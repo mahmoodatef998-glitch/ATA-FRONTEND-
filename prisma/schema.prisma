@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model clients {
+  id             Int              @id @default(autoincrement())
+  name           String
+  phone          String           @unique
+  email          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  hasAccount     Boolean          @default(false)
+  password       String?
+  orders         orders[]
+  order_feedback order_feedback[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model companies {
+  id            Int             @id @default(autoincrement())
+  name          String
+  slug          String          @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  notifications notifications[]
+  orders        orders[]
+  users         users[]
+
+  @@index([slug])
+}
+
+model order_templates {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String
+  description String?
+  fields      Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model purchase_orders {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  poNumber        String
+  poFile          String?
+  depositRequired Boolean  @default(false)
+  depositPercent  Int?
+  depositAmount   Float?
+  notes           String?
+  createdById     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  orders          orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([poNumber])
+}
+
+model payments {
+  id            Int           @id @default(autoincrement())
+  orderId       Int
+  paymentType   PaymentType
+  amount        Float
+  currency      String        @default("AED")
+  paymentMethod String?
+  reference     String?
+  notes         String?
+  paidAt        DateTime      @default(now())
+  createdById   Int?
+  createdAt     DateTime      @default(now())
+  orders        orders        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([paymentType])
+}
+
+model delivery_notes {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  dnNumber    String
+  dnFile      String?
+  items       Json
+  deliveredAt DateTime?
+  notes       String?
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  orders      orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([dnNumber])
+}
+
+enum PaymentType {
+  DEPOSIT
+  FINAL
+  FULL
+  PARTIAL
+}
+
+model order_feedback {
+  id                  Int      @id @default(autoincrement())
+  orderId             Int      @unique
+  clientId            Int
+  rating              Int
+  serviceQuality      Int?
+  deliveryExperience  Int?
+  comments            String?
+  wouldRecommend      Boolean?
+  createdAt           DateTime @default(now())
+  orders              orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  clients             clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([clientId])
+  @@index([rating])
+}
+
+model notifications {
+  id        Int       @id @default(autoincrement())
+  companyId Int
+  userId    Int?
+  title     String
+  body      String?
+  meta      Json?
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  companies companies @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users     users?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([createdAt])
+  @@index([read])
+  @@index([userId])
+}
+
+model order_histories {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  actorId   Int?
+  actorName String?
+  action    String
+  payload   Json?
+  createdAt DateTime @default(now())
+  orders    orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([orderId])
+}
+
+model orders {
+  id                    Int               @id @default(autoincrement())
+  companyId             Int
+  clientId              Int?
+  publicToken           String            @unique
+  items                 Json?
+  details               String?
+  totalAmount           Float?
+  currency              String            @default("AED")
+  status                OrderStatus       @default(PENDING)
+  stage                 OrderStage        @default(RECEIVED)
+  images                Json?
+  depositPercentage     Int?
+  depositAmount         Float?
+  depositPaid           Boolean           @default(false)
+  depositPaidAt         DateTime?
+  finalPaymentReceived  Boolean           @default(false)
+  finalPaymentAt        DateTime?
+  createdById           Int?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime
+  order_histories       order_histories[]
+  clients               clients?          @relation(fields: [clientId], references: [id])
+  companies             companies         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users                 users?            @relation(fields: [createdById], references: [id])
+  quotations            quotations[]
+  purchase_orders       purchase_orders[]
+  payments              payments[]
+  delivery_notes        delivery_notes[]
+  order_feedback        order_feedback?
+
+  @@index([clientId])
+  @@index([companyId])
+  @@index([createdAt])
+  @@index([publicToken])
+  @@index([status])
+  @@index([stage])
+}
+
+model quotations {
+  id             Int       @id @default(autoincrement())
+  orderId        Int
+  createdById    Int?
+  items          Json
+  total          Float
+  currency       String    @default("AED")
+  notes          String?
+  accepted       Boolean?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime
+  file           String?
+  fileName       String?
+  fileSize       Int?
+  rejectedReason String?
+  reviewedAt     DateTime?
+  clientComment  String?
+  users          users?    @relation(fields: [createdById], references: [id])
+  orders         orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model users {
+  id            Int             @id @default(autoincrement())
+  companyId     Int
+  name          String
+  email         String          @unique
+  password      String
+  role          UserRole        @default(ADMIN)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  notifications notifications[]
+  orders        orders[]
+  quotations    quotations[]
+  companies     companies       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([email])
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  QUOTATION_SENT
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderStage {
+  RECEIVED
+  UNDER_REVIEW
+  QUOTATION_PREPARATION
+  QUOTATION_SENT
+  QUOTATION_ACCEPTED
+  PO_PREPARED
+  AWAITING_DEPOSIT
+  DEPOSIT_RECEIVED
+  IN_MANUFACTURING
+  MANUFACTURING_COMPLETE
+  READY_FOR_DELIVERY
+  DELIVERY_NOTE_SENT
+  AWAITING_FINAL_PAYMENT
+  FINAL_PAYMENT_RECEIVED
+  COMPLETED_DELIVERED
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}

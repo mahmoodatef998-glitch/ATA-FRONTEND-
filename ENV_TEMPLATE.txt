@@ -1,0 +1,49 @@
+════════════════════════════════════════════════════════════════
+   📋 نموذج ملف .env
+════════════════════════════════════════════════════════════════
+
+⚠️ مهم: انسخ المحتوى أدناه في ملف جديد اسمه .env
+
+
+════════════════════════════════════════════════════════════════
+
+# Database Configuration
+DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/ata_crm"
+
+# NextAuth Configuration
+NEXTAUTH_URL="http://localhost:3005"
+NEXTAUTH_SECRET="ata-crm-secret-key-change-this-in-production-min-32-chars"
+
+# Email Configuration (Optional - for notifications)
+# Uncomment and fill these if you want email notifications
+# EMAIL_HOST="smtp.gmail.com"
+# EMAIL_PORT="587"
+# EMAIL_SECURE="false"
+# EMAIL_USER="your-email@gmail.com"
+# EMAIL_PASSWORD="your-app-password-16-chars"
+# EMAIL_FROM_NAME="ATA CRM System"
+
+# Node Environment
+NODE_ENV="development"
+
+════════════════════════════════════════════════════════════════
+
+خطوات الإنشاء:
+
+1. افتح Notepad أو أي Text Editor
+2. انسخ المحتوى أعلاه
+3. احفظ الملف باسم: .env
+4. ضعه في المجلد الرئيسي للمشروع
+
+أو استخدم Command Prompt:
+   copy ENV_TEMPLATE.txt .env
+
+════════════════════════════════════════════════════════════════
+
+
+
+
+
+
+
+

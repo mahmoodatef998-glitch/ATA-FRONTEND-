@@ -1,0 +1,15 @@
+# Ignore all uploaded files
+quotations/*
+!quotations/.gitkeep
+
+# But keep the .gitignore file itself
+!.gitignore
+
+
+
+
+
+
+
+
+
