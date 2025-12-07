@@ -1,79 +1,63 @@
 @echo off
-title ATA CRM - Starting
-color 0A
-
-echo.
+chcp 65001 >nul
 echo ========================================
-echo    Starting ATA CRM System
+echo   Starting ATA CRM Project...
 echo ========================================
 echo.
 
-cd /d "%~dp0"
-
-REM Stop old processes
-echo Cleaning old processes...
-taskkill /F /IM node.exe >nul 2>&1
-timeout /t 2 >nul
-taskkill /F /IM node.exe >nul 2>&1
-timeout /t 2 >nul
-echo Done.
-echo.
-
-REM Check Docker
-echo Checking Docker...
-docker ps >nul 2>&1
+REM Check if Node.js is installed
+where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: Docker not running!
-    echo Please start Docker Desktop first.
+    echo [ERROR] Node.js is not installed or not in PATH
+    echo Please install Node.js from https://nodejs.org/
     pause
     exit /b 1
 )
-echo Docker OK.
+
+REM Check if npm is installed
+where npm >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] npm is not installed or not in PATH
+    pause
+    exit /b 1
+)
+
+echo [1/3] Starting Prisma Studio...
+start "Prisma Studio" /min cmd /k "npm run prisma:studio"
+timeout /t 3 /nobreak >nul
+
+echo [2/3] Checking if port 3005 is available...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3005 ^| findstr LISTENING') do (
+    echo Port 3005 is in use by process %%a. Stopping it...
+    taskkill /F /PID %%a >nul 2>&1
+    timeout /t 2 /nobreak >nul
+)
+
+echo Starting Next.js Development Server...
+echo.
+echo Waiting for server to start...
 echo.
 
-REM Start PostgreSQL
-echo Starting PostgreSQL...
-docker-compose up -d >nul 2>&1
-timeout /t 5 >nul
-echo PostgreSQL OK.
+REM Start the development server in a new window
+start "Next.js Dev Server" cmd /k "npm run dev"
+
+REM Wait for server to be ready
+echo Waiting for server to be ready...
+timeout /t 8 /nobreak >nul
+
+echo [3/3] Opening browser...
 echo.
 
-REM Generate Prisma
-echo Preparing Prisma...
-call npx prisma generate >nul 2>&1
-echo Prisma OK.
-echo.
+REM Open browser using PowerShell
+powershell -Command "Start-Process 'http://localhost:3005'"
 
-REM Start services
-echo Starting Prisma Studio (blue window)...
-start cmd /k "color 0B && npx prisma studio --port 5556"
-timeout /t 2 >nul
-
-echo Starting Next.js (green window)...
-start cmd /k "color 0A && npm run dev"
-timeout /t 2 >nul
-
-echo.
 echo ========================================
-echo    Waiting for servers (15 sec)...
-echo ========================================
-timeout /t 15 >nul
-
-echo Opening browser...
-start http://localhost:3005
-
-echo.
-echo ========================================
-echo    SUCCESS!
-echo ========================================
-echo.
-echo Services:
-echo   Next.js:  http://localhost:3005
-echo   Prisma:   http://localhost:5556
-echo.
-echo Admin Login:
-echo   admin@demo.co / 00243540000
-echo.
+echo   Server Started Successfully!
 echo ========================================
 echo.
-pause
+echo Frontend: http://localhost:3005
+echo Prisma Studio: http://localhost:5556
+echo.
+echo Press any key to close this window...
+echo (The servers will continue running in separate windows)
+pause >nul

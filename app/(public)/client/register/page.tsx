@@ -1,18 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
+import { checkPasswordStrength, validatePhoneNumber, normalizePhoneNumber } from "@/lib/validators/client-registration";
 
 export default function ClientRegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<{ strength: "weak" | "medium" | "strong"; feedback: string[] } | null>(null);
+  const [phoneError, setPhoneError] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -20,14 +25,69 @@ export default function ClientRegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    website: "", // Honeypot field
   });
+
+  // Validate password strength on change
+  useEffect(() => {
+    if (formData.password) {
+      const strength = checkPasswordStrength(formData.password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength(null);
+    }
+  }, [formData.password]);
+
+  // Validate phone number on change
+  useEffect(() => {
+    if (formData.phone) {
+      const normalized = normalizePhoneNumber(formData.phone);
+      if (normalized && !validatePhoneNumber(normalized)) {
+        setPhoneError("Please enter a valid phone number");
+      } else {
+        setPhoneError("");
+      }
+    } else {
+      setPhoneError("");
+    }
+  }, [formData.phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setPhoneError("");
+
+    // Client-side validation
+    if (!formData.name || formData.name.length < 2) {
+      setError("Name must be at least 2 characters");
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneNumber(formData.phone);
+    if (!normalizedPhone || !validatePhoneNumber(normalizedPhone)) {
+      setPhoneError("Please enter a valid phone number");
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    const strength = checkPasswordStrength(formData.password);
+    if (!strength.valid) {
+      setError("Password is too weak. " + strength.feedback.join(", "));
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+
+    // Honeypot check
+    if (formData.website) {
+      // Bot detected - silently fail
       return;
     }
 
@@ -41,9 +101,10 @@ export default function ClientRegisterPage() {
         },
         body: JSON.stringify({
           name: formData.name,
-          phone: formData.phone,
+          phone: normalizedPhone,
           email: formData.email || undefined,
           password: formData.password,
+          website: formData.website, // Honeypot
         }),
       });
 
@@ -53,24 +114,9 @@ export default function ClientRegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      // Auto-login after registration
-      const loginResponse = await fetch("/api/client/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: formData.phone,
-          password: formData.password,
-        }),
-      });
-
-      if (loginResponse.ok) {
-        router.push("/client/portal");
-        router.refresh();
-      } else {
-        router.push("/client/login");
-      }
+      // Show success message and redirect to login
+      // Account needs admin approval before login
+      router.push("/client/login?registered=true");
     } catch (err: any) {
       setError(err.message || "An error occurred. Please try again.");
     } finally {
@@ -79,7 +125,7 @@ export default function ClientRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4" suppressHydrationWarning>
       {/* Back to Home Button */}
       <Link 
         href="/" 
@@ -89,7 +135,7 @@ export default function ClientRegisterPage() {
         <span>Back to Home</span>
       </Link>
 
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md" suppressHydrationWarning>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center">
@@ -101,8 +147,8 @@ export default function ClientRegisterPage() {
             Track your orders and view quotations anytime
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent suppressHydrationWarning>
+          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
             <div className="space-y-2">
               <Label htmlFor="name">
                 Full Name <span className="text-red-500">*</span>
@@ -134,8 +180,19 @@ export default function ClientRegisterPage() {
                 }
                 required
                 minLength={8}
+                maxLength={20}
                 disabled={loading}
+                className={phoneError ? "border-red-500" : ""}
               />
+              {phoneError && (
+                <p className="text-xs text-red-600">{phoneError}</p>
+              )}
+              {!phoneError && formData.phone && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Valid phone number
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Use the same phone number you used for orders
               </p>
@@ -159,35 +216,140 @@ export default function ClientRegisterPage() {
               <Label htmlFor="password">
                 Password <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimum 6 characters"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-                minLength={6}
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimum 8 characters with uppercase, lowercase, numbers"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  minLength={8}
+                  maxLength={128}
+                  disabled={loading}
+                  className={passwordStrength && !passwordStrength.valid ? "border-red-500" : passwordStrength?.strength === "strong" ? "border-green-500" : ""}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {passwordStrength && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          passwordStrength.strength === "strong"
+                            ? "bg-green-500 w-full"
+                            : passwordStrength.strength === "medium"
+                            ? "bg-yellow-500 w-2/3"
+                            : "bg-red-500 w-1/3"
+                        }`}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${
+                      passwordStrength.strength === "strong"
+                        ? "text-green-600"
+                        : passwordStrength.strength === "medium"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                    }`}>
+                      {passwordStrength.strength.toUpperCase()}
+                    </span>
+                  </div>
+                  {passwordStrength.feedback.length > 0 && (
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      {passwordStrength.feedback.map((msg, idx) => (
+                        <li key={idx} className="flex items-center gap-1">
+                          {passwordStrength.valid ? (
+                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <XCircle className="h-3 w-3 text-red-600" />
+                          )}
+                          {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">
                 Confirm Password <span className="text-red-500">*</span>
               </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Re-enter password"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                  }
+                  required
+                  minLength={8}
+                  maxLength={128}
+                  disabled={loading}
+                  className={
+                    formData.confirmPassword && formData.password !== formData.confirmPassword
+                      ? "border-red-500"
+                      : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? "border-green-500"
+                      : ""
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {formData.confirmPassword && (
+                <p className={`text-xs flex items-center gap-1 ${
+                  formData.password === formData.confirmPassword
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}>
+                  {formData.password === formData.confirmPassword ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3" />
+                      Passwords match
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3" />
+                      Passwords do not match
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {/* Honeypot field - hidden from users */}
+            <div style={{ position: "absolute", left: "-9999px", opacity: 0, pointerEvents: "none" }}>
+              <Label htmlFor="website">Website (leave blank)</Label>
               <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Re-enter password"
-                value={formData.confirmPassword}
+                id="website"
+                type="text"
+                name="website"
+                value={formData.website}
                 onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
+                  setFormData({ ...formData, website: e.target.value })
                 }
-                required
-                minLength={6}
-                disabled={loading}
+                tabIndex={-1}
+                autoComplete="off"
               />
             </div>
 

@@ -1,19 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "@/lib/auth-helpers";
+import { authorize } from "@/lib/rbac/authorize";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { ordersQuerySchema } from "@/lib/validators/order";
-import { UserRole } from "@prisma/client";
+import { UserRole, Prisma } from "@prisma/client";
+import { applyRateLimit, RATE_LIMITS, getRateLimitHeaders } from "@/lib/rate-limit";
+import { handleApiError } from "@/lib/error-handler";
 
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get list of orders
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, APPROVED, REJECTED, QUOTATION_SENT, COMPLETED, CANCELLED]
+ *         description: Filter by order status
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by client name or phone
+ *     responses:
+ *       200:
+ *         description: List of orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orders:
+ *                       type: array
+ *                     pagination:
+ *                       type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const { response: rateLimitResponse, rateLimitInfo } = await applyRateLimit(request, RATE_LIMITS.API_GENERAL);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
-    // Require authentication
-    const session = await getServerSession();
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    // التحقق من صلاحية عرض الطلبات
+    const { userId, companyId } = await authorize(PermissionAction.LEAD_READ);
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -32,14 +90,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, status, search, companyId } = validation.data;
+    const { page, limit, status, search } = validation.data;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Build where clause
-    const where: any = {};
-
-    // Filter by company
-    where.companyId = session.user.companyId;
+    // Build where clause with proper Prisma types
+    // companyId comes from authorize() above
+    const where: Prisma.ordersWhereInput = {
+      companyId: companyId,
+    };
 
     // Filter by status
     if (status) {
@@ -48,7 +106,7 @@ export async function GET(request: NextRequest) {
 
     // Search by client name or phone
     if (search) {
-      where.client = {
+      where.clients = {
         OR: [
           { name: { contains: search, mode: "insensitive" } },
           { phone: { contains: search } },
@@ -82,7 +140,12 @@ export async function GET(request: NextRequest) {
       prisma.orders.count({ where }),
     ]);
 
-    return NextResponse.json({
+    // Get rate limit headers (from the check we already did)
+    const rateLimitHeaders = rateLimitInfo 
+      ? getRateLimitHeaders(rateLimitInfo.remaining, rateLimitInfo.resetAt, rateLimitInfo.limit)
+      : {};
+
+    const response = NextResponse.json({
       success: true,
       data: {
         orders,
@@ -94,12 +157,15 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+    // Add rate limit headers
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    return NextResponse.json(
-      { success: false, error: "An error occurred while fetching orders" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

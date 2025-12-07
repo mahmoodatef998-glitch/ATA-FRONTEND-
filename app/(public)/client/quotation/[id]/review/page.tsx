@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, CheckCircle, XCircle, ArrowLeft, MessageSquare } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { POUploader } from "@/components/client/po-uploader";
+import { MarkActionViewed } from "@/components/client/mark-action-viewed";
 
 export default function ReviewQuotationPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -179,6 +181,11 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* Mark quotation action as viewed when viewing this page */}
+            {quotation && quotation.accepted === null && (
+              <MarkActionViewed orderId={quotation.order.id} actionType="quotation" />
+            )}
+
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -384,37 +391,50 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
 
                 {/* Already Reviewed */}
                 {quotation.accepted !== null && (
-                  <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                    <div className="flex items-start gap-3 mb-3">
-                      {quotation.accepted ? (
-                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                      )}
-                      <div className="flex-1">
-                        <p className="font-semibold">
-                          {quotation.accepted ? "You accepted this quotation" : "You rejected this quotation"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Reviewed on {formatDateTime(quotation.reviewedAt)}
-                        </p>
+                  <>
+                    <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <div className="flex items-start gap-3 mb-3">
+                        {quotation.accepted ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold">
+                            {quotation.accepted ? "You accepted this quotation" : "You rejected this quotation"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Reviewed on {formatDateTime(quotation.reviewedAt)}
+                          </p>
+                        </div>
                       </div>
+
+                      {quotation.rejectedReason && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm font-medium">Reason:</p>
+                          <p className="text-sm text-muted-foreground mt-1">{quotation.rejectedReason}</p>
+                        </div>
+                      )}
+
+                      {quotation.clientComment && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm font-medium">Your Note:</p>
+                          <p className="text-sm text-muted-foreground mt-1">{quotation.clientComment}</p>
+                        </div>
+                      )}
                     </div>
 
-                    {quotation.rejectedReason && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm font-medium">Reason:</p>
-                        <p className="text-sm text-muted-foreground mt-1">{quotation.rejectedReason}</p>
-                      </div>
+                    {/* PO Uploader - Show only if quotation is accepted and order doesn't have PO yet */}
+                    {quotation.accepted && quotation.order && (!quotation.order.purchase_orders || quotation.order.purchase_orders.length === 0) && (
+                      <POUploader 
+                        orderId={quotation.order.id}
+                        onSuccess={() => {
+                          // Refresh the page to show the uploaded PO
+                          window.location.reload();
+                        }}
+                      />
                     )}
-
-                    {quotation.clientComment && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm font-medium">Your Note:</p>
-                        <p className="text-sm text-muted-foreground mt-1">{quotation.clientComment}</p>
-                      </div>
-                    )}
-                  </div>
+                  </>
                 )}
               </CardContent>
             </Card>

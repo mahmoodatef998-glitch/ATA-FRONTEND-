@@ -1,41 +1,30 @@
 @echo off
-title ATA CRM - Stopping
-color 0C
-
-echo.
+chcp 65001 >nul
 echo ========================================
-echo    Stopping ATA CRM
+echo   Stopping ATA CRM Project...
 echo ========================================
 echo.
 
-echo Stopping all Node processes...
+echo [1/2] Stopping Node.js processes on port 3005...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3005 ^| findstr LISTENING') do (
+    echo Killing process %%a...
+    taskkill /F /PID %%a >nul 2>&1
+)
+
+echo [2/2] Stopping Prisma Studio on port 5556...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5556 ^| findstr LISTENING') do (
+    echo Killing process %%a...
+    taskkill /F /PID %%a >nul 2>&1
+)
+
+echo.
+echo Stopping all Node.js processes...
 taskkill /F /IM node.exe >nul 2>&1
-timeout /t 2 >nul
-taskkill /F /IM node.exe >nul 2>&1
-timeout /t 2 >nul
-echo Done.
+taskkill /F /IM tsx.exe >nul 2>&1
 
-echo.
-echo Do you want to stop PostgreSQL too?
-choice /C YN /M "Stop PostgreSQL (Y/N)"
-
-if errorlevel 2 goto :no
-if errorlevel 1 goto :yes
-
-:yes
-cd /d "%~dp0"
-docker-compose down
-echo PostgreSQL stopped.
-goto :end
-
-:no
-echo PostgreSQL kept running.
-goto :end
-
-:end
 echo.
 echo ========================================
-echo    Stopped!
+echo   All servers stopped!
 echo ========================================
 echo.
-pause
+timeout /t 2 /nobreak >nul

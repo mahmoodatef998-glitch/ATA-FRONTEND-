@@ -10,18 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Eye, Search, ArrowRight, TrendingUp, User, FileDown, Package, Clock, CheckCircle, FileText } from "lucide-react";
+import { Eye, ArrowRight, TrendingUp, User, FileDown, Package, Clock, CheckCircle, FileText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { OrderFilters } from "@/components/dashboard/order-filters";
 
 // Fetch orders from API
 async function getOrders(searchParams: Promise<any>) {
@@ -39,17 +32,26 @@ async function getOrders(searchParams: Promise<any>) {
     const where: any = {};
     
     // Add filters
-    if (params.status) {
+    if (params.processing === "true") {
+      // Processing = all orders that are not completed or cancelled (in development)
+      where.status = { notIn: ["COMPLETED", "CANCELLED"] };
+    } else if (params.status && params.status !== "") {
       where.status = params.status;
     }
     
-    if (params.search) {
-      where.clients = {
-        OR: [
-          { name: { contains: params.search, mode: "insensitive" } },
-          { phone: { contains: params.search } },
-        ],
-      };
+    // Advanced search - Full-text search in multiple fields
+    if (params.search && params.search !== "") {
+      const searchTerm = params.search.trim();
+      where.OR = [
+        { id: { equals: isNaN(parseInt(searchTerm)) ? -1 : parseInt(searchTerm) } },
+        { details: { contains: searchTerm, mode: "insensitive" } },
+        { clients: { name: { contains: searchTerm, mode: "insensitive" } } },
+        { clients: { phone: { contains: searchTerm } } },
+        { clients: { email: { contains: searchTerm, mode: "insensitive" } } },
+        { purchase_orders: { some: { poNumber: { contains: searchTerm, mode: "insensitive" } } } },
+        { quotations: { some: { id: { equals: isNaN(parseInt(searchTerm)) ? -1 : parseInt(searchTerm) } } } },
+        { delivery_notes: { some: { dnNumber: { contains: searchTerm, mode: "insensitive" } } } },
+      ];
     }
     
     const [orders, total] = await Promise.all([
@@ -141,10 +143,10 @@ export default async function OrdersPage({
               Dashboard
             </Button>
           </Link>
-          <a href="/api/orders/export" download>
+          <a href="/api/orders/export?format=excel" download>
             <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
               <FileDown className="h-4 w-4 mr-2" />
-              Export Excel
+              Export All Orders
             </Button>
           </a>
         </div>
@@ -170,9 +172,9 @@ export default async function OrdersPage({
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                <p className="text-sm font-medium text-muted-foreground">Processing</p>
                 <p className="text-3xl font-bold text-amber-700 dark:text-amber-300">
-                  {data.orders.filter((o: any) => o.status === "PENDING").length}
+                  {data.orders.filter((o: any) => o.status !== "COMPLETED" && o.status !== "CANCELLED").length}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
@@ -218,30 +220,8 @@ export default async function OrdersPage({
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by client name or phone..."
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            <Select>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="QUOTATION_SENT">Quotation Sent</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="mb-6">
+            <OrderFilters />
           </div>
 
           {/* Orders Table */}

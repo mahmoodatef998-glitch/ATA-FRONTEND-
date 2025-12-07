@@ -23,8 +23,38 @@ NEXTAUTH_SECRET="ata-crm-secret-key-change-this-in-production-min-32-chars"
 # EMAIL_PASSWORD="your-app-password-16-chars"
 # EMAIL_FROM_NAME="ATA CRM System"
 
+# Cloud Storage - Cloudinary (Optional - for file storage)
+# Sign up at https://cloudinary.com (free 25GB)
+# Get credentials from dashboard
+# CLOUDINARY_CLOUD_NAME="your-cloud-name"
+# CLOUDINARY_API_KEY="your-api-key"
+# CLOUDINARY_API_SECRET="your-api-secret"
+# If not set, files will be stored locally in public/uploads/
+
+# Sentry Error Tracking (Optional)
+# Sign up at https://sentry.io (free 5K errors/month)
+# SENTRY_DSN="your-sentry-dsn"
+
 # Node Environment
 NODE_ENV="development"
+
+# RBAC System Configuration
+# Enable/disable Role-Based Access Control system
+# true = Use RBAC permission checks
+# false = Use legacy role-based checks
+RBAC_ENABLED="true"
+
+# Optional: Permission cache TTL (milliseconds)
+# Default: 300000 (5 minutes)
+PERMISSION_CACHE_TTL="300000"
+
+# Optional: Enable/disable audit logging
+# Default: true
+AUDIT_LOGGING_ENABLED="true"
+
+# Frontend RBAC Flag (for client-side checks)
+# Must be prefixed with NEXT_PUBLIC_ for client-side access
+NEXT_PUBLIC_RBAC_ENABLED="true"
 
 ════════════════════════════════════════════════════════════════
 
@@ -39,6 +69,13 @@ NODE_ENV="development"
    copy ENV_TEMPLATE.txt .env
 
 ════════════════════════════════════════════════════════════════
+
+
+
+
+
+
+
 
 
 

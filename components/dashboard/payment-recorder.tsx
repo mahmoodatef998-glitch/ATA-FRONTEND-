@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 interface PaymentRecorderProps {
   orderId: number;
@@ -27,6 +28,7 @@ export function PaymentRecorder({
   totalAmount,
   currency = "AED",
 }: PaymentRecorderProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [paymentType, setPaymentType] = useState<string>("");
   const [amount, setAmount] = useState("");
@@ -36,7 +38,11 @@ export function PaymentRecorder({
 
   const handleSubmit = async () => {
     if (!paymentType || !amount) {
-      alert("Please fill all required fields");
+      toast({
+        title: "⚠️ حقول مطلوبة",
+        description: "الرجاء ملء نوع الدفعة والمبلغ",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -56,18 +62,30 @@ export function PaymentRecorder({
 
       const result = await response.json();
       if (result.success) {
-        alert("✅ Payment recorded successfully!");
+        toast({
+          title: "✅ تم تسجيل الدفعة بنجاح!",
+          description: `تم تسجيل دفعة ${paymentType} بمبلغ ${parseFloat(amount).toLocaleString()} ${currency}`,
+          className: "bg-green-50 border-green-200",
+        });
         setAmount("");
         setPaymentMethod("");
         setReference("");
         setNotes("");
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        alert(`❌ Error: ${result.error}`);
+        toast({
+          title: "❌ خطأ في تسجيل الدفعة",
+          description: result.error || "حدث خطأ غير متوقع",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Payment recording error:", error);
-      alert("Failed to record payment");
+      toast({
+        title: "❌ فشل الاتصال",
+        description: "تعذر الاتصال بالسيرفر. الرجاء المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users } from "lucide-react";
+import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users, ArrowRight, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { AnalyticsSection } from "@/components/dashboard/analytics-section";
+import { UserRole } from "@prisma/client";
+import { getCached } from "@/lib/cache";
 
 async function getDashboardStats() {
   try {
@@ -15,6 +18,26 @@ async function getDashboardStats() {
 
     const companyId = session.user.companyId;
 
+    // Cache key for dashboard stats (cache for 30 seconds)
+    const cacheKey = `dashboard:stats:${companyId}`;
+
+    // Get orders statistics with caching
+    return await getCached(
+      cacheKey,
+      async () => {
+        return await fetchDashboardStats(companyId);
+      },
+      30 // 30 seconds cache
+    );
+  } catch (error) {
+    const logger = await import("@/lib/logger").then(m => m.logger);
+    logger.error("Error fetching dashboard stats", error, "dashboard");
+    return null;
+  }
+}
+
+async function fetchDashboardStats(companyId: number) {
+  try {
     // Get orders statistics
     const [
       totalOrders,
@@ -23,13 +46,20 @@ async function getDashboardStats() {
       totalRevenue,
       recentOrders,
       topClients,
+      actionRequiredOrders,
+      pendingClients,
     ] = await Promise.all([
       // Total orders
       prisma.orders.count({ where: { companyId } }),
       
-      // Pending orders
+      // Processing orders - all orders that are not completed or cancelled (in development)
       prisma.orders.count({
-        where: { companyId, status: { in: ["PENDING", "APPROVED"] } },
+        where: { 
+          companyId, 
+          status: { 
+            notIn: ["COMPLETED", "CANCELLED"] 
+          } 
+        },
       }),
       
       // Completed orders
@@ -60,6 +90,53 @@ async function getDashboardStats() {
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,
+      }),
+      
+      // Orders that need admin action
+      prisma.orders.findMany({
+        where: {
+          companyId,
+          OR: [
+            // New orders pending review
+            { status: "PENDING", stage: "RECEIVED" },
+            // Quotations accepted by client (need PO)
+            { 
+              quotations: {
+                some: {
+                  accepted: true,
+                }
+              },
+              purchase_orders: {
+                none: {}
+              }
+            },
+            // Deposit received (need to update stage)
+            {
+              depositPaid: true,
+              stage: "AWAITING_DEPOSIT"
+            },
+            // Final payment received (need to close order)
+            {
+              finalPaymentReceived: true,
+              status: { not: "COMPLETED" }
+            },
+          ]
+        },
+        include: {
+          clients: { select: { name: true, phone: true } },
+          quotations: true,
+          purchase_orders: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+
+      // Pending client approvals
+      prisma.clients.count({
+        where: {
+          hasAccount: true,
+          accountStatus: "PENDING",
+        },
       }),
     ]);
 
@@ -100,10 +177,13 @@ async function getDashboardStats() {
       monthRevenue: monthRevenue._sum.totalAmount || 0,
       recentOrders,
       topClients: topClientsWithNames,
+      actionRequiredOrders,
+      pendingClients,
     };
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
-    return null;
+    const logger = await import("@/lib/logger").then(m => m.logger);
+    logger.error("Error in fetchDashboardStats", error, "dashboard");
+    throw error; // Re-throw to be handled by outer catch
   }
 }
 
@@ -112,6 +192,11 @@ export default async function DashboardPage() {
   
   if (!session || !session.user) {
     redirect("/login");
+  }
+
+  // Redirect team members to their dashboard
+  if (session.user.role === UserRole.TECHNICIAN || session.user.role === UserRole.SUPERVISOR) {
+    redirect("/team");
   }
 
   const stats = await getDashboardStats();
@@ -146,6 +231,157 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Action Required Alert */}
+      {stats.actionRequiredOrders.length > 0 && (
+        <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="h-12 w-12 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Clock className="h-6 w-6 text-white animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-amber-900 dark:text-amber-100 mb-1">
+                  ⚠️ Action Required ({stats.actionRequiredOrders.length})
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  These orders need your attention
+                </p>
+              </div>
+            </div>
+            
+            {/* List of orders needing action */}
+            <div className="space-y-2">
+              {stats.actionRequiredOrders.map((order) => {
+                // Determine what action is needed
+                const isNewOrder = order.status === "PENDING" && order.stage === "RECEIVED";
+                const needsPO = order.quotations.some((q: any) => q.accepted === true) && 
+                               order.purchase_orders.length === 0;
+                const depositReceived = order.depositPaid && order.stage === "AWAITING_DEPOSIT";
+                const finalPaymentReceived = order.finalPaymentReceived && order.status !== "COMPLETED";
+                
+                let actionText = "";
+                let actionButton = "";
+                let actionHref = "";
+                
+                if (isNewOrder) {
+                  actionText = "📋 New order - needs review and quotation";
+                  actionButton = "Review Order";
+                  actionHref = `/dashboard/orders/${order.id}`;
+                } else if (needsPO) {
+                  actionText = "✅ Quotation accepted - create Purchase Order";
+                  actionButton = "Create PO";
+                  actionHref = `/dashboard/orders/${order.id}`;
+                } else if (depositReceived) {
+                  actionText = "💰 Deposit received - update to manufacturing";
+                  actionButton = "Update Status";
+                  actionHref = `/dashboard/orders/${order.id}`;
+                } else if (finalPaymentReceived) {
+                  actionText = "✅ Final payment received - close order";
+                  actionButton = "Complete Order";
+                  actionHref = `/dashboard/orders/${order.id}`;
+                }
+                
+                return (
+                  <div 
+                    key={order.id} 
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-amber-200 dark:border-amber-800 hover:shadow-md transition-all"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-bold text-amber-900 dark:text-amber-100">
+                          Order #{order.id}
+                        </p>
+                        <span className="text-xs text-amber-600 dark:text-amber-400">
+                          • {order.clients?.name}
+                        </span>
+                      </div>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        {actionText}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Created: {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href={actionHref}>
+                        <Button 
+                          size="sm" 
+                          className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-md"
+                        >
+                          {actionButton}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="mt-4 pt-4 border-t border-amber-200 dark:border-amber-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div className="p-2 bg-white/60 dark:bg-gray-800/60 rounded">
+                  <div className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                    {stats.actionRequiredOrders.filter(o => o.status === "PENDING").length}
+                  </div>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">New Orders</div>
+                </div>
+                <div className="p-2 bg-white/60 dark:bg-gray-800/60 rounded">
+                  <div className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                    {stats.actionRequiredOrders.filter(o => 
+                      o.quotations.some((q: any) => q.accepted === true) && o.purchase_orders.length === 0
+                    ).length}
+                  </div>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">Need PO</div>
+                </div>
+                <div className="p-2 bg-white/60 dark:bg-gray-800/60 rounded">
+                  <div className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                    {stats.actionRequiredOrders.filter(o => o.depositPaid && o.stage === "AWAITING_DEPOSIT").length}
+                  </div>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">Deposits Paid</div>
+                </div>
+                <div className="p-2 bg-white/60 dark:bg-gray-800/60 rounded">
+                  <div className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                    {stats.actionRequiredOrders.filter(o => o.finalPaymentReceived && o.status !== "COMPLETED").length}
+                  </div>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">To Close</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Clients Alert - Admin Only */}
+      {session.user.role === UserRole.ADMIN && stats.pendingClients > 0 && (
+        <Card className="border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+                <UserPlus className="h-6 w-6 text-white animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-blue-900 dark:text-blue-100 mb-1">
+                  🔔 Pending Client Approvals ({stats.pendingClients})
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  New client accounts are waiting for your approval
+                </p>
+              </div>
+            </div>
+            
+            <Link href="/dashboard/clients">
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
+                <Users className="mr-2 h-4 w-4" />
+                Review Client Approvals
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Orders */}
@@ -164,10 +400,10 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Pending Orders */}
+        {/* Processing Orders */}
         <Card className="border-2 border-amber-200 dark:border-amber-900 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">Processing</CardTitle>
             <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
@@ -175,7 +411,7 @@ export default async function DashboardPage() {
               {stats.pendingOrders}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Awaiting action
+              In development
             </p>
           </CardContent>
         </Card>
@@ -310,6 +546,9 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Analytics Dashboard */}
+      <AnalyticsSection />
+
       {/* This Month Performance */}
       <Card className="border-2 border-indigo-200 dark:border-indigo-900">
         <CardHeader>
@@ -365,10 +604,10 @@ export default async function DashboardPage() {
                 Notifications
               </Button>
             </Link>
-            <Link href="/dashboard/orders?status=PENDING">
+            <Link href="/dashboard/orders?processing=true">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <TrendingUp className="h-6 w-6" />
-                Pending Orders
+                Processing Orders
               </Button>
             </Link>
           </div>
