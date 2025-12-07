@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface DeliveryNoteCreatorProps {
   orderId: number;
@@ -18,6 +19,7 @@ export function DeliveryNoteCreator({
   orderId,
   orderItems = [],
 }: DeliveryNoteCreatorProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [dnNumber, setDnNumber] = useState("");
   const [notes, setNotes] = useState("");
@@ -48,7 +50,11 @@ export function DeliveryNoteCreator({
 
   const handleSubmit = async () => {
     if (!dnNumber.trim()) {
-      alert("Please enter Delivery Note Number");
+      toast({
+        title: "⚠️ خطأ في البيانات",
+        description: "الرجاء إدخال رقم Delivery Note",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -72,17 +78,29 @@ export function DeliveryNoteCreator({
 
       const result = await response.json();
       if (result.success) {
-        alert("✅ Delivery Note created successfully!");
+        toast({
+          title: "✅ تم إنشاء Delivery Note بنجاح!",
+          description: `تم إنشاء DN #${dnNumber} وإرسال إشعار للعميل`,
+          className: "bg-green-50 border-green-200",
+        });
         setDnNumber("");
         setNotes("");
         setDnFiles([]);
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        alert(`❌ Error: ${result.error}`);
+        toast({
+          title: "❌ خطأ في إنشاء DN",
+          description: result.error || "حدث خطأ غير متوقع",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Delivery note error:", error);
-      alert("Failed to create delivery note");
+      toast({
+        title: "❌ فشل الاتصال",
+        description: "تعذر الاتصال بالسيرفر. الرجاء المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

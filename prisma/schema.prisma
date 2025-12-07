@@ -8,30 +8,44 @@ datasource db {
 }
 
 model clients {
-  id             Int              @id @default(autoincrement())
-  name           String
-  phone          String           @unique
-  email          String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime
-  hasAccount     Boolean          @default(false)
-  password       String?
-  orders         orders[]
-  order_feedback order_feedback[]
+  id              Int                 @id @default(autoincrement())
+  name            String
+  phone           String              @unique
+  email           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  hasAccount      Boolean             @default(false)
+  password        String?
+  accountStatus   ClientAccountStatus @default(PENDING)
+  approvedAt      DateTime?
+  approvedById    Int?
+  approvedBy      users?              @relation("ClientApprover", fields: [approvedById], references: [id])
+  rejectionReason String?
+  orders          orders[]
+  order_feedback  order_feedback[]
 
   @@index([email])
   @@index([phone])
+  @@index([accountStatus])
 }
 
 model companies {
-  id            Int             @id @default(autoincrement())
-  name          String
-  slug          String          @unique
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime
-  notifications notifications[]
-  orders        orders[]
-  users         users[]
+  id              Int               @id @default(autoincrement())
+  name            String
+  slug            String            @unique
+  officeLat       Float? // Office latitude for location validation
+  officeLng       Float? // Office longitude for location validation
+  timezone        String            @default("Asia/Dubai") // Company timezone
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  notifications   notifications[]
+  orders          orders[]
+  users           users[]
+  tasks           tasks[]
+  attendance      attendance[]
+  companySettings company_settings?
+  auditLogs       audit_logs[]
+  roles           roles[]         @relation("CompanyRoles")
 
   @@index([slug])
 }
@@ -44,50 +58,48 @@ model order_templates {
   fields      Json
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
 
   @@index([category])
   @@index([isActive])
 }
 
 model purchase_orders {
-  id              Int      @id @default(autoincrement())
-  orderId         Int
-  poNumber        String
-  poFile          String?
-  depositRequired Boolean  @default(false)
-  depositPercent  Int?
-  depositAmount   Float?
-  notes           String?
-  createdById     Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime
-  orders          orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement())
+  orderId          Int
+  poNumber         String
+  poFile           String?
+  depositProofFile String?
+  notes            String?
+  createdById      Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  orders           orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([poNumber])
 }
 
 model payments {
-  id            Int           @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   orderId       Int
   paymentType   PaymentType
   amount        Float
-  currency      String        @default("AED")
+  currency      String      @default("AED")
   paymentMethod String?
   reference     String?
   notes         String?
-  paidAt        DateTime      @default(now())
+  paidAt        DateTime    @default(now())
   createdById   Int?
-  createdAt     DateTime      @default(now())
-  orders        orders        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  orders        orders      @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([paymentType])
 }
 
 model delivery_notes {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   orderId     Int
   dnNumber    String
   dnFile      String?
@@ -95,9 +107,9 @@ model delivery_notes {
   deliveredAt DateTime?
   notes       String?
   createdById Int?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime
-  orders      orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orders      orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([dnNumber])
@@ -111,17 +123,17 @@ enum PaymentType {
 }
 
 model order_feedback {
-  id                  Int      @id @default(autoincrement())
-  orderId             Int      @unique
-  clientId            Int
-  rating              Int
-  serviceQuality      Int?
-  deliveryExperience  Int?
-  comments            String?
-  wouldRecommend      Boolean?
-  createdAt           DateTime @default(now())
-  orders              orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  clients             clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id                 Int      @id @default(autoincrement())
+  orderId            Int      @unique
+  clientId           Int
+  rating             Int
+  serviceQuality     Int?
+  deliveryExperience Int?
+  comments           String?
+  wouldRecommend     Boolean?
+  createdAt          DateTime @default(now())
+  orders             orders   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  clients            clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([clientId])
@@ -161,35 +173,37 @@ model order_histories {
 }
 
 model orders {
-  id                    Int               @id @default(autoincrement())
-  companyId             Int
-  clientId              Int?
-  publicToken           String            @unique
-  items                 Json?
-  details               String?
-  totalAmount           Float?
-  currency              String            @default("AED")
-  status                OrderStatus       @default(PENDING)
-  stage                 OrderStage        @default(RECEIVED)
-  images                Json?
-  depositPercentage     Int?
-  depositAmount         Float?
-  depositPaid           Boolean           @default(false)
-  depositPaidAt         DateTime?
-  finalPaymentReceived  Boolean           @default(false)
-  finalPaymentAt        DateTime?
-  createdById           Int?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime
-  order_histories       order_histories[]
-  clients               clients?          @relation(fields: [clientId], references: [id])
-  companies             companies         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  users                 users?            @relation(fields: [createdById], references: [id])
-  quotations            quotations[]
-  purchase_orders       purchase_orders[]
-  payments              payments[]
-  delivery_notes        delivery_notes[]
-  order_feedback        order_feedback?
+  id                   Int               @id @default(autoincrement())
+  companyId            Int
+  clientId             Int?
+  publicToken          String            @unique
+  items                Json?
+  details              String?
+  totalAmount          Float?
+  currency             String            @default("AED")
+  status               OrderStatus       @default(PENDING)
+  stage                OrderStage        @default(RECEIVED)
+  images               Json?
+  depositPercentage    Int?
+  depositAmount        Float?
+  depositPaid          Boolean           @default(false)
+  depositPaidAt        DateTime?
+  poReceived           Boolean           @default(false)
+  poReceivedAt         DateTime?
+  finalPaymentReceived Boolean           @default(false)
+  finalPaymentAt       DateTime?
+  createdById          Int?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime
+  order_histories      order_histories[]
+  clients              clients?          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  companies            companies         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users                users?            @relation(fields: [createdById], references: [id])
+  quotations           quotations[]
+  purchase_orders      purchase_orders[]
+  payments             payments[]
+  delivery_notes       delivery_notes[]
+  order_feedback       order_feedback?
 
   @@index([clientId])
   @@index([companyId])
@@ -200,41 +214,71 @@ model orders {
 }
 
 model quotations {
-  id             Int       @id @default(autoincrement())
-  orderId        Int
-  createdById    Int?
-  items          Json
-  total          Float
-  currency       String    @default("AED")
-  notes          String?
-  accepted       Boolean?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime
-  file           String?
-  fileName       String?
-  fileSize       Int?
-  rejectedReason String?
-  reviewedAt     DateTime?
-  clientComment  String?
-  users          users?    @relation(fields: [createdById], references: [id])
-  orders         orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id              Int       @id @default(autoincrement())
+  orderId         Int
+  createdById     Int?
+  items           Json
+  total           Float
+  currency        String    @default("AED")
+  notes           String?
+  accepted        Boolean?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  file            String?
+  fileName        String?
+  fileSize        Int?
+  rejectedReason  String?
+  reviewedAt      DateTime?
+  clientComment   String?
+  depositRequired Boolean   @default(false)
+  depositPercent  Int?
+  depositAmount   Float?
+  users           users?    @relation(fields: [createdById], references: [id])
+  orders          orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
 }
 
 model users {
-  id            Int             @id @default(autoincrement())
-  companyId     Int
-  name          String
-  email         String          @unique
-  password      String
-  role          UserRole        @default(ADMIN)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime
-  notifications notifications[]
-  orders        orders[]
-  quotations    quotations[]
-  companies     companies       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id                        Int                  @id @default(autoincrement())
+  companyId                 Int
+  name                      String
+  email                     String               @unique
+  password                  String
+  role                      UserRole             @default(ADMIN)
+  accountStatus             UserAccountStatus    @default(APPROVED) // PENDING for new registrations
+  approvedAt                DateTime?
+  approvedById              Int?
+  rejectionReason           String?
+  profilePicture            String? // Profile picture URL
+  phone                     String? // Phone number
+  isActive                  Boolean              @default(true) // Active/Inactive status
+  department                String? // Department name
+  specialization            String? // Specialization/Job title
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+  notifications             notifications[]
+  orders                    orders[]
+  quotations                quotations[]
+  approvedClients           clients[]            @relation("ClientApprover")
+  approvedUsers             users[]              @relation("UserApprover")
+  approver                  users?               @relation("UserApprover", fields: [approvedById], references: [id])
+  companies                 companies            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // Technician & Supervisor relations
+  assignedTasks             tasks[]              @relation("TaskAssignee") // Legacy - for backward compatibility
+  taskAssignments           task_assignees[] // New - for multiple assignees
+  createdTasks              tasks[]              @relation("TaskCreator")
+  attendance                attendance[]
+  overtime                  overtime[]
+  workLogs                  work_logs[]
+  supervisorReviewsReceived supervisor_reviews[] @relation("ReviewTechnician")
+  supervisorReviewsGiven    supervisor_reviews[] @relation("ReviewSupervisor")
+  approvedAttendances       attendance[]         @relation("AttendanceApprover")
+  assignedAttendanceTasks   attendance_tasks[]   @relation("AttendanceTaskAssigner")
+  assignedTaskAssignees     task_assignees[]     @relation("TaskAssigner") // Users assigned by this user
+  auditLogs                 audit_logs[]         @relation("AuditLogUser")
+  userRoles                 user_roles[]         @relation("UserRoles")
+  assignedRoles             user_roles[]         @relation("RoleAssigner")
 
   @@index([companyId])
   @@index([email])
@@ -269,5 +313,339 @@ enum OrderStage {
 
 enum UserRole {
   ADMIN
+  ACCOUNTANT
+  FACTORY_SUPERVISOR
+  SALES_REP
+  OPERATIONS_MANAGER
   CLIENT
+  TECHNICIAN
+  SUPERVISOR
+  HR
+}
+
+enum ClientAccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserAccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================
+// Technician & Supervisor Module
+// ============================================
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AttendanceType {
+  OFFICE
+  FIELD
+  REMOTE
+}
+
+enum AttendanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WorkLogStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model tasks {
+  id                Int                  @id @default(autoincrement())
+  companyId         Int
+  title             String
+  description       String?
+  assignedToId      Int? // Legacy - for backward compatibility
+  assignedById      Int?
+  status            TaskStatus           @default(PENDING)
+  priority          TaskPriority         @default(MEDIUM)
+  deadline          DateTime?
+  location          String? // Location name/address
+  locationLat       Float?
+  locationLng       Float?
+  estimatedHours    Float?
+  actualHours       Float?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  companies         companies            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignedTo        users?               @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  assignedBy        users?               @relation("TaskCreator", fields: [assignedById], references: [id])
+  assignees         task_assignees[] // New - for multiple assignees
+  workLogs          work_logs[]
+  supervisorReviews supervisor_reviews[]
+  attendanceTasks   attendance_tasks[]
+
+  @@index([companyId])
+  @@index([assignedToId])
+  @@index([assignedById])
+  @@index([status])
+  @@index([deadline])
+  @@index([assignedToId, status])
+}
+
+// Join table for many-to-many relationship between tasks and users
+model task_assignees {
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  userId       Int
+  assignedAt   DateTime @default(now())
+  assignedById Int? // Who assigned this user to this task
+  tasks        tasks    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy   users?   @relation("TaskAssigner", fields: [assignedById], references: [id])
+
+  @@unique([taskId, userId]) // One assignment per user per task
+  @@index([taskId])
+  @@index([userId])
+  @@index([assignedById])
+}
+
+model attendance {
+  id               Int                @id @default(autoincrement())
+  userId           Int
+  companyId        Int // Denormalized for better query performance (required)
+  date             DateTime // Normalized day (date only, time = 00:00:00) in UTC+4
+  checkInTime      DateTime // Actual check-in timestamp in UTC
+  checkOutTime     DateTime? // Actual check-out timestamp in UTC
+  checkInLat       Float?
+  checkInLng       Float?
+  checkOutLat      Float?
+  checkOutLng      Float?
+  checkInLocation  String? // Location name
+  checkOutLocation String? // Location name
+  attendanceType   AttendanceType     @default(OFFICE)
+  status           AttendanceStatus   @default(APPROVED) // PENDING if outside radius
+  approvedById     Int? // Admin who approved/rejected
+  approvedAt       DateTime?
+  rejectionReason  String? // Reason if rejected
+  notes            String?
+  createdAt        DateTime           @default(now())
+  users            users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companies        companies          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  approvedBy       users?             @relation("AttendanceApprover", fields: [approvedById], references: [id])
+  attendanceTasks  attendance_tasks[]
+
+  @@unique([userId, date]) // One attendance per user per day
+  @@index([userId])
+  @@index([companyId])
+  @@index([date])
+  @@index([userId, date]) // Critical for latest month queries
+  @@index([companyId, date]) // For company-wide attendance queries
+  @@index([checkInTime])
+  @@index([userId, checkInTime])
+  @@index([status])
+}
+
+model attendance_tasks {
+  id           Int        @id @default(autoincrement())
+  attendanceId Int
+  taskId       Int
+  performedAt  DateTime? // When task was performed (start time)
+  completedAt  DateTime? // When task was completed (end time)
+  status       TaskStatus @default(PENDING)
+  performance  Int? // Performance rating 1-5 (optional)
+  note         String? // Performance notes from supervisor
+  assignedById Int? // Supervisor/admin who assigned this task to this attendance
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  attendance   attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  task         tasks      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignedBy   users?     @relation("AttendanceTaskAssigner", fields: [assignedById], references: [id])
+
+  @@unique([attendanceId, taskId]) // One task per attendance
+  @@index([attendanceId])
+  @@index([taskId])
+  @@index([status])
+  @@index([attendanceId, status])
+}
+
+model overtime {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  date         DateTime
+  hours        Float
+  reason       String?
+  approved     Boolean   @default(false)
+  approvedById Int?
+  approvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  users        users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([approved])
+  @@index([userId, date])
+}
+
+model work_logs {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  taskId       Int
+  description  String
+  startTime    DateTime
+  endTime      DateTime?
+  photos       Json? // Array of photo URLs
+  status       WorkLogStatus @default(SUBMITTED)
+  approvedById Int?
+  approvedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks        tasks         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([status])
+  @@index([userId, createdAt])
+}
+
+model supervisor_reviews {
+  id           Int      @id @default(autoincrement())
+  supervisorId Int
+  technicianId Int
+  taskId       Int
+  rating       Int // 1-5
+  comments     String?
+  createdAt    DateTime @default(now())
+  supervisor   users    @relation("ReviewSupervisor", fields: [supervisorId], references: [id], onDelete: Cascade)
+  technician   users    @relation("ReviewTechnician", fields: [technicianId], references: [id], onDelete: Cascade)
+  tasks        tasks    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([supervisorId])
+  @@index([technicianId])
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+model company_settings {
+  id                Int       @id @default(autoincrement())
+  companyId         Int       @unique
+  checkInRadius     Int       @default(100) // meters
+  workingHours      Float     @default(8.0) // hours per day
+  overtimeThreshold Float     @default(0.5) // hours
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  companies         companies @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model audit_logs {
+  id          Int       @id @default(autoincrement())
+  companyId   Int
+  userId      Int? // User who performed the action
+  userName    String? // User name (cached for historical records)
+  userRole    UserRole? // User role (cached for historical records)
+  action      String // Action performed (e.g., "role_changed", "attendance_updated", "invoice_deleted")
+  resource    String // Resource type (e.g., "user", "attendance", "invoice", "order")
+  resourceId  Int? // ID of the affected resource
+  details     Json? // Additional details about the action
+  ipAddress   String? // IP address of the user
+  userAgent   String? // User agent string
+  createdAt   DateTime  @default(now())
+  companies   companies @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users       users?    @relation("AuditLogUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@index([userRole])
+}
+
+// RBAC Tables
+model roles {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // e.g., "admin", "operation_manager"
+  displayName String    // e.g., "Admin", "Operations Manager"
+  description String?
+  isSystem    Boolean   @default(false) // System roles cannot be deleted
+  companyId   Int?      // null for global roles, specific companyId for company-specific roles
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  companies   companies? @relation("CompanyRoles", fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  rolePermissions role_permissions[]
+  userRoles       user_roles[]
+
+  @@index([name])
+  @@index([companyId])
+  @@index([isSystem])
+}
+
+model permissions {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // e.g., "user.create", "task.assign"
+  displayName String    // e.g., "Create User", "Assign Task"
+  description String?
+  category    String    // e.g., "Users", "Tasks", "Finance"
+  resource    String    // e.g., "user", "task", "invoice"
+  action      String    // e.g., "create", "read", "update", "delete"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  rolePermissions role_permissions[]
+
+  @@index([name])
+  @@index([category])
+  @@index([resource])
+  @@index([action])
+}
+
+model role_permissions {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime   @default(now())
+  roles        roles      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissions  permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model user_roles {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roleId    Int
+  assignedBy Int?    // User who assigned this role
+  assignedAt DateTime @default(now())
+  expiresAt  DateTime? // Optional expiration date
+  isActive   Boolean  @default(true)
+  users     users    @relation("UserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  roles     roles    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assigner  users?   @relation("RoleAssigner", fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([isActive])
+  @@index([expiresAt])
 }

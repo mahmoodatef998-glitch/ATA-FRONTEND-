@@ -20,38 +20,76 @@ import {
   Calendar
 } from "lucide-react";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
-import { UploadQuotationSimple } from "@/components/dashboard/upload-quotation-simple";
-import { POManager } from "@/components/dashboard/po-manager";
+import { QuotationManager } from "@/components/dashboard/quotation-manager";
 import { PaymentRecorder } from "@/components/dashboard/payment-recorder";
 import { DeliveryNoteCreator } from "@/components/dashboard/delivery-note-creator";
 import { OrderProgressTrackerCompact } from "@/components/order-progress-tracker-compact";
+import { UpdateStage } from "@/components/dashboard/update-stage";
+import { useCan, useCanAny } from "@/lib/permissions/frontend-helpers";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
+import { Permission, migratePermission } from "@/lib/permissions/migration-map";
+import { usePermissions } from "@/contexts/permissions-context";
 
 interface OrderDetailsTabsProps {
   order: any;
 }
 
-const tabs = [
-  { id: "overview", label: "Overview", icon: Package },
-  { id: "quotations", label: "Quotations", icon: FileText },
-  { id: "po", label: "Purchase Orders", icon: FileText },
-  { id: "payments", label: "Payments", icon: DollarSign },
-  { id: "delivery", label: "Delivery", icon: Truck },
-  { id: "history", label: "History", icon: HistoryIcon },
-];
+// Build tabs list - show all tabs, but content will check permissions
+function getAvailableTabs(checkPermission: (p: Permission) => boolean) {
+  const allTabs = [
+    { id: "overview", label: "Overview", icon: Package, permission: null },
+    { id: "quotations", label: "Quotations", icon: FileText, permission: Permission.VIEW_QUOTATIONS },
+    { id: "po", label: "Purchase Orders", icon: FileText, permission: Permission.VIEW_POS },
+    { id: "payments", label: "Payments", icon: DollarSign, permission: Permission.VIEW_PAYMENTS },
+    { id: "delivery", label: "Delivery", icon: Truck, permission: Permission.VIEW_DELIVERY_NOTES },
+    { id: "history", label: "History", icon: HistoryIcon, permission: Permission.VIEW_ORDERS },
+  ];
+  
+  // Show all tabs (don't filter), but content will check permissions
+  return allTabs;
+}
 
 export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [processingPayment, setProcessingPayment] = useState(false);
+  
+  // Permission checks using new RBAC system
+  const canViewPayments = useCan(PermissionAction.INVOICE_READ);
+  const canCreatePayments = useCan(PermissionAction.PAYMENT_RECORD);
+  const canUpdateManufacturing = useCan(PermissionAction.LEAD_MOVE_STAGE);
+  const canViewManufacturing = useCan(PermissionAction.LEAD_READ);
+  const canCreateQuotations = useCan(PermissionAction.INVOICE_CREATE);
+  // Purchase Orders - use PO permissions
+  const canCreatePOs = useCan(PermissionAction.PO_CREATE);
+  const canViewPOs = useCan(PermissionAction.PO_READ);
+  const canUpdatePOs = useCan(PermissionAction.PO_UPDATE);
+  const canDeletePOs = useCan(PermissionAction.PO_DELETE);
+  const canCreateDeliveryNotes = useCan(PermissionAction.LEAD_CREATE);
+  const canViewOrders = useCan(PermissionAction.LEAD_READ);
+  const canViewQuotations = useCan(PermissionAction.INVOICE_READ);
+  const canViewDeliveryNotes = useCan(PermissionAction.LEAD_READ);
+  // History - allow with either LEAD_READ or OVERVIEW_VIEW
+  const canViewHistory = useCanAny([PermissionAction.LEAD_READ, PermissionAction.OVERVIEW_VIEW]);
 
+  // Helper function for backward compatibility
+  const checkPermission = (oldPermission: Permission): boolean => {
+    const newPermission = migratePermission(oldPermission);
+    return useCan(newPermission);
+  };
+
+  const availableTabs = getAvailableTabs(checkPermission);
+  
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       {/* Tabs Navigation */}
-      <Card className="border-2">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => (
+      <Card className="border-2" suppressHydrationWarning>
+        <CardContent className="pt-6" suppressHydrationWarning>
+          <div className="flex flex-wrap gap-2" suppressHydrationWarning>
+            {availableTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                suppressHydrationWarning
                 className={`
                   flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
                   ${activeTab === tab.id
@@ -73,14 +111,34 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-6">
+            {/* Access Denied for Accountant - they should only see PO and Payments */}
+            {!canViewOrders && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view this section. Please use Purchase Orders or Payments tabs.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {canViewOrders && (
+          <>
             {/* Compact Progress Tracker */}
             <Card className="border-2">
               <CardContent className="pt-6">
                 <OrderProgressTrackerCompact currentStage={order.stage || "RECEIVED"} />
               </CardContent>
             </Card>
+            
+            {/* Update Stage - admins / supervisors */}
+            {canUpdateManufacturing && (
+              <UpdateStage orderId={order.id} currentStage={order.stage} />
+            )}
 
-            {/* Order Details */}
+            {/* Order Details + Recent Activity */}
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="border-2">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
@@ -120,6 +178,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 </CardContent>
               </Card>
 
+              {/* Client Information */}
               <Card className="border-2">
                 <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
                   <CardTitle>Client Information</CardTitle>
@@ -153,6 +212,52 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                         <p className="font-semibold text-sm">{order.clients.email}</p>
                       </div>
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Activity / History Preview */}
+              <Card className="border-2">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30">
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest actions performed on this order</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  {order.order_histories && order.order_histories.length > 0 ? (
+                    <div className="space-y-3">
+                      {order.order_histories.slice(0, 5).map((history: any) => (
+                        <div
+                          key={history.id}
+                          className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800"
+                        >
+                          <div className="mt-1">
+                            <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium capitalize">
+                              {history.action?.replace(/_/g, " ") || "Activity"}
+                            </p>
+                            {history.actorName && (
+                              <p className="text-xs text-muted-foreground">
+                                by {history.actorName}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDateTime(history.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {order.order_histories.length > 5 && (
+                        <p className="text-xs text-muted-foreground">
+                          View full history in the <span className="font-semibold">History</span> tab
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No activity has been recorded for this order yet.
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -233,14 +338,31 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 )}
               </CardContent>
             </Card>
+          </>
+            )}
           </div>
         )}
 
         {/* Quotations Tab */}
         {activeTab === "quotations" && (
           <div className="space-y-6">
-            {order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
-              <UploadQuotationSimple orderId={order.id} orderStatus={order.status} />
+            {/* Access Denied for Accountant */}
+            {!canViewQuotations && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view quotations. Please use Purchase Orders or Payments tabs.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {canViewQuotations && (
+              <>
+            {order.status !== "COMPLETED" && order.status !== "CANCELLED" && canCreateQuotations && (
+              <QuotationManager orderId={order.id} orderTotal={order.totalAmount || undefined} currency={order.currency} />
             )}
             
             {/* Quotations Display */}
@@ -334,25 +456,42 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 </CardContent>
               </Card>
             )}
+          </>
+            )}
           </div>
         )}
 
         {/* Purchase Orders Tab */}
         {activeTab === "po" && (
           <div className="space-y-6">
-            {order.status === "APPROVED" && !order.purchase_orders?.length && (
-              <POManager 
-                orderId={order.id}
-                orderTotal={order.totalAmount || undefined}
-                currency={order.currency}
-              />
+            {/* Access Denied check */}
+            {!canViewPOs && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view purchase orders.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
+            {canViewPOs && (
+          <>
+            <Card className="border-2 border-blue-200 dark:border-blue-900">
+              <CardContent className="pt-6">
+                <p className="text-blue-700 dark:text-blue-300">
+                  ℹ️ The client is responsible for uploading the Purchase Order (PO). Once uploaded, it will appear here.
+                </p>
+              </CardContent>
+            </Card>
 
             {order.purchase_orders && order.purchase_orders.length > 0 && (
               <Card className="border-2">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
                   <CardTitle>📄 Purchase Orders</CardTitle>
-                  <CardDescription>All purchase orders for this order</CardDescription>
+                  <CardDescription>All purchase orders and deposit proofs for this order</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   {order.purchase_orders.map((po: any) => (
@@ -366,57 +505,6 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                         </div>
                         <Badge variant="default" className="bg-blue-600">Purchase Order</Badge>
                       </div>
-
-                      {po.depositRequired && (
-                        <div className="bg-white/60 dark:bg-gray-800/60 p-3 rounded-lg">
-                          <p className="text-sm font-semibold mb-1">💰 Deposit Required:</p>
-                          <p className="text-base font-bold text-amber-600 dark:text-amber-400">
-                            {po.depositPercent}% = {formatCurrency(po.depositAmount, order.currency)}
-                          </p>
-                          <div className="flex items-center justify-between gap-2 mt-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              Payment Status: {order.depositPaid ? (
-                                <Badge variant="default" className="bg-green-600">✓ Paid</Badge>
-                              ) : (
-                                <Badge variant="secondary" className="bg-amber-500 text-white">⏳ Awaiting Payment</Badge>
-                              )}
-                            </div>
-                            {!order.depositPaid && po.depositAmount && (
-                              <Button
-                                onClick={async () => {
-                                  if (confirm(`Mark deposit of ${formatCurrency(po.depositAmount, order.currency)} as received?`)) {
-                                    try {
-                                      const response = await fetch(`/api/orders/${order.id}/payment`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                          paymentType: "DEPOSIT",
-                                          amount: po.depositAmount,
-                                          paymentMethod: "Client Transfer",
-                                          reference: `DEP-${po.poNumber}-${Date.now()}`,
-                                        }),
-                                      });
-                                      const result = await response.json();
-                                      if (result.success) {
-                                        window.location.reload();
-                                      } else {
-                                        alert(`Error: ${result.error}`);
-                                      }
-                                    } catch (error) {
-                                      alert("Failed to record payment");
-                                    }
-                                  }
-                                }}
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-xs"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Received
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
 
                       {/* Display PO Files (supports single file or JSON array) */}
                       {po.poFile && (
@@ -440,6 +528,9 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 <div className="space-y-2">
                                   {files.map((file: string, idx: number) => {
                                     const fileName = file.split('/').pop() || `Document ${idx + 1}`;
+                                    
+                                    // Use simple link like Quotation (no complex handling)
+                                    // Cloudinary can serve PDFs from /image/upload/ if they're public
                                     return (
                                       <a
                                         key={idx}
@@ -461,6 +552,50 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                         </div>
                       )}
 
+                      {/* Display Deposit Proof Files (cheque / bank slip) */}
+                      {po.depositProofFile && (
+                        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 p-3 rounded-lg border border-emerald-200 dark:border-emerald-900">
+                          {(() => {
+                            let files: string[] = [];
+                            try {
+                              const parsed = JSON.parse(po.depositProofFile);
+                              files = Array.isArray(parsed) ? parsed : [po.depositProofFile];
+                            } catch {
+                              files = [po.depositProofFile];
+                            }
+                            
+                            return (
+                              <>
+                                <p className="text-sm font-semibold mb-2 text-emerald-700 dark:text-emerald-300">
+                                  💰 Deposit proof ({files.length}):
+                                </p>
+                                <div className="space-y-2">
+                                  {files.map((file: string, idx: number) => {
+                                    // Use original URL as-is (Cloudinary handles both /image/upload/ and /raw/upload/)
+                                    const fileName = file.split('/').pop() || `Deposit ${idx + 1}`;
+                                    return (
+                                      <a
+                                        key={idx}
+                                        href={file}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-all"
+                                      >
+                                        <FileText className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                                        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300 truncate flex-1">
+                                          {fileName}
+                                        </span>
+                                        <Download className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+
                       {po.notes && (
                         <div className="text-sm bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
                           <p className="font-medium mb-1">📝 Notes:</p>
@@ -472,12 +607,29 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 </CardContent>
               </Card>
             )}
+          </>
+            )}
           </div>
         )}
 
         {/* Payments Tab */}
         {activeTab === "payments" && (
           <div className="space-y-6">
+            {/* Access Denied check */}
+            {!canViewPayments && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view payments.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {canViewPayments && (
+              <>
             {/* Payment Stages Status */}
             <Card className="border-2 border-green-200 dark:border-green-900">
               <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
@@ -523,6 +675,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                         <Button
                           onClick={async () => {
                             if (confirm(`Mark deposit of ${formatCurrency(order.depositAmount, order.currency)} as received?`)) {
+                              setProcessingPayment(true);
                               try {
                                 const response = await fetch(`/api/orders/${order.id}/payment`, {
                                   method: "POST",
@@ -542,14 +695,23 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 }
                               } catch (error) {
                                 alert("Failed to record payment");
+                              } finally {
+                                setProcessingPayment(false);
                               }
                             }
                           }}
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
+                          disabled={processingPayment}
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Mark as Received
+                          {processingPayment ? (
+                            <>⏳ Processing...</>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Mark as Received
+                            </>
+                          )}
                         </Button>
                       )}
                       <Badge 
@@ -604,6 +766,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                           onClick={async () => {
                             const finalAmount = order.totalAmount - (order.depositAmount || 0);
                             if (confirm(`Mark final payment of ${formatCurrency(finalAmount, order.currency)} as received?`)) {
+                              setProcessingPayment(true);
                               try {
                                 const response = await fetch(`/api/orders/${order.id}/payment`, {
                                   method: "POST",
@@ -623,14 +786,23 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 }
                               } catch (error) {
                                 alert("Failed to record payment");
+                              } finally {
+                                setProcessingPayment(false);
                               }
                             }
                           }}
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
+                          disabled={processingPayment}
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Mark as Received
+                          {processingPayment ? (
+                            <>⏳ Processing...</>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Mark as Received
+                            </>
+                          )}
                         </Button>
                       )}
                       <Badge 
@@ -669,14 +841,25 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
               </CardContent>
             </Card>
 
-            {/* Payment Recorder */}
-            {(order.stage === "AWAITING_DEPOSIT" || order.stage === "AWAITING_FINAL_PAYMENT") && (
+            {/* Payment Recorder - only for accountants/admins */}
+            {(order.stage === "AWAITING_DEPOSIT" || order.stage === "AWAITING_FINAL_PAYMENT") && canCreatePayments && (
               <PaymentRecorder
                 orderId={order.id}
                 depositAmount={order.depositAmount || undefined}
                 totalAmount={order.totalAmount || undefined}
                 currency={order.currency}
               />
+            )}
+            
+            {/* Message for users without permission to record payments */}
+            {(order.stage === "AWAITING_DEPOSIT" || order.stage === "AWAITING_FINAL_PAYMENT") && !canCreatePayments && canViewPayments && (
+              <Card className="border-2 border-amber-200 dark:border-amber-900">
+                <CardContent className="pt-6">
+                  <p className="text-amber-700 dark:text-amber-300">
+                    ⚠️ You do not have permission to record payments. Please contact an accountant or administrator.
+                  </p>
+                </CardContent>
+              </Card>
             )}
 
             {/* Payment History */}
@@ -727,14 +910,31 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 </CardContent>
               </Card>
             )}
+              </>
+            )}
           </div>
         )}
 
         {/* Delivery Tab */}
         {activeTab === "delivery" && (
           <div className="space-y-6">
+            {/* Access Denied for Accountant */}
+            {!canViewDeliveryNotes && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view delivery notes. Please use Purchase Orders or Payments tabs.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {canViewDeliveryNotes && (
+              <>
             {/* Show Delivery Note Creator if order is approved and has PO */}
-            {order.status === "APPROVED" && !order.delivery_notes?.length && (
+            {order.status === "APPROVED" && !order.delivery_notes?.length && canCreateDeliveryNotes && (
               <DeliveryNoteCreator
                 orderId={order.id}
                 orderItems={order.items as any[]}
@@ -782,6 +982,8 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 <div className="space-y-2">
                                   {files.map((file: string, idx: number) => {
                                     const fileName = file.split('/').pop() || `Document ${idx + 1}`;
+                                    // Use simple link like Quotation (no complex handling)
+                                    // Cloudinary can serve PDFs from /image/upload/ if they're public
                                     return (
                                       <a
                                         key={idx}
@@ -823,11 +1025,29 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                 </CardContent>
               </Card>
             )}
+          </>
+            )}
           </div>
         )}
 
         {/* History Tab */}
         {activeTab === "history" && (
+          <div className="space-y-6">
+            {/* Access Denied check */}
+            {!canViewHistory && (
+              <Card className="border-2 border-red-200 dark:border-red-900">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <h2 className="text-2xl font-bold mb-2 text-red-600 dark:text-red-400">Access Denied</h2>
+                    <p className="text-muted-foreground">
+                      You do not have permission to view order history. Please use Purchase Orders or Payments tabs.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {canViewHistory && (
+              <>
           <Card className="border-2">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
               <CardTitle>Order History</CardTitle>
@@ -870,6 +1090,9 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
               )}
             </CardContent>
           </Card>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

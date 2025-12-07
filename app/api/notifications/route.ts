@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/auth-helpers";
+import { Prisma } from "@prisma/client";
+import { handleApiError } from "@/lib/error-handler";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +23,25 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = {
-      companyId: session.user.companyId,
+    // Convert userId to integer if it's a string
+    const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
+    const companyId = typeof session.user.companyId === "string" ? parseInt(session.user.companyId) : session.user.companyId;
+
+    logger.debug("Fetching notifications", {
+      userId,
+      companyId,
+      unreadOnly,
+      page,
+      limit,
+      context: "notifications"
+    });
+
+    // Build where clause - Get notifications for this user OR company-level notifications
+    const where: Prisma.notificationsWhereInput = {
+      companyId: companyId,
       OR: [
-        { userId: session.user.id },
-        { userId: null }, // Company-level notifications
+        { userId: userId },
+        { userId: null }, // Company-level notifications (for all users in company)
       ],
     };
 
@@ -57,11 +73,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching notifications:", error);
-    return NextResponse.json(
-      { success: false, error: "An error occurred while fetching notifications" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

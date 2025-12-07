@@ -1,37 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "@/lib/auth-helpers";
+import { authorize } from "@/lib/rbac/authorize";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
+import { handleApiError, NotFoundError, ForbiddenError } from "@/lib/error-handler";
+import { successResponse } from "@/lib/utils/api-helpers";
+import { validateId } from "@/lib/utils/validation-helpers";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
-    const session = await getServerSession();
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    // التحقق من صلاحية عرض الطلبات
+    const { userId, companyId } = await authorize(PermissionAction.LEAD_READ);
 
     const { id } = await params;
-    const orderId = parseInt(id);
+    const orderId = validateId(id, "order");
 
-    if (isNaN(orderId)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid order ID" },
-        { status: 400 }
-      );
-    }
-
-    // Fetch order with full details
+    // Fetch order with optimized select (only needed fields)
     const order = await prisma.orders.findUnique({
       where: { id: orderId },
-      include: {
-        clients: true,
+      select: {
+        id: true,
+        companyId: true,
+        clientId: true,
+        publicToken: true,
+        items: true,
+        details: true,
+        totalAmount: true,
+        currency: true,
+        status: true,
+        stage: true,
+        images: true,
+        depositPercentage: true,
+        depositAmount: true,
+        depositPaid: true,
+        depositPaidAt: true,
+        finalPaymentReceived: true,
+        finalPaymentAt: true,
+        createdAt: true,
+        updatedAt: true,
+        clients: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
         companies: {
           select: {
             id: true,
@@ -49,7 +66,21 @@ export async function GET(
         },
         quotations: {
           orderBy: { createdAt: "desc" },
-          include: {
+          select: {
+            id: true,
+            items: true,
+            total: true,
+            currency: true,
+            notes: true,
+            file: true,
+            fileName: true,
+            fileSize: true,
+            accepted: true,
+            rejectedReason: true,
+            clientComment: true,
+            reviewedAt: true,
+            createdAt: true,
+            updatedAt: true,
             users: {
               select: {
                 id: true,
@@ -61,35 +92,41 @@ export async function GET(
         },
         order_histories: {
           orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            actorId: true,
+            actorName: true,
+            action: true,
+            payload: true,
+            createdAt: true,
+          },
+        },
+        purchase_orders: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            poNumber: true,
+            poFile: true,
+            depositProofFile: true,
+            notes: true,
+            createdAt: true,
+          },
         },
       },
     });
 
     if (!order) {
-      return NextResponse.json(
-        { success: false, error: "Order not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError("Order", orderId);
     }
 
     // Authorization: Check if user belongs to same company
-    if (order.companyId !== session.user.companyId) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden: Access denied" },
-        { status: 403 }
-      );
+    if (order.companyId !== companyId) {
+      throw new ForbiddenError("Access denied: Order belongs to different company");
     }
 
-    return NextResponse.json({
-      success: true,
-      data: order,
-    });
+    return successResponse(order);
   } catch (error) {
-    console.error("Error fetching order:", error);
-    return NextResponse.json(
-      { success: false, error: "An error occurred while fetching the order" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

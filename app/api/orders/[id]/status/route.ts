@@ -43,7 +43,21 @@ export async function PATCH(
     // Check if order exists and user has access
     const order = await prisma.orders.findUnique({
       where: { id: orderId },
-      include: { clients: true },
+      select: {
+        id: true,
+        companyId: true,
+        clientId: true,
+        status: true,
+        stage: true,
+        clients: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -96,14 +110,15 @@ export async function PATCH(
         },
       });
 
-      // Create notification for other admins
+      // Create notification for all admins
       const companyUsers = await tx.users.findMany({
         where: {
           companyId: order.companyId,
           role: UserRole.ADMIN,
-          id: { not: typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id },
         },
       });
+
+      const currentUserId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
 
       await Promise.all(
         companyUsers.map((user) =>
@@ -116,19 +131,53 @@ export async function PATCH(
               meta: {
                 orderId,
                 status,
-                actorId: session.user.id,
+                actorId: currentUserId,
               },
-              read: false,
+              read: user.id === currentUserId, // Mark as read for creator
             },
           })
         )
       );
 
+      // Create notification for client
+      if (order.clientId) {
+        await tx.notifications.create({
+          data: {
+            companyId: order.companyId,
+            userId: null, // Client notifications don't have userId
+            title: `📋 Order Status Updated - Order #${orderId}`,
+            body: `Your order status has been updated to: ${status}`,
+            meta: {
+              orderId,
+              status,
+              clientId: order.clientId,
+              action: "status_updated",
+            },
+            read: false,
+          },
+        });
+      }
+
       return updatedOrder;
     });
 
-    // TODO: Emit Socket.io event for real-time updates
-    // socketIo.to(`company_${order.companyId}`).emit("order_updated", { orderId });
+    // Emit Socket.io event for real-time updates
+    if (global.io) {
+      global.io.to(`company_${order.companyId}`).emit("order_updated", {
+        orderId,
+        status,
+        title: `Order Status Updated`,
+        body: `Order #${orderId} status changed to ${status}`,
+      });
+      global.io.to(`company_${order.companyId}`).emit("new_notification", {
+        orderId,
+        status,
+        title: `Order Status Updated`,
+        body: `Order #${orderId} status changed to ${status}`,
+        type: "status_updated",
+      });
+      console.log(`🔌 Emitted status update to company_${order.companyId}`);
+    }
 
     // Send email notification to client
     if (order.clients?.email) {

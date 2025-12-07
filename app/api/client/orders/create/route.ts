@@ -4,6 +4,7 @@ import { generatePublicToken } from "@/lib/token-generator";
 import { OrderStatus } from "@prisma/client";
 import { jwtVerify } from "jose";
 import { sendEmail, getOrderConfirmationEmail } from "@/lib/email";
+import { uploadFile, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,21 +64,43 @@ export async function POST(request: NextRequest) {
 
       items = JSON.parse(itemsJson as string);
 
-      // Process uploaded files
-      const { writeFile } = await import("fs/promises");
+      // Process uploaded files - Use Cloudinary if configured, otherwise local storage
+      const { writeFile, mkdir } = await import("fs/promises");
       const { join } = await import("path");
+      
+      const uploadDir = join(process.cwd(), "public", "uploads", "orders");
+      
+      // Ensure directory exists (for local storage fallback)
+      if (!isCloudinaryConfigured()) {
+        try {
+          await mkdir(uploadDir, { recursive: true });
+        } catch (err) {
+          console.error("Error creating upload directory:", err);
+        }
+      }
       
       for (let i = 0; i < 5; i++) {
         const file = formData.get(`file_${i}`) as File;
         if (file) {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-          const fileName = `order_${Date.now()}_${i}_${file.name}`;
-          const filePath = join(process.cwd(), "public", "uploads", "orders", fileName);
-          
           try {
-            await writeFile(filePath, buffer);
-            uploadedFiles.push(`/uploads/orders/${fileName}`);
+            if (isCloudinaryConfigured()) {
+              // Upload to Cloudinary
+              const result = await uploadFile(file, "orders", {
+                resource_type: "auto",
+                public_id: `order_${Date.now()}_${i}`,
+              });
+              uploadedFiles.push(result.secure_url);
+              console.log(`✅ [Order Create] File uploaded to Cloudinary: ${result.secure_url}`);
+            } else {
+              // Fallback to local storage
+              const bytes = await file.arrayBuffer();
+              const buffer = Buffer.from(bytes);
+              const fileName = `order_${Date.now()}_${i}_${file.name}`;
+              const filePath = join(uploadDir, fileName);
+              
+              await writeFile(filePath, buffer);
+              uploadedFiles.push(`/uploads/orders/${fileName}`);
+            }
           } catch (err) {
             console.error("Error saving file:", err);
           }

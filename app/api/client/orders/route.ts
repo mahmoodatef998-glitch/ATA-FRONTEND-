@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
+import { handleApiError } from "@/lib/error-handler";
 
 async function getClientFromToken(request: NextRequest) {
   try {
@@ -34,10 +35,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch orders for this client (newest first)
-    const orders = await prisma.orders.findMany({
-      where: { clientId },
+    // Parse pagination parameters
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const skip = (page - 1) * limit;
+
+    // Fetch orders for this client (newest first) with pagination
+    // Note: We don't use select for orders to get all fields including finalPaymentReceived, depositPaid, etc.
+    const [orders, total] = await Promise.all([
+      prisma.orders.findMany({
+        where: { clientId },
       include: {
+        clients: {
+          select: {
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
         companies: {
           select: {
             name: true,
@@ -66,9 +82,6 @@ export async function GET(request: NextRequest) {
             id: true,
             poNumber: true,
             poFile: true,
-            depositRequired: true,
-            depositPercent: true,
-            depositAmount: true,
             notes: true,
             createdAt: true,
           },
@@ -97,18 +110,26 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" }, // Newest orders first
-    });
+      skip,
+      take: limit,
+      }),
+      prisma.orders.count({ where: { clientId } }),
+    ]);
 
     return NextResponse.json({
       success: true,
-      data: { orders },
+      data: {
+        orders,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     });
   } catch (error) {
-    console.error("Error fetching client orders:", error);
-    return NextResponse.json(
-      { success: false, error: "An error occurred" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
