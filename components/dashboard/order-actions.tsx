@@ -106,7 +106,7 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" suppressHydrationWarning>
       {currentStatus === OrderStatus.PENDING && (
         <>
           <Button
@@ -140,7 +140,7 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
       )}
 
       {publicToken && (
-        <div className="pt-4 border-t">
+        <div className="pt-4 border-t" suppressHydrationWarning>
           <Button
             variant="outline"
             className="w-full"

@@ -100,18 +100,42 @@ export async function POST(
             data: {
               companyId: quotation.orders.companyId,
               userId: user.id,
-              title: `Quotation Sent - Order #${quotation.orderId}`,
-              body: `${session.user.name} sent quotation worth ${quotation.total} ${quotation.currency} to ${quotation.orders.clients?.name}`,
+              title: `📤 Quotation Sent - Order #${quotation.orderId}`,
+              body: `Quotation (${quotation.total} ${quotation.currency}) sent to ${quotation.orders.clients?.name}. Waiting for client to review and accept/reject.`,
               meta: {
                 orderId: quotation.orderId,
                 quotationId,
                 action: "quotation_sent",
+                actionRequired: true, // Client needs to review
+                actionType: "client_review_quotation",
+                waitingFor: "client_response",
               },
               read: false,
             },
           })
         )
       );
+
+      // Create notification for client
+      if (quotation.orders.clientId) {
+        await tx.notifications.create({
+          data: {
+            companyId: quotation.orders.companyId,
+            userId: null, // Client notifications don't have userId
+            title: `📄 New Quotation - Order #${quotation.orderId}`,
+            body: `A new quotation (${quotation.total} ${quotation.currency}) has been sent for your order. Please review and accept or reject.`,
+            meta: {
+              orderId: quotation.orderId,
+              quotationId,
+              clientId: quotation.orders.clientId,
+              action: "quotation_sent",
+              actionRequired: true,
+              actionType: "review_quotation",
+            },
+            read: false,
+          },
+        });
+      }
 
       return { quotation, order: updatedOrder };
     });

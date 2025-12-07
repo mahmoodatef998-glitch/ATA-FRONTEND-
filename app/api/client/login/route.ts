@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { SignJWT } from "jose";
+import { applyRateLimit, RATE_LIMITS, getRateLimitHeaders } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   identifier: z.string().min(3), // email or phone
@@ -10,6 +11,12 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const { response: rateLimitResponse, rateLimitInfo } = await applyRateLimit(request, RATE_LIMITS.AUTH_LOGIN);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validation = loginSchema.safeParse(body);
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid credentials",
+          error: "Username or password incorrect",
         },
         { status: 400 }
       );
@@ -38,8 +45,31 @@ export async function POST(request: NextRequest) {
 
     if (!client || !client.hasAccount || !client.password) {
       return NextResponse.json(
-        { success: false, error: "Invalid email/phone or password" },
+        { success: false, error: "Username or password incorrect" },
         { status: 401 }
+      );
+    }
+
+    // Check if account is approved
+    if (client.accountStatus === "PENDING") {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "Your account is pending approval. Please wait for admin approval before logging in.",
+          accountStatus: "PENDING"
+        },
+        { status: 403 }
+      );
+    }
+
+    if (client.accountStatus === "REJECTED") {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: client.rejectionReason || "Your account has been rejected. Please contact support for more information.",
+          accountStatus: "REJECTED"
+        },
+        { status: 403 }
       );
     }
 
@@ -48,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, error: "Invalid email/phone or password" },
+        { success: false, error: "Username or password incorrect" },
         { status: 401 }
       );
     }
@@ -65,6 +95,11 @@ export async function POST(request: NextRequest) {
       .setExpirationTime("30d")
       .sign(secret);
 
+    // Get rate limit headers (from the check we already did)
+    const rateLimitHeaders = rateLimitInfo 
+      ? getRateLimitHeaders(rateLimitInfo.remaining, rateLimitInfo.resetAt, rateLimitInfo.limit)
+      : {};
+
     // Create response with cookie
     const response = NextResponse.json({
       success: true,
@@ -75,6 +110,11 @@ export async function POST(request: NextRequest) {
         email: client.email,
       },
       message: "Login successful",
+    });
+
+    // Add rate limit headers
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
 
     // Set HTTP-only cookie

@@ -1,15 +1,103 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-helpers";
+import { authorize } from "@/lib/rbac/authorize";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole, PaymentType } from "@prisma/client";
 import { sendEmail } from "@/lib/email";
+import { sendPaymentReceivedEmail } from "@/lib/email-templates";
+
+/**
+ * GET - عرض جميع الدفعات لطلب معين
+ * متاح للمحاسبين والمديرين
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // التحقق من صلاحية عرض الدفعات
+    const { userId, companyId } = await authorize(PermissionAction.INVOICE_READ);
+    const { id } = await params;
+    const orderId = parseInt(id);
+
+    if (isNaN(orderId)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid order ID" },
+        { status: 400 }
+      );
+    }
+
+    // التحقق من وجود الطلب وأنه ينتمي لنفس الشركة
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId },
+      select: { id: true, companyId: true },
+    });
+
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: "Order not found" },
+        { status: 404 }
+      );
+    }
+
+    if (order.companyId !== companyId) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Access denied" },
+        { status: 403 }
+      );
+    }
+
+    // جلب جميع الدفعات للطلب
+    const payments = await prisma.payments.findMany({
+      where: { orderId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        orders: {
+          select: {
+            id: true,
+            publicToken: true,
+            totalAmount: true,
+            currency: true,
+            clients: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { payments },
+    });
+  } catch (error: any) {
+    console.error("Error fetching payments:", error);
+    
+    // إذا كان الخطأ متعلق بالصلاحيات
+    if (error.message?.includes("Unauthorized") || error.message?.includes("Missing permission")) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Insufficient permissions" },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch payments" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireRole([UserRole.ADMIN]);
+    // السماح للمحاسب (ACCOUNTANT) والمدير (ADMIN) بتسجيل الدفعات
+    const { userId, companyId } = await authorize(PermissionAction.PAYMENT_RECORD);
     const { id } = await params;
     const orderId = parseInt(id);
 
@@ -32,7 +120,26 @@ export async function POST(
 
     const order = await prisma.orders.findUnique({
       where: { id: orderId },
-      include: { clients: true },
+      select: {
+        id: true,
+        companyId: true,
+        clientId: true,
+        totalAmount: true,
+        currency: true,
+        depositPaid: true,
+        depositAmount: true,
+        finalPaymentReceived: true,
+        status: true,
+        stage: true,
+        clients: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -43,6 +150,13 @@ export async function POST(
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Get current user name
+      const currentUser = await tx.users.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
+      const userName = currentUser?.name || "User";
+
       // Record payment
       const payment = await tx.payments.create({
         data: {
@@ -53,7 +167,7 @@ export async function POST(
           paymentMethod: paymentMethod || null,
           reference: reference || null,
           notes: notes || null,
-          createdById: session.user.id,
+          createdById: userId,
         },
       });
 
@@ -89,8 +203,8 @@ export async function POST(
       await tx.order_histories.create({
         data: {
           orderId,
-          actorId: session.user.id,
-          actorName: session.user.name,
+          actorId: userId,
+          actorName: userName,
           action: `payment_received_${paymentType.toLowerCase()}`,
           payload: {
             paymentType,
@@ -101,12 +215,11 @@ export async function POST(
         },
       });
 
-      // Create notifications for other admins
+      // Create notifications for all admins
       const companyUsers = await tx.users.findMany({
         where: {
           companyId: order.companyId,
           role: UserRole.ADMIN,
-          id: { not: session.user.id },
         },
       });
 
@@ -116,43 +229,73 @@ export async function POST(
             data: {
               companyId: order.companyId,
               userId: user.id,
-              title: `Payment Received - Order #${orderId}`,
-              body: `${session.user.name} recorded ${paymentType} payment of ${parseFloat(amount).toLocaleString()} ${order.currency}`,
+              title: `💰 Payment Recorded - Order #${orderId}`,
+              body: `${userName} recorded ${paymentType} payment of ${parseFloat(amount).toLocaleString()} ${order.currency}${reference ? ` (Ref: ${reference})` : ''}.`,
               meta: {
                 orderId,
                 paymentType,
                 amount: parseFloat(amount),
+                currency: order.currency,
+                reference,
+                actionRequired: false, // Just informational
               },
-              read: false,
+              read: user.id === userId, // Mark as read for creator
             },
           })
         )
       );
 
+      // Create notification for client
+      if (order.clientId) {
+        await tx.notifications.create({
+          data: {
+            companyId: order.companyId,
+            userId: null, // Client notifications don't have userId
+            title: `💰 Payment Received - Order #${orderId}`,
+            body: `Your ${paymentType} payment of ${parseFloat(amount).toLocaleString()} ${order.currency} has been received and recorded.${reference ? ` Reference: ${reference}` : ''}`,
+            meta: {
+              orderId,
+              paymentType,
+              amount: parseFloat(amount),
+              currency: order.currency,
+              clientId: order.clientId,
+              action: "payment_received",
+            },
+            read: false,
+          },
+        });
+      }
+
       return { payment, order: updatedOrder };
     });
 
-    // Send confirmation email
-    if (order.clients?.email) {
-      const emailContent = `
-        <h2>Payment Received - Thank You!</h2>
-        <p>Dear ${order.clients.name},</p>
-        <p>We have received your payment for Order #${orderId}.</p>
-        <p><strong>Payment Details:</strong></p>
-        <ul>
-          <li>Type: ${paymentType}</li>
-          <li>Amount: ${parseFloat(amount).toLocaleString()} ${order.currency}</li>
-          ${reference ? `<li>Reference: ${reference}</li>` : ''}
-        </ul>
-        ${paymentType === "DEPOSIT" ? '<p>Manufacturing will begin shortly!</p>' : ''}
-        ${paymentType === "FINAL" ? '<p>Your order is now complete. Thank you for your business!</p>' : ''}
-      `;
+    // Emit Socket.io event for real-time updates
+    if (global.io) {
+      global.io.to(`company_${order.companyId}`).emit("new_notification", {
+        orderId,
+        title: `Payment Received`,
+        body: `${paymentType} payment of ${order.currency} ${amount} received for Order #${orderId}`,
+        type: "payment_received",
+      });
+      console.log(`🔌 Emitted notification to company_${order.companyId}`);
+    }
 
-      sendEmail({
-        to: order.clients.email,
-        subject: `Payment Received - Order #${orderId}`,
-        html: emailContent,
-      }).catch((err) => console.error("Email error:", err));
+    // Send professional confirmation email to client
+    if (order.clients?.email) {
+      const company = await prisma.companies.findUnique({
+        where: { id: order.companyId }
+      });
+      
+      sendPaymentReceivedEmail({
+        clientName: order.clients.name,
+        clientEmail: order.clients.email,
+        orderId: order.id,
+        paymentType: paymentType as "DEPOSIT" | "FINAL" | "PARTIAL",
+        amount: parseFloat(amount),
+        paymentDate: new Date(),
+        currency: order.currency,
+        companyName: company?.name || "ATA CRM",
+      }).catch((err) => console.error("Payment email error:", err));
     }
 
     return NextResponse.json({

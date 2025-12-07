@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-helpers";
 import { UserRole } from "@prisma/client";
 import { sendEmail } from "@/lib/email";
+import { sendOrderCompletedEmail } from "@/lib/email-templates";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { uploadFile, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 export async function POST(
   request: NextRequest,
@@ -37,30 +39,48 @@ export async function POST(
       );
     }
 
-    // Handle multiple file uploads
+    // Handle multiple file uploads - Use Cloudinary if configured, otherwise local storage
     const dnFiles: string[] = [];
-    if (files && files.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads", "delivery-notes");
-      
-      // Ensure directory exists
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "delivery-notes");
+    
+    // Ensure directory exists (for local storage fallback)
+    if (!isCloudinaryConfigured()) {
       await mkdir(uploadDir, { recursive: true });
+    }
 
+    if (files && files.length > 0) {
       for (const file of files) {
         if (file && file.size > 0) {
           try {
-            const bytes = await file.arrayBuffer();
-            const buffer = Buffer.from(bytes);
+            if (isCloudinaryConfigured()) {
+              // Upload to Cloudinary
+              const timestamp = Date.now();
+              const randomStr = Math.random().toString(36).substring(7);
+              // Include folder path in public_id to match Cloudinary's actual public_id
+              const publicId = `ata-crm/delivery-notes/DN-${orderId}-${timestamp}-${randomStr}`;
+              // Use "raw" for PDFs to ensure correct URL format (same as Quotation)
+              const result = await uploadFile(file, "delivery-notes", {
+                resource_type: "raw", // Use 'raw' for PDFs like Quotation (not 'auto')
+                public_id: publicId, // Full path including folder
+              });
+              dnFiles.push(result.secure_url);
+              console.log(`✅ [Delivery Note] File uploaded to Cloudinary: ${result.secure_url}`);
+            } else {
+              // Fallback to local storage
+              const bytes = await file.arrayBuffer();
+              const buffer = Buffer.from(bytes);
 
-            // Create unique filename
-            const timestamp = Date.now();
-            const randomStr = Math.random().toString(36).substring(7);
-            const ext = path.extname(file.name);
-            const filename = `DN-${orderId}-${timestamp}-${randomStr}${ext}`;
-            const filePath = path.join(uploadDir, filename);
+              // Create unique filename
+              const timestamp = Date.now();
+              const randomStr = Math.random().toString(36).substring(7);
+              const ext = path.extname(file.name);
+              const filename = `DN-${orderId}-${timestamp}-${randomStr}${ext}`;
+              const filePath = path.join(uploadDir, filename);
 
-            // Write file
-            await writeFile(filePath, buffer);
-            dnFiles.push(`/uploads/delivery-notes/${filename}`);
+              // Write file
+              await writeFile(filePath, buffer);
+              dnFiles.push(`/uploads/delivery-notes/${filename}`);
+            }
           } catch (err) {
             console.error("Error saving delivery note file:", err);
           }
@@ -70,7 +90,21 @@ export async function POST(
 
     const order = await prisma.orders.findUnique({
       where: { id: orderId },
-      include: { clients: true },
+      select: {
+        id: true,
+        companyId: true,
+        clientId: true,
+        status: true,
+        stage: true,
+        clients: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -83,6 +117,7 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       // Create Delivery Note - save multiple files as JSON string in dnFile
       const dnFileData = dnFiles.length > 0 ? JSON.stringify(dnFiles) : null;
+      const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
       
       const dn = await tx.delivery_notes.create({
         data: {
@@ -92,7 +127,7 @@ export async function POST(
           items: JSON.parse(items),
           deliveredAt: new Date(),
           notes: notes || null,
-          createdById: session.user.id,
+          createdById: userId,
           updatedAt: new Date(),
         },
       });
@@ -110,7 +145,7 @@ export async function POST(
       await tx.order_histories.create({
         data: {
           orderId,
-          actorId: session.user.id,
+          actorId: userId,
           actorName: session.user.name,
           action: "delivery_note_sent",
           payload: {
@@ -121,64 +156,126 @@ export async function POST(
         },
       });
 
-      // Create notifications for other admins
+      // Create notifications for all admins
       const companyUsers = await tx.users.findMany({
         where: {
           companyId: order.companyId,
           role: UserRole.ADMIN,
-          id: { not: session.user.id },
         },
       });
 
-      await Promise.all(
-        companyUsers.map((user) =>
-          tx.notifications.create({
-            data: {
-              companyId: order.companyId,
-              userId: user.id,
-              title: `Delivery Note Created - Order #${orderId}`,
-              body: `${session.user.name} created Delivery Note #${dnNumber}${order.finalPaymentReceived ? ' - Order completed!' : ' - Awaiting final payment'}`,
-              meta: {
-                orderId,
-                dnNumber,
-                itemCount: JSON.parse(items).length,
-              },
-              read: false,
-            },
-          })
-        )
-      );
+                  await Promise.all(
+                    companyUsers.map((user) =>
+                      tx.notifications.create({
+                        data: {
+                          companyId: order.companyId,
+                          userId: user.id,
+                          title: order.finalPaymentReceived 
+                            ? `✅ Order Completed - Delivery Note #${dnNumber} - Order #${orderId}`
+                            : `🚚 Delivery Note Sent - Order #${orderId}`,
+                          body: order.finalPaymentReceived
+                            ? `${session.user.name} created Delivery Note #${dnNumber}. Order #${orderId} is now completed!`
+                            : `Delivery Note #${dnNumber} sent to ${order.clients?.name}. Client should arrange final payment to complete the order.`,
+                          meta: {
+                            orderId,
+                            dnNumber,
+                            itemCount: JSON.parse(items).length,
+                            actionRequired: !order.finalPaymentReceived, // If final payment not received, waiting for it
+                            actionType: order.finalPaymentReceived ? null : "client_final_payment",
+                            waitingFor: order.finalPaymentReceived ? null : "client_final_payment",
+                          },
+                          read: user.id === userId, // Mark as read for creator
+                        },
+                      })
+                    )
+                  );
 
-      return { dn, order: updatedOrder };
+                  // Create notification for client
+                  if (order.clientId) {
+                    await tx.notifications.create({
+                      data: {
+                        companyId: order.companyId,
+                        userId: null, // Client notifications don't have userId
+                        title: order.finalPaymentReceived
+                          ? `✅ Order Completed - Order #${orderId}`
+                          : `🚚 Delivery Note - Order #${orderId}`,
+                        body: order.finalPaymentReceived
+                          ? `Your order has been completed! Delivery Note #${dnNumber} has been created.`
+                          : `Delivery Note #${dnNumber} has been sent for your order.${!order.finalPaymentReceived ? ' Please arrange final payment to complete the order.' : ''}`,
+                        meta: {
+                          orderId,
+                          dnNumber,
+                          clientId: order.clientId,
+                          action: "delivery_note_sent",
+                          actionRequired: !order.finalPaymentReceived,
+                          actionType: order.finalPaymentReceived ? null : "final_payment",
+                        },
+                        read: false,
+                      },
+                    });
+                  }
+
+                  return { dn, order: updatedOrder };
     });
 
-    // Send email
+    // Emit Socket.io event for real-time updates
+    if (global.io) {
+      global.io.to(`company_${order.companyId}`).emit("new_notification", {
+        orderId,
+        title: `Delivery Note Created`,
+        body: `DN #${dnNumber} created for Order #${orderId}`,
+        type: "delivery_note_created",
+      });
+      console.log(`🔌 Emitted notification to company_${order.companyId}`);
+    }
+
+    // Send completion email to client if final payment received
     if (order.clients?.email) {
-      const itemsList = JSON.parse(items)
-        .map((item: any) => `<li>${item.name} - Qty: ${item.quantity}</li>`)
-        .join("");
+      const company = await prisma.companies.findUnique({
+        where: { id: order.companyId }
+      });
+      
+      // If final payment received → send completion email
+      if (order.finalPaymentReceived) {
+        sendOrderCompletedEmail({
+          clientName: order.clients.name,
+          clientEmail: order.clients.email,
+          orderId: order.id,
+          deliveryNoteNumber: dnNumber,
+          companyName: company?.name || "ATA CRM",
+        }).catch((err) => console.error("Completion email error:", err));
+      } else {
+        // Send delivery note email (with final payment reminder)
+        const itemsList = JSON.parse(items)
+          .map((item: { name: string; quantity: number }) => `<li>${item.name} - Qty: ${item.quantity}</li>`)
+          .join("");
 
-      const filesHtml = dnFiles.length > 0 
-        ? `<p><strong>Delivery Note Documents:</strong></p><ul>${dnFiles.map(f => `<li><a href="${process.env.NEXTAUTH_URL}${f}">Download Document</a></li>`).join('')}</ul>`
-        : '';
+        const filesHtml = dnFiles.length > 0 
+          ? `<p><strong>Delivery Note Documents:</strong></p><ul>${dnFiles.map(f => `<li><a href="${process.env.NEXTAUTH_URL}${f}">Download Document</a></li>`).join('')}</ul>`
+          : '';
 
-      const emailContent = `
-        <h2>Delivery Note - Order #${orderId}</h2>
-        <p>Dear ${order.clients.name},</p>
-        <p>Your order has been delivered!</p>
-        <p><strong>Delivery Note: ${dnNumber}</strong></p>
-        ${filesHtml}
-        <p><strong>Items Delivered:</strong></p>
-        <ul>${itemsList}</ul>
-        ${!order.finalPaymentReceived ? '<p><strong>Final payment is now due.</strong></p>' : ''}
-        <p>Thank you for your business!</p>
-      `;
+        const emailContent = `
+          <h2>🚚 Delivery Note - Order #${orderId}</h2>
+          <p>Dear ${order.clients.name},</p>
+          <p>Your order has been delivered!</p>
+          <p><strong>Delivery Note: ${dnNumber}</strong></p>
+          ${filesHtml}
+          <p><strong>Items Delivered:</strong></p>
+          <ul>${itemsList}</ul>
+          <div style="background: #fef3c7; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; font-weight: bold;">💰 Final Payment Due</p>
+            <p style="margin: 5px 0 0 0;">Please arrange the final payment to complete the order.</p>
+          </div>
+          <p>Thank you for your business!</p>
+          <p>Best regards,<br><strong>${company?.name || "ATA CRM"}</strong></p>
+        `;
 
-      sendEmail({
-        to: order.clients.email,
-        subject: `Delivery Note ${dnNumber} - Order #${orderId}`,
-        html: emailContent,
-      }).catch((err) => console.error("Email error:", err));
+        sendEmail({
+          to: order.clients.email,
+          subject: `🚚 Delivery Note ${dnNumber} - Order #${orderId}`,
+          html: emailContent,
+        }).catch((err) => console.error("Delivery email error:", err));
+      }
     }
 
     return NextResponse.json({

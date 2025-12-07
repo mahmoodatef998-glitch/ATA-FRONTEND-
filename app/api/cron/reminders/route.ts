@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { getDubaiDaysFromNow, getDubaiDaysAgo, formatDubaiDate } from "@/lib/cron-timezone-utils";
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, GitHub Actions, or external cron service)
-// Recommended: Run once per day at 9:00 AM
+// Recommended: Run once per day at 9:00 AM Dubai time
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,12 +17,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log(`📅 Dubai Date: ${formatDubaiDate(new Date())}`);
+
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const threeDaysFromNow = new Date(now);
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const tomorrow = getDubaiDaysFromNow(1);
+    const threeDaysFromNow = getDubaiDaysFromNow(3);
 
     // 1. Reminder: Deposit Payment Overdue (> 3 days)
     const overdueDeposits = await prisma.orders.findMany({
@@ -62,8 +62,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 3. Reminder: Orders stuck in manufacturing for > 7 days
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgo = getDubaiDaysAgo(7);
 
     const stuckOrders = await prisma.orders.findMany({
       where: {
@@ -177,6 +176,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
+
 
 
 

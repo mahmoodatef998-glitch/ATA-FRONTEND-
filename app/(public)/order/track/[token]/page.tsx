@@ -5,13 +5,22 @@ import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { OrderProgressTrackerCompact } from "@/components/order-progress-tracker-compact";
+import { CancelOrderButton } from "@/components/cancel-order-button";
+import { OrderTabs } from "@/components/client/order-tabs";
+import { MarkActionViewed } from "@/components/client/mark-action-viewed";
+import { auth } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/utils";
 
 async function getOrderByToken(token: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXTAUTH_URL || "http://localhost:3005"}/api/public/orders/track/${token}`,
-      { cache: "no-store" }
-    );
+    const baseUrl = getBaseUrl();
+    const apiUrl = `${baseUrl}/api/public/orders/track/${token}`;
+    const response = await fetch(apiUrl, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
       return null;
@@ -64,6 +73,7 @@ export default async function OrderTrackingPage({
 }) {
   const { token } = await params;
   const order = await getOrderByToken(token);
+  const session = await auth();
 
   if (!order) {
     return (
@@ -137,362 +147,23 @@ export default async function OrderTrackingPage({
           </Card>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Order Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Company</p>
-                <p className="font-medium">{order.company.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Client Name</p>
-                <p className="font-medium">{order.client.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Phone</p>
-                <p className="font-medium">{order.client.phone}</p>
-              </div>
-              {order.details && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Details</p>
-                  <p className="text-sm">{order.details}</p>
-                </div>
-              )}
-              {order.totalAmount && (
-                <div className="pt-4 border-t">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">Total Amount:</span>
-                    <span className="text-xl font-bold text-primary">
-                      {formatCurrency(order.totalAmount, order.currency)}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Items */}
-          {order.items && Array.isArray(order.items) && order.items.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Requested Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {order.items.map((item: any, index: number) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-start p-3 border rounded-lg bg-gray-50"
-                    >
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        {item.specs && (
-                          <p className="text-sm text-muted-foreground">{item.specs}</p>
-                        )}
-                      </div>
-                      <Badge variant="secondary">Qty: {item.quantity}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Quotations */}
-        {order.quotations && order.quotations.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Quotations</CardTitle>
-              <CardDescription>Price quotes from {order.company.name}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.quotations.map((quote: any) => (
-                  <div key={quote.id} className="border rounded-lg p-4 bg-white">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-semibold">Quotation #{quote.id}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDateTime(quote.createdAt)}
-                        </p>
-                      </div>
-                      <Badge variant={quote.accepted ? "default" : "secondary"}>
-                        {quote.accepted ? "Accepted" : "Pending"}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2 mb-3">
-                      {quote.items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span>
-                            {item.name} x {item.quantity}
-                          </span>
-                          <span className="font-medium">
-                            {formatCurrency(item.total, quote.currency)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="pt-3 border-t flex justify-between items-center">
-                      <span className="font-semibold">Total:</span>
-                      <span className="text-lg font-bold">
-                        {formatCurrency(quote.total, quote.currency)}
-                      </span>
-                    </div>
-                    {quote.notes && (
-                      <p className="mt-3 text-sm text-muted-foreground bg-gray-50 p-3 rounded">
-                        <strong>Note:</strong> {quote.notes}
-                      </p>
-                    )}
-                    
-                    {/* Download Quotation File */}
-                    {quote.file && (
-                      <div className="mt-4 pt-4 border-t">
-                        <a
-                          href={quote.file}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <Button variant="outline" className="w-full" size="lg">
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Quotation File
-                          </Button>
-                        </a>
-                      </div>
-                    )}
-                    
-                    {/* Review Quotation */}
-                    {quote.accepted === null && quote.file && (
-                      <div className="mt-4 p-4 bg-green-50 border border-green-300 rounded-lg">
-                        <p className="text-sm text-green-900 font-medium mb-2">
-                          ✅ Ready for Review
-                        </p>
-                        <p className="text-sm text-green-700 mb-3">
-                          You can now accept or reject this quotation
-                        </p>
-                        <Link href={`/client/quotation/${quote.id}/review`}>
-                          <Button variant="default" className="w-full bg-green-600 hover:bg-green-700">
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Review & Respond
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Mark payment action as viewed when viewing this page */}
+        {order.depositPercentage && !order.depositPaid && (
+          <MarkActionViewed orderId={order.orderId} actionType="payment" />
         )}
 
-        {/* Purchase Orders */}
-        {order.purchase_orders && order.purchase_orders.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Purchase Orders</CardTitle>
-              <CardDescription>Official purchase orders for this order</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.purchase_orders.map((po: any) => (
-                  <div key={po.id} className="border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-semibold text-blue-700 dark:text-blue-300">PO #{po.poNumber}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDateTime(po.createdAt)}
-                        </p>
-                      </div>
-                      <Badge variant="default" className="bg-blue-600">Official PO</Badge>
-                    </div>
-                    
-                    {po.poFile && (
-                      <div className="mb-3">
-                        {(() => {
-                          // Try to parse as JSON array (multiple files)
-                          let files: string[] = [];
-                          try {
-                            const parsed = JSON.parse(po.poFile);
-                            files = Array.isArray(parsed) ? parsed : [po.poFile];
-                          } catch {
-                            // If not JSON, treat as single file
-                            files = [po.poFile];
-                          }
-                          
-                          return files.length > 0 ? (
-                            <div className="space-y-2">
-                              {files.map((file: string, idx: number) => {
-                                const fileName = file.split('/').pop() || 'PO Document';
-                                return (
-                                  <a
-                                    key={idx}
-                                    href={file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block"
-                                  >
-                                    <Button variant="outline" className="w-full" size="sm">
-                                      <Download className="h-4 w-4 mr-2" />
-                                      Download {files.length > 1 ? `PO Document ${idx + 1}` : 'Purchase Order'}
-                                    </Button>
-                                  </a>
-                                );
-                              })}
-                            </div>
-                          ) : null;
-                        })()}
-                      </div>
-                    )}
-
-                    {po.depositRequired && (
-                      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-                        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                          💰 Deposit Required: {po.depositPercent}%
-                        </p>
-                      </div>
-                    )}
-
-                    {po.notes && (
-                      <p className="mt-3 text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                        <strong>Note:</strong> {po.notes}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Mark delivery note action as viewed when viewing this page */}
+        {order.delivery_notes && order.delivery_notes.length > 0 && !order.finalPaymentReceived && (
+          <MarkActionViewed orderId={order.orderId} actionType="delivery" />
         )}
 
-        {/* Delivery Notes */}
-        {order.delivery_notes && order.delivery_notes.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Delivery Notes</CardTitle>
-              <CardDescription>Delivery information for this order</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.delivery_notes.map((dn: any) => (
-                  <div key={dn.id} className="border rounded-lg p-4 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-semibold text-cyan-700 dark:text-cyan-300">DN #{dn.dnNumber}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDateTime(dn.deliveredAt || dn.createdAt)}
-                        </p>
-                      </div>
-                      <Badge variant="default" className="bg-green-600">✓ Delivered</Badge>
-                    </div>
-                    
-                    {dn.dnFile && (
-                      <div className="mb-3">
-                        {(() => {
-                          // Try to parse as JSON array (multiple files)
-                          let files: string[] = [];
-                          try {
-                            const parsed = JSON.parse(dn.dnFile);
-                            files = Array.isArray(parsed) ? parsed : [dn.dnFile];
-                          } catch {
-                            // If not JSON, treat as single file
-                            files = [dn.dnFile];
-                          }
-                          
-                          return files.length > 0 ? (
-                            <div className="space-y-2">
-                              {files.map((file: string, idx: number) => {
-                                const fileName = file.split('/').pop() || 'Delivery Document';
-                                return (
-                                  <a
-                                    key={idx}
-                                    href={file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block"
-                                  >
-                                    <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white border-blue-600" size="sm">
-                                      <Truck className="h-4 w-4 mr-2" />
-                                      Download {files.length > 1 ? `Document ${idx + 1}` : 'Delivery Note'}
-                                    </Button>
-                                  </a>
-                                );
-                              })}
-                            </div>
-                          ) : null;
-                        })()}
-                      </div>
-                    )}
-
-                    {dn.items && Array.isArray(dn.items) && dn.items.length > 0 && (
-                      <div className="mb-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">
-                          📦 Items Delivered:
-                        </p>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
-                          {dn.items.map((item: any, idx: number) => (
-                            <li key={idx}>• {item.name} - Qty: {item.quantity}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {dn.notes && (
-                      <p className="text-sm text-muted-foreground bg-white/60 dark:bg-gray-800/60 p-3 rounded">
-                        <strong>📝 Delivery Notes:</strong> {dn.notes}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Order History */}
-        {order.history && order.history.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Timeline</CardTitle>
-              <CardDescription>Track all updates to your order</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {order.history.map((history: any, index: number) => (
-                  <div key={history.id} className="flex gap-4">
-                    <div className="mt-1">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-primary" />
-                      </div>
-                      {index < order.history.length - 1 && (
-                        <div className="ml-4 h-full w-0.5 bg-gray-200 mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex justify-between items-start mb-1">
-                        <p className="font-medium capitalize">
-                          {history.action.replace(/_/g, " ")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDateTime(history.createdAt)}
-                        </p>
-                      </div>
-                      {history.actorName && (
-                        <p className="text-sm text-muted-foreground">
-                          by {history.actorName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Order Tabs */}
+        <OrderTabs 
+          order={order} 
+          isLoggedIn={true}
+          isPublic={true}
+          token={token}
+        />
 
         {/* Footer Actions */}
         <div className="text-center space-y-4">
@@ -506,6 +177,15 @@ export default async function OrderTrackingPage({
                 Back to My Orders
               </Button>
             </Link>
+            
+            {/* Cancel Order Button - Only in early stages */}
+            <CancelOrderButton
+              orderId={order.orderId}
+              orderStage={order.stage}
+              hasQuotation={order.quotations?.some((q: any) => q.file !== null) || false}
+              isLoggedIn={!!session && session.user?.id === order.clientId}
+            />
+            
             <Link href="/">
               <Button variant="ghost" className="gap-2">
                 <Package className="h-4 w-4" />

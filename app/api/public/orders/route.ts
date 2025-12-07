@@ -5,6 +5,8 @@ import { generatePublicToken } from "@/lib/token-generator";
 import { rateLimiter, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { OrderStatus, UserRole } from "@prisma/client";
 import { sendEmail, getOrderConfirmationEmail } from "@/lib/email";
+import { sanitizeText } from "@/lib/security";
+import { handleApiError } from "@/lib/error-handler";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +38,20 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
+    
+    // Sanitize input before validation
+    if (body.name) body.name = sanitizeText(body.name);
+    if (body.phone) body.phone = sanitizeText(body.phone);
+    if (body.email) body.email = sanitizeText(body.email);
+    if (body.details) body.details = sanitizeText(body.details);
+    if (body.items && Array.isArray(body.items)) {
+      body.items = body.items.map((item: any) => ({
+        ...item,
+        name: sanitizeText(item.name || ""),
+        specs: item.specs ? sanitizeText(item.specs) : undefined,
+      }));
+    }
+    
     const validation = createOrderSchema.safeParse(body);
 
     if (!validation.success) {
@@ -169,8 +185,16 @@ export async function POST(request: NextRequest) {
       return { order, client };
     });
 
-    // TODO: Emit Socket.io event for real-time notification
-    // socketIo.to(`company_${defaultCompanyId}`).emit("new_order", { orderId: result.order.id });
+    // Emit Socket.io event for real-time notification
+    if (global.io) {
+      global.io.to(`company_${defaultCompanyId}`).emit("new_notification", {
+        orderId: result.order.id,
+        title: `New Order from ${result.client.name}`,
+        body: `Order #${result.order.id} created`,
+        type: "new_order",
+      });
+      console.log(`🔌 Emitted new_order notification to company_${defaultCompanyId}`);
+    }
 
     const trackingUrl = `${request.nextUrl.origin}/order/track/${result.order.publicToken}`;
 
@@ -215,29 +239,8 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("❌ Error creating order - Full details:", error);
-    
-    // Get detailed error message
-    let errorMessage = "An error occurred while creating the order";
-    let errorDetails = null;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage,
-        details: process.env.NODE_ENV === "development" ? {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        } : undefined
-      },
-      { status: 500 }
-    );
+    // handleApiError already logs errors and handles development details
+    return handleApiError(error);
   }
 }
 

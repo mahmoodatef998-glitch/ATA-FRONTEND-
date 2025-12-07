@@ -1,23 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, LogIn } from "lucide-react";
+import { Loader2, LogIn, CheckCircle, Clock, XCircle } from "lucide-react";
 
 export default function ClientLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState({
     identifier: "", // email or phone
     password: "",
   });
+
+  useEffect(() => {
+    // Check if user just registered
+    if (searchParams.get("registered") === "true") {
+      setSuccessMessage("Account created successfully! Please wait for admin approval before you can login.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +45,19 @@ export default function ClientLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        // Check if account is pending or rejected
+        if (data.accountStatus === "PENDING") {
+          setError("Your account is pending approval. Please wait for admin approval before logging in.");
+          return;
+        }
+        if (data.accountStatus === "REJECTED") {
+          setError(data.error || "Your account has been rejected. Please contact support.");
+          return;
+        }
+        // Use the error message from API, or default message
+        const errorMsg = data.error || "Username or password incorrect";
+        setError(errorMsg);
+        return;
       }
 
       // Redirect to client portal
@@ -50,7 +71,7 @@ export default function ClientLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4" suppressHydrationWarning>
       {/* Back to Home Button */}
       <Link 
         href="/" 
@@ -60,7 +81,7 @@ export default function ClientLoginPage() {
         <span>Back to Home</span>
       </Link>
 
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md" suppressHydrationWarning>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center">
@@ -112,9 +133,41 @@ export default function ClientLoginPage() {
               />
             </div>
 
+            {successMessage && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Account Created Successfully!
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      {successMessage}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
+                <div className="flex items-start gap-3">
+                  {error.includes("pending") ? (
+                    <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  ) : error.includes("rejected") ? (
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                      {error.includes("pending") ? "Account Pending Approval" : error.includes("rejected") ? "Account Rejected" : "Login Error"}
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {error}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { sendEmail, getQuotationResponseEmail } from "@/lib/email";
+import { sendQuotationAcceptedEmail, sendQuotationRejectedEmail } from "@/lib/email-templates";
 
 export async function PATCH(
   request: NextRequest,
@@ -99,21 +100,50 @@ export async function PATCH(
               companyId: quotation.orders.companyId,
               userId: user.id,
               title: accepted !== false
-                ? `Quotation Accepted - Order #${quotation.orderId}`
-                : `Quotation Rejected - Order #${quotation.orderId}`,
+                ? `✅ Quotation Accepted - Order #${quotation.orderId}`
+                : `❌ Quotation Rejected - Order #${quotation.orderId}`,
               body: accepted !== false
-                ? `Client accepted quotation worth ${quotation.total} ${quotation.currency}${clientComment ? `. Note: ${clientComment}` : ""}`
-                : `Client rejected quotation. Reason: ${rejectionReason || "Not specified"}${clientComment ? `. Note: ${clientComment}` : ""}`,
+                ? `Client ${quotation.orders.clients?.name} accepted quotation (${quotation.total} ${quotation.currency}). ${quotation.depositRequired ? 'Client should upload PO + Deposit Proof next.' : 'Client should upload PO next.'}${clientComment ? ` Client note: ${clientComment}` : ""}`
+                : `Client ${quotation.orders.clients?.name} rejected quotation. Reason: ${rejectionReason || "Not specified"}${clientComment ? `. Client note: ${clientComment}` : ""}`,
               meta: {
                 orderId: quotation.orderId,
                 quotationId,
                 accepted: accepted !== false,
+                actionRequired: accepted !== false, // If accepted, waiting for PO upload
+                actionType: accepted !== false ? "client_upload_po" : null,
+                waitingFor: accepted !== false ? "client_po_upload" : null,
               },
               read: false,
             },
           })
         )
       );
+
+      // Create notification for client
+      if (quotation.orders.clientId) {
+        await tx.notifications.create({
+          data: {
+            companyId: quotation.orders.companyId,
+            userId: null, // Client notifications don't have userId
+            title: accepted !== false
+              ? `✅ Quotation Accepted - Order #${quotation.orderId}`
+              : `❌ Quotation Rejected - Order #${quotation.orderId}`,
+            body: accepted !== false
+              ? `Your quotation has been accepted! ${quotation.depositRequired ? 'Please upload your Purchase Order and Deposit Proof.' : 'Please upload your Purchase Order.'}`
+              : `Your quotation has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`,
+            meta: {
+              orderId: quotation.orderId,
+              quotationId,
+              clientId: quotation.orders.clientId,
+              accepted: accepted !== false,
+              action: accepted !== false ? "quotation_accepted" : "quotation_rejected",
+              actionRequired: accepted !== false,
+              actionType: accepted !== false ? "upload_po" : null,
+            },
+            read: false,
+          },
+        });
+      }
 
       return { quotation: updatedQuotation, order: updatedOrder };
     });
@@ -149,6 +179,29 @@ export async function PATCH(
         });
       }
     });
+
+    // Send confirmation email to client
+    if (quotation.orders.clients?.email) {
+      const emailData = {
+        clientName: quotation.orders.clients.name,
+        clientEmail: quotation.orders.clients.email,
+        orderId: quotation.orderId,
+        quotationId: quotationId,
+        quotationTotal: quotation.total,
+        currency: quotation.currency,
+        companyName: quotation.orders.companies?.name || "ATA CRM",
+      };
+      
+      if (accepted !== false) {
+        sendQuotationAcceptedEmail(emailData).catch(err => {
+          console.error('Failed to send quotation accepted email to client:', err);
+        });
+      } else {
+        sendQuotationRejectedEmail(emailData).catch(err => {
+          console.error('Failed to send quotation rejected email to client:', err);
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

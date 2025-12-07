@@ -1,20 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { UserRole } from "@prisma/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Get callbackUrl from query params
+  const callbackUrl = searchParams.get("callbackUrl") || null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +35,81 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
-      } else {
-        router.push("/dashboard/orders");
+        // Show more specific error message
+        let errorMessage = "Failed to sign in. Please try again.";
+        
+        // NextAuth returns different error types
+        if (result.error === "CredentialsSignin") {
+          errorMessage = "Username or password incorrect";
+        } else if (result.error === "Configuration") {
+          // Configuration error - this usually means NEXTAUTH_SECRET is missing or invalid
+          // In development, try to continue with a user-friendly message
+          errorMessage = "Authentication service is temporarily unavailable. Please try again in a moment.";
+          console.error("NextAuth Configuration Error:", {
+            message: "NEXTAUTH_SECRET may be missing or invalid",
+            solution: "1. Check if .env file exists in project root\n2. Verify NEXTAUTH_SECRET is at least 32 characters\n3. Restart the development server\n4. Check server console for detailed error messages",
+            note: "In development mode, a fallback secret should be used automatically. If this error persists, check server-side logs."
+          });
+          // Don't show the error to user, just log it
+          setError(errorMessage);
+          setLoading(false);
+          return;
+        } else if (result.error && typeof result.error === "string") {
+          // Use the error message directly if it's a string
+          errorMessage = result.error;
+          
+          // Check if error is about account status
+          if (result.error.toLowerCase().includes("pending")) {
+            errorMessage = "Your account is pending admin approval. Please wait for approval before logging in.";
+          } else if (result.error.toLowerCase().includes("rejected")) {
+            errorMessage = "Your account has been rejected. Please contact admin for more information.";
+          } else if (result.error.toLowerCase().includes("invalid email") || result.error.toLowerCase().includes("invalid password") || result.error.toLowerCase().includes("username or password incorrect")) {
+            errorMessage = "Username or password incorrect";
+          } else if (result.error.toLowerCase().includes("configuration")) {
+            errorMessage = "Authentication service is not properly configured. Please contact administrator.";
+          }
+        }
+        
+        setError(errorMessage);
+        console.error("Login error:", result.error);
+      } else if (result?.ok) {
+        // Success - redirect to callbackUrl if provided, otherwise check role
+        if (callbackUrl) {
+          // Validate callbackUrl - don't redirect technicians/supervisors to /dashboard
+          const callbackPath = new URL(callbackUrl, window.location.origin).pathname;
+          if (callbackPath.startsWith("/dashboard")) {
+            // Check role before redirecting to dashboard
+            const response = await fetch("/api/auth/session");
+            const sessionData = await response.json();
+            
+            if (sessionData?.user?.role === "TECHNICIAN" || sessionData?.user?.role === "SUPERVISOR" || sessionData?.user?.role === "HR") {
+              // Redirect team members to /team instead of /dashboard (HR can only access Our Team section)
+              router.push("/team");
+            } else {
+              router.push(callbackUrl);
+            }
+          } else {
+            router.push(callbackUrl);
+          }
+        } else {
+          // Check role and redirect accordingly
+          const response = await fetch("/api/auth/session");
+          const sessionData = await response.json();
+          
+          if (sessionData?.user?.role === "TECHNICIAN" || sessionData?.user?.role === "SUPERVISOR" || sessionData?.user?.role === "HR") {
+            router.push("/team");
+          } else {
+            router.push("/dashboard");
+          }
+        }
         router.refresh();
+      } else {
+        setError("Unexpected error. Please try again.");
       }
     } catch (err) {
-      setError("An error occurred during login");
+      console.error("Login exception:", err);
+      const errorMessage = err instanceof Error ? err.message : "An error occurred during login";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -104,7 +178,7 @@ export default function LoginPage() {
                   📧 admin@demo.co
                 </p>
                 <p className="font-mono text-sm">
-                  🔑 123
+                  🔑 00243540000
                 </p>
               </div>
             </div>

@@ -14,12 +14,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Convert userId to integer if it's a string
+    const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
+
     // Count unread notifications for user
     const count = await prisma.notifications.count({
       where: {
         companyId: session.user.companyId,
         OR: [
-          { userId: session.user.id },
+          { userId: userId },
           { userId: null }, // Company-level notifications
         ],
         read: false,
