@@ -1,0 +1,48 @@
+# ============================================
+# Environment Variables للاختبار على Vercel
+# ============================================
+# 
+# ⚠️ مهم: انسخ كل Variable واحدة تلو الأخرى في Vercel
+# 
+# ============================================
+
+# 1. DATABASE_URL
+# ⚠️ غيّر هذا إلى Database حقيقي من Supabase/Neon/Vercel Postgres
+DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/ata_crm_test
+
+# 2. NEXTAUTH_SECRET
+# للاختبار فقط - استخدم مفتاح أقوى في Production
+NEXTAUTH_SECRET=ata-crm-test-secret-key-for-vercel-testing-only-32-chars
+
+# 3. NODE_ENV
+NODE_ENV=production
+
+# 4. RBAC_ENABLED
+RBAC_ENABLED=true
+
+# 5. NEXT_PUBLIC_RBAC_ENABLED
+NEXT_PUBLIC_RBAC_ENABLED=true
+
+# 6. NEXTAUTH_URL
+# placeholder - سنحدثه بعد Deploy إلى URL الحقيقي
+NEXTAUTH_URL=https://placeholder.vercel.app
+
+# ============================================
+# كيفية الإضافة في Vercel:
+# ============================================
+# 
+# 1. Vercel Dashboard → Settings → Environment Variables
+# 2. Add New
+# 3. Key: (اسم المتغير)
+# 4. Value: (القيمة)
+# 5. Environment: Production, Preview, Development
+# 6. Save
+# 
+# ============================================
+# 
+# ⚠️ تذكير:
+# - غيّر DATABASE_URL إلى Database حقيقي!
+# - بعد Deploy، حدث NEXTAUTH_URL بالـ URL الحقيقي
+# 
+# ============================================
+
