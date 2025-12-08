@@ -216,7 +216,7 @@ export default function UserRoleAssignmentPage() {
           <CardHeader>
             <CardTitle>User Not Found</CardTitle>
             <CardDescription>
-              The user you're looking for doesn't exist.
+              The user you&apos;re looking for doesn&apos;t exist.
             </CardDescription>
           </CardHeader>
         </Card>

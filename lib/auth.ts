@@ -31,6 +31,7 @@ declare module "next-auth" {
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
   trustHost: true, // Trust host for proper cookie handling
+  basePath: "/api/auth", // Explicitly set base path for NextAuth
   providers: [
     CredentialsProvider({
       name: "Credentials",

@@ -96,7 +96,21 @@ export function Navbar({ user }: NavbarProps) {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
+    try {
+      await signOut({ 
+        callbackUrl: "/login",
+        redirect: false, // Don't redirect automatically, we'll handle it
+      });
+      // If successful, redirect manually
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback: clear session and redirect manually
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+        window.location.href = "/login";
+      }
+    }
   };
 
   const handleBackup = async () => {

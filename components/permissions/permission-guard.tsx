@@ -24,13 +24,17 @@ export function PermissionGuard({
   fallback = null,
   children,
 }: PermissionGuardProps) {
-  const hasPermission = permission ? useCan(permission) : false;
-  const hasAnyPermission = permissions && !requireAll ? useCanAny(permissions) : false;
-  const hasAllPermissions = permissions && requireAll ? useCanAll(permissions) : false;
+  // Always call hooks unconditionally to follow React Hooks rules
+  // Pass empty string/array if not provided - hooks will handle it gracefully
+  const hasPermission = useCan(permission || "");
+  const hasAnyPermission = useCanAny(permissions || []);
+  const hasAllPermissions = useCanAll(permissions || []);
 
+  // Determine access based on provided props
+  // Only use the hook results if the corresponding prop was provided
   const canAccess = permission
     ? hasPermission
-    : permissions
+    : permissions && permissions.length > 0
     ? requireAll
       ? hasAllPermissions
       : hasAnyPermission

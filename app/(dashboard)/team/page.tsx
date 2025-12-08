@@ -432,7 +432,7 @@ export default function TeamDashboardPage() {
               <XCircle className="h-5 w-5 text-red-600" />
               Not Checked In ({attendanceDetails.notCheckedInUsers.length})
             </CardTitle>
-            <CardDescription>Team members who haven't checked in today</CardDescription>
+            <CardDescription>Team members who haven&apos;t checked in today</CardDescription>
           </CardHeader>
           <CardContent>
             {attendanceDetails.notCheckedInUsers.length === 0 ? (

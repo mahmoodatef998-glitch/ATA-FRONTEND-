@@ -102,9 +102,11 @@ const roleDefinitions = [
       "attendance.clock", "attendance.read",
       "invoice.create", "invoice.read", "invoice.update", // Added for quotation upload
       "user.read", // Added for viewing team members
+      "po.read", // Added for viewing Purchase Orders (read-only)
       "report.view", "report.generate",
       "file.read", "file.upload",
       "setting.view",
+      // Note: payment.record is NOT included - only Admin and Accountant can access payments
     ],
   },
   {

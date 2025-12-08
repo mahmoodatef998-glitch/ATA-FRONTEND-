@@ -1095,8 +1095,8 @@ export function CheckInOut() {
                         <p className="text-xs font-semibold text-blue-900 mb-2">💡 Step-by-Step Fix:</p>
                         <ol className="text-xs text-blue-800 space-y-2 list-decimal list-inside">
                           <li><strong>Click 🔒 lock icon</strong> in address bar (left of URL)</li>
-                          <li>Click <strong>"Site settings"</strong> (or "Permissions")</li>
-                          <li>Find <strong>"Location"</strong> → Change from "Block" to <strong>"Allow"</strong></li>
+                          <li>Click <strong>&quot;Site settings&quot;</strong> (or &quot;Permissions&quot;)</li>
+                          <li>Find <strong>&quot;Location&quot;</strong> → Change from &quot;Block&quot; to <strong>&quot;Allow&quot;</strong></li>
                           <li>Close settings → Press <kbd className="px-1 py-0.5 bg-blue-100 rounded text-xs">F5</kbd> to refresh</li>
                           <li>Try Check-in again</li>
                         </ol>

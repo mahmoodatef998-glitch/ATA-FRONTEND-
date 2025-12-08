@@ -8,15 +8,16 @@ import { sendPaymentReceivedEmail } from "@/lib/email-templates";
 
 /**
  * GET - عرض جميع الدفعات لطلب معين
- * متاح للمحاسبين والمديرين
+ * متاح فقط للمحاسبين والمديرين (Admin + Accountant)
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // التحقق من صلاحية عرض الدفعات
-    const { userId, companyId } = await authorize(PermissionAction.INVOICE_READ);
+    // التحقق من صلاحية عرض الدفعات - فقط Admin و Accountant يمكنهم الوصول
+    // استخدام PAYMENT_RECORD لأن Operations Manager لا يملكه
+    const { userId, companyId } = await authorize(PermissionAction.PAYMENT_RECORD);
     const { id } = await params;
     const orderId = parseInt(id);
 

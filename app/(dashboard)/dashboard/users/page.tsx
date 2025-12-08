@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Edit, Trash2, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Users, Edit, Trash2, Loader2, CheckCircle, XCircle, Clock, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { UserRole, UserAccountStatus } from "@prisma/client";
 import { useSession } from "next-auth/react";

@@ -368,7 +368,7 @@ export default function TeamMemberDetailsPage() {
                 <DialogHeader>
                   <DialogTitle>Edit Profile</DialogTitle>
                   <DialogDescription>
-                    Update the member's personal information and details.
+                    Update the member&apos;s personal information and details.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

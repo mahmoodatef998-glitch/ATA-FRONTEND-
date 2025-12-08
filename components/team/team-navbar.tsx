@@ -33,7 +33,25 @@ export function TeamNavbar() {
   const isAdmin = session?.user?.role === UserRole.ADMIN;
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    try {
+      // Try to sign out with NextAuth
+      await signOut({ 
+        callbackUrl: "/",
+        redirect: false, // Don't redirect automatically, we'll handle it
+      });
+      // If successful, redirect manually
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback: clear session and redirect manually
+      // Clear any local storage or cookies if needed
+      if (typeof window !== "undefined") {
+        // Clear session storage
+        sessionStorage.clear();
+        // Redirect to home page
+        window.location.href = "/";
+      }
+    }
   };
 
   return (

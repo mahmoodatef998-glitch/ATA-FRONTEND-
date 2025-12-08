@@ -54,7 +54,8 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   const [processingPayment, setProcessingPayment] = useState(false);
   
   // Permission checks using new RBAC system
-  const canViewPayments = useCan(PermissionAction.INVOICE_READ);
+  // Payments - only Admin and Accountant can view/record payments
+  const canViewPayments = useCan(PermissionAction.PAYMENT_RECORD);
   const canCreatePayments = useCan(PermissionAction.PAYMENT_RECORD);
   const canUpdateManufacturing = useCan(PermissionAction.LEAD_MOVE_STAGE);
   const canViewManufacturing = useCan(PermissionAction.LEAD_READ);

@@ -20,6 +20,10 @@ const RBAC_ENABLED = process.env.NEXT_PUBLIC_RBAC_ENABLED === "true";
  */
 export function useCan(permission: string | PermissionAction): boolean {
   const { permissions } = usePermissions();
+  // Return false if permission is empty string
+  if (!permission || permission === "") {
+    return false;
+  }
   return permissions.includes(String(permission));
 }
 
@@ -28,6 +32,10 @@ export function useCan(permission: string | PermissionAction): boolean {
  */
 export function useCanAny(permissions: (string | PermissionAction)[]): boolean {
   const { permissions: userPermissions } = usePermissions();
+  // Return false if permissions array is empty
+  if (!permissions || permissions.length === 0) {
+    return false;
+  }
   const permissionStrings = permissions.map(p => String(p));
   return permissionStrings.some(p => userPermissions.includes(p));
 }
@@ -37,6 +45,10 @@ export function useCanAny(permissions: (string | PermissionAction)[]): boolean {
  */
 export function useCanAll(permissions: (string | PermissionAction)[]): boolean {
   const { permissions: userPermissions } = usePermissions();
+  // Return false if permissions array is empty
+  if (!permissions || permissions.length === 0) {
+    return false;
+  }
   const permissionStrings = permissions.map(p => String(p));
   return permissionStrings.every(p => userPermissions.includes(p));
 }

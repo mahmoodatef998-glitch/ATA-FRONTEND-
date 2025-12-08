@@ -801,7 +801,5 @@ export async function DELETE(
   } catch (error: any) {
     logger.error("Delete team member error", error, "team");
     return handleApiError(error);
-      { status: 500 }
-    );
   }
 }
