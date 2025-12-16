@@ -128,7 +128,13 @@ export default function TeamMemberDetailsPage() {
   const [saving, setSaving] = useState(false);
   
   // Profile edit form
-  const [profileForm, setProfileForm] = useState({
+  const [profileForm, setProfileForm] = useState<{
+    name: string;
+    email: string;
+    department: string;
+    specialization: string;
+    role: UserRole;
+  }>({
     name: "",
     email: "",
     department: "",
