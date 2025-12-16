@@ -417,7 +417,7 @@ export default function TeamMemberDetailsPage() {
                     <Label htmlFor="role" className="text-right">Role</Label>
                     <Select
                       value={profileForm.role}
-                      onValueChange={(value: UserRole) => setProfileForm({ ...profileForm, role: value })}
+                      onValueChange={(value) => setProfileForm({ ...profileForm, role: value as UserRole })}
                     >
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
