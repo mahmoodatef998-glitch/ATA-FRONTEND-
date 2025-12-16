@@ -229,7 +229,7 @@ export default function ClientRegisterPage() {
                   minLength={8}
                   maxLength={128}
                   disabled={loading}
-                  className={passwordStrength && !passwordStrength.valid ? "border-red-500" : passwordStrength?.strength === "strong" ? "border-green-500" : ""}
+                  className={passwordStrength && passwordStrength.strength === "weak" ? "border-red-500" : passwordStrength?.strength === "strong" ? "border-green-500" : ""}
                 />
                 <button
                   type="button"
@@ -268,7 +268,7 @@ export default function ClientRegisterPage() {
                     <ul className="text-xs text-muted-foreground space-y-0.5">
                       {passwordStrength.feedback.map((msg, idx) => (
                         <li key={idx} className="flex items-center gap-1">
-                          {passwordStrength.valid ? (
+                          {passwordStrength.strength === "strong" ? (
                             <CheckCircle2 className="h-3 w-3 text-green-600" />
                           ) : (
                             <XCircle className="h-3 w-3 text-red-600" />

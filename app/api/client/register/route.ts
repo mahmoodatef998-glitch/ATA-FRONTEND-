@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
           name: true,
           phone: true,
           email: true,
+          hasAccount: true,
           accountStatus: true,
         },
       });
@@ -200,6 +201,7 @@ export async function POST(request: NextRequest) {
           name: true,
           phone: true,
           email: true,
+          hasAccount: true,
           accountStatus: true,
         },
       });

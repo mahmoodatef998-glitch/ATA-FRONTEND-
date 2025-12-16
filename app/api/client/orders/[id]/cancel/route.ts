@@ -98,7 +98,6 @@ export async function POST(
       where: { id: parseInt(id) },
       data: {
         status: "CANCELLED",
-        stage: "CANCELLED",
       }
     });
 
@@ -124,7 +123,6 @@ export async function POST(
           companyId: order.companyId,
           title: `Order #${order.id} Cancelled`,
           body: `${order.clients?.name} cancelled their order`,
-          type: "order_update",
           meta: {
             orderId: order.id,
             clientName: order.clients?.name,
