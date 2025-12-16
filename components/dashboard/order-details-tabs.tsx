@@ -25,7 +25,7 @@ import { PaymentRecorder } from "@/components/dashboard/payment-recorder";
 import { DeliveryNoteCreator } from "@/components/dashboard/delivery-note-creator";
 import { OrderProgressTrackerCompact } from "@/components/order-progress-tracker-compact";
 import { UpdateStage } from "@/components/dashboard/update-stage";
-import { useCan, useCanAny } from "@/lib/permissions/frontend-helpers";
+import { useCan, useCanAny, can } from "@/lib/permissions/frontend-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { Permission, migratePermission } from "@/lib/permissions/migration-map";
 import { usePermissions } from "@/contexts/permissions-context";
@@ -52,6 +52,7 @@ function getAvailableTabs(checkPermission: (p: Permission) => boolean) {
 export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [processingPayment, setProcessingPayment] = useState(false);
+  const { permissions } = usePermissions();
   
   // Permission checks using new RBAC system
   // Payments - only Admin and Accountant can view/record payments
@@ -73,9 +74,10 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   const canViewHistory = useCanAny([PermissionAction.LEAD_READ, PermissionAction.OVERVIEW_VIEW]);
 
   // Helper function for backward compatibility
+  // Use 'can' function instead of 'useCan' hook since this is called inside a regular function
   const checkPermission = (oldPermission: Permission): boolean => {
     const newPermission = migratePermission(oldPermission);
-    return useCan(newPermission);
+    return can(permissions, newPermission);
   };
 
   const availableTabs = getAvailableTabs(checkPermission);
