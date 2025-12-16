@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       where: {
         stage: 'AWAITING_DEPOSIT',
         depositPaid: false,
-        purchase_orders: {
+        quotations: {
           some: {
             depositRequired: true,
           }
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
       include: {
         clients: true,
         purchase_orders: true,
+        quotations: true,
         companies: true,
       },
       orderBy: {

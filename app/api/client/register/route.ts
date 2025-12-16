@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
         accountStatus: true,
         name: true,
         email: true,
+        phone: true,
       },
     });
 
@@ -243,9 +244,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Emit Socket.io event for real-time notification
-    if (global.io && admins.length > 0) {
+    const io = global.io;
+    if (io && admins.length > 0) {
       admins.forEach((admin) => {
-        global.io.to(`company_${admin.companyId}`).emit("new_notification", {
+        io.to(`company_${admin.companyId}`).emit("new_notification", {
           clientId: client.id,
           title: `New Client Registration`,
           body: `${client.name} is waiting for approval`,
