@@ -383,7 +383,7 @@ export default function TeamMembersPage() {
           password: "",
           confirmPassword: "",
           phone: "",
-          role: "TECHNICIAN",
+          role: UserRole.TECHNICIAN,
           isActive: true,
           department: "",
           specialization: "",
