@@ -55,6 +55,7 @@ export default function RBACManagementPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [expandedRoles, setExpandedRoles] = useState<Set<UserRole>>(new Set());
+  const [activeTab, setActiveTab] = useState("roles");
 
   useEffect(() => {
     if (status === "authenticated" && isAdmin) {
@@ -232,7 +233,7 @@ export default function RBACManagementPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="roles" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="roles">
             <Users className="h-4 w-4 mr-2" />
