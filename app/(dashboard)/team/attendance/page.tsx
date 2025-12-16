@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,18 +75,7 @@ export default function AttendancePage() {
 
   const isSupervisor = session?.user?.role === UserRole.SUPERVISOR || session?.user?.role === UserRole.ADMIN;
 
-  useEffect(() => {
-    if (isSupervisor) {
-      fetchUsers();
-      fetchTodayTeamAttendance();
-    } else {
-      // For technicians, fetch their own attendance
-      fetchTodayTeamAttendance();
-    }
-    fetchLatestMonth();
-  }, [currentMonth, currentYear, selectedUserId]);
-
-  const fetchTodayTeamAttendance = async () => {
+  const fetchTodayTeamAttendance = useCallback(async () => {
     try {
       const response = await fetch("/api/attendance/today-team");
       const result = await response.json();
@@ -96,11 +85,11 @@ export default function AttendancePage() {
     } catch (error) {
       console.error("Error fetching today team attendance:", error);
     }
-  };
+  }, []);
 
   // Remove auto-open modal - now showing cards by default
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch("/api/users?role=TECHNICIAN&role=SUPERVISOR");
       const result = await response.json();
@@ -113,9 +102,9 @@ export default function AttendancePage() {
       console.error("Error fetching users:", error);
       setUsers([]); // Set empty array on error
     }
-  };
+  }, []);
 
-  const fetchLatestMonth = async () => {
+  const fetchLatestMonth = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -161,7 +150,18 @@ export default function AttendancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentMonth, currentYear, selectedUserId, isSupervisor, toast]);
+
+  useEffect(() => {
+    if (isSupervisor) {
+      fetchUsers();
+      fetchTodayTeamAttendance();
+    } else {
+      // For technicians, fetch their own attendance
+      fetchTodayTeamAttendance();
+    }
+    fetchLatestMonth();
+  }, [fetchUsers, fetchTodayTeamAttendance, fetchLatestMonth, isSupervisor]);
 
   const handlePreviousMonth = () => {
     if (currentMonth === 1) {
