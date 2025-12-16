@@ -115,7 +115,7 @@ const nextConfig: NextConfig = {
     ];
   },
   // Webpack configuration to exclude Node.js modules from client-side bundle
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
       // Exclude Node.js modules from client-side bundle
       config.resolve.fallback = {

@@ -58,3 +58,6 @@ prisma/dev.db-journal
 !/public/uploads/delivery-notes/.gitkeep
 !/public/uploads/orders/.gitkeep
 
+# Backend API (moved to separate repository)
+/backend-api/
+
