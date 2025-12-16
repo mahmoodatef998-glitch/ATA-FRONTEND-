@@ -47,22 +47,10 @@ export async function GET() {
       health.status = "unhealthy";
     }
 
-    // Check storage (uploads directory)
+    // Check Cloudinary configuration first
+    let cloudinaryConfigured = false;
     try {
-      const uploadsDir = join(process.cwd(), "public", "uploads");
-      const storageExists = existsSync(uploadsDir);
-      health.services.storage = storageExists ? "available" : "unavailable";
-      if (!storageExists) {
-        health.status = "unhealthy";
-      }
-    } catch (error) {
-      health.services.storage = "error";
-      health.status = "unhealthy";
-    }
-
-    // Check Cloudinary configuration
-    try {
-      const cloudinaryConfigured = isCloudinaryConfigured();
+      cloudinaryConfigured = isCloudinaryConfigured();
       if (cloudinaryConfigured) {
         // Try to get Cloudinary instance to verify it's working
         const cloudinaryInstance = getCloudinaryInstance();
@@ -73,6 +61,24 @@ export async function GET() {
     } catch (error) {
       health.services.cloudinary = "error";
       // Don't mark as unhealthy if Cloudinary fails - it's optional
+    }
+
+    // Check storage (uploads directory)
+    // Storage is optional if Cloudinary is configured
+    try {
+      const uploadsDir = join(process.cwd(), "public", "uploads");
+      const storageExists = existsSync(uploadsDir);
+      health.services.storage = storageExists ? "available" : "unavailable";
+      // Only mark as unhealthy if storage is unavailable AND Cloudinary is not configured
+      if (!storageExists && !cloudinaryConfigured) {
+        health.status = "unhealthy";
+      }
+    } catch (error) {
+      health.services.storage = "error";
+      // Only mark as unhealthy if Cloudinary is not configured
+      if (!cloudinaryConfigured) {
+        health.status = "unhealthy";
+      }
     }
 
     // Return appropriate status code
@@ -90,4 +96,3 @@ export async function GET() {
     );
   }
 }
-
