@@ -49,8 +49,14 @@ async function getNotifications() {
       total,
     });
 
+    // Convert Date objects to ISO strings for client component
+    const serializedNotifications = notifications.map((notification) => ({
+      ...notification,
+      createdAt: notification.createdAt.toISOString(),
+    }));
+
     return {
-      notifications,
+      notifications: serializedNotifications,
       pagination: {
         page: 1,
         limit: 20,
