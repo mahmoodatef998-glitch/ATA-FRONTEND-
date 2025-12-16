@@ -92,6 +92,7 @@ const roleColors: Record<UserRole, string> = {
   CLIENT: "bg-gray-100 text-gray-800",
   TECHNICIAN: "bg-cyan-100 text-cyan-800",
   SUPERVISOR: "bg-orange-100 text-orange-800",
+  HR: "bg-pink-100 text-pink-800",
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -103,6 +104,7 @@ const roleLabels: Record<UserRole, string> = {
   CLIENT: "Client",
   TECHNICIAN: "Technician",
   SUPERVISOR: "Supervisor",
+  HR: "HR",
 };
 
 const monthNames = [
