@@ -73,21 +73,38 @@ export default function TeamMembersPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({
+  const [editFormData, setEditFormData] = useState<{
+    name: string;
+    email: string;
+    role: UserRole;
+    department: string;
+    specialization: string;
+    password: string;
+  }>({
     name: "",
     email: "",
-    role: "TECHNICIAN" as UserRole,
+    role: UserRole.TECHNICIAN,
     department: "",
     specialization: "",
     password: "",
   });
-  const [addFormData, setAddFormData] = useState({
+  const [addFormData, setAddFormData] = useState<{
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phone: string;
+    role: UserRole;
+    isActive: boolean;
+    department: string;
+    specialization: string;
+  }>({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     phone: "",
-    role: "TECHNICIAN" as UserRole,
+    role: UserRole.TECHNICIAN,
     isActive: true,
     department: "",
     specialization: "",
