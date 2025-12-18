@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { UserRole } from "@prisma/client";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface AttendanceRequest {
   id: number;
@@ -52,24 +53,7 @@ export default function ApprovalPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
 
-  useEffect(() => {
-    // Check if user is Admin
-    if (session?.user && session.user.role !== UserRole.ADMIN) {
-      toast({
-        title: "Access Denied",
-        description: "Only administrators can access this page",
-        variant: "destructive",
-      });
-      router.push("/team");
-      return;
-    }
-
-    if (session?.user?.role === UserRole.ADMIN) {
-      fetchPendingRequests();
-    }
-  }, [session, router, toast]);
-
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/attendance/pending");
@@ -93,7 +77,23 @@ export default function ApprovalPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useStableAsyncEffect(() => {
+    if (session?.user && session.user.role !== UserRole.ADMIN) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can access this page",
+        variant: "destructive",
+      });
+      router.push("/team");
+      return;
+    }
+
+    if (session?.user?.role === UserRole.ADMIN) {
+      fetchPendingRequests();
+    }
+  }, [session?.user?.role, router, toast, fetchPendingRequests]);
 
   const handleApprove = async (request: AttendanceRequest) => {
     try {

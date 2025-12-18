@@ -1,5 +1,4 @@
 import { getBaseUrl } from "@/lib/utils";
-import { cookies } from "next/headers";
 import { NotificationsList } from "@/components/dashboard/notifications-list";
 
 async function getNotifications() {
@@ -49,8 +48,14 @@ async function getNotifications() {
       total,
     });
 
+    // Convert Date objects to strings for client-side compatibility
+    const serializedNotifications = notifications.map((notification) => ({
+      ...notification,
+      createdAt: notification.createdAt.toISOString(),
+    }));
+
     return {
-      notifications,
+      notifications: serializedNotifications,
       pagination: {
         page: 1,
         limit: 20,

@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { useCan } from "@/lib/permissions/frontend-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { ArrowLeft, User, Shield, X } from "lucide-react";
 import { useApiErrorHandler } from "@/lib/api-error-handler";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,13 +75,7 @@ export default function UserRoleAssignmentPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [openDeleteDialog, setOpenDeleteDialog] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (canManage && !isNaN(userId)) {
-      fetchData();
-    }
-  }, [canManage, userId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [userResponse, rolesResponse, userRolesResponse] = await Promise.all([
@@ -122,7 +117,13 @@ export default function UserRoleAssignmentPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, userId]);
+
+  useStableAsyncEffect(() => {
+    if (canManage && !isNaN(userId)) {
+      fetchData();
+    }
+  }, [canManage, fetchData, userId]);
 
   const handleAssignRole = async () => {
     if (!selectedRoleId) {

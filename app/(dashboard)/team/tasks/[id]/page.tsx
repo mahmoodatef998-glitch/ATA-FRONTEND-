@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/utils";
 import Link from "next/link";
 import { WorkLogForm } from "@/components/technician/work-log-form";
 import { useSession } from "next-auth/react";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 import { UserRole } from "@prisma/client";
 
 const getPriorityColor = (priority: string) => {
@@ -63,13 +64,7 @@ export default function TaskDetailPage() {
   const [task, setTask] = useState<any>(null);
   const [showWorkLogForm, setShowWorkLogForm] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchTask();
-    }
-  }, [params.id]);
-
-  const fetchTask = async () => {
+  const fetchTask = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/tasks/${params.id}`);
@@ -96,7 +91,13 @@ export default function TaskDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router, toast]);
+
+  useStableAsyncEffect(() => {
+    if (params.id) {
+      fetchTask();
+    }
+  }, [params.id, fetchTask]);
 
   const handleStatusUpdate = async (newStatus: string) => {
     try {

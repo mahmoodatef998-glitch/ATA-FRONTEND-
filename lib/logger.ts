@@ -16,7 +16,7 @@
 // Check if we're in Edge Runtime
 // Edge Runtime doesn't have Node.js modules like fs, path
 const isEdgeRuntime = 
-  typeof EdgeRuntime !== 'undefined' || 
+  typeof globalThis !== 'undefined' && typeof (globalThis as any).EdgeRuntime !== 'undefined' || 
   (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') ||
   (typeof process === 'undefined');
 

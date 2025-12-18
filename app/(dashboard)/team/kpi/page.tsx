@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/technician/kpi-card";
 import { Loader2, TrendingUp, Users } from "lucide-react";
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "next-auth/react";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 import { UserRole } from "@prisma/client";
 
 export default function KPIPage() {
@@ -24,11 +25,7 @@ export default function KPIPage() {
   const [viewMode, setViewMode] = useState<"individual" | "team">("individual");
   const [period, setPeriod] = useState("thisMonth");
 
-  useEffect(() => {
-    fetchKPI();
-  }, [viewMode, period]);
-
-  const fetchKPI = async () => {
+  const fetchKPI = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -85,7 +82,11 @@ export default function KPIPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, period, viewMode]);
+
+  useStableAsyncEffect(() => {
+    fetchKPI();
+  }, [fetchKPI]);
 
   const canViewTeam = session?.user?.role === UserRole.SUPERVISOR || session?.user?.role === UserRole.ADMIN;
 

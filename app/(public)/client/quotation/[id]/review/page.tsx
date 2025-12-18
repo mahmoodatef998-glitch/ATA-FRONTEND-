@@ -428,6 +428,7 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
                     {quotation.accepted && quotation.order && (!quotation.order.purchase_orders || quotation.order.purchase_orders.length === 0) && (
                       <POUploader 
                         orderId={quotation.order.id}
+                        uploadUrl={`/api/orders/${quotation.order.id}/po`}
                         onSuccess={() => {
                           // Refresh the page to show the uploaded PO
                           window.location.reload();

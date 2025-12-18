@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
           name: true,
           phone: true,
           email: true,
+          hasAccount: true,
           accountStatus: true,
         },
       });
@@ -200,6 +201,7 @@ export async function POST(request: NextRequest) {
           name: true,
           phone: true,
           email: true,
+          hasAccount: true,
           accountStatus: true,
         },
       });
@@ -225,11 +227,11 @@ export async function POST(request: NextRequest) {
             companyId: admin.companyId,
             userId: admin.id,
             title: `🔔 New Client Registration - ${client.name}`,
-            body: `Client ${client.name} (${client.phone}) has registered and is waiting for approval.`,
+            body: `Client ${client.name} (${phone}) has registered and is waiting for approval.`,
             meta: {
               clientId: client.id,
               clientName: client.name,
-              clientPhone: client.phone,
+              clientPhone: phone,
               actionRequired: true,
               actionType: "approve_client",
               waitingFor: "admin_approval",
@@ -243,7 +245,7 @@ export async function POST(request: NextRequest) {
     // Emit Socket.io event for real-time notification
     if (global.io && admins.length > 0) {
       admins.forEach((admin) => {
-        global.io.to(`company_${admin.companyId}`).emit("new_notification", {
+        global.io!.to(`company_${admin.companyId}`).emit("new_notification", {
           clientId: client.id,
           title: `New Client Registration`,
           body: `${client.name} is waiting for approval`,
@@ -268,7 +270,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: client.id,
         name: client.name,
-        phone: client.phone,
+        phone: phone, // Use the normalized phone from the request
         email: client.email,
         accountStatus: client.accountStatus,
       },

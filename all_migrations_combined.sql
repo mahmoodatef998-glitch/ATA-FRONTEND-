@@ -5,7 +5,7 @@
 
 -- Migration 1: 20251103101743_init
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('USER', 'BROKER', 'ADMIN', 'SUPERADMIN');
+CREATE TYPE "UserRole" AS E   NUM ('USER', 'BROKER', 'ADMIN', 'SUPERADMIN');
 
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'QUOTATION_SENT', 'COMPLETED', 'CANCELLED');
@@ -260,4 +260,5 @@ ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_fke
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_assignedBy_fkey" FOREIGN KEY ("assignedBy") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 

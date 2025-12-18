@@ -58,7 +58,7 @@ export async function GET(
     // Others need TEAM_MEMBERS_READ permission
     const sessionUserId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
     const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    const isAdmin = userRole === UserRole.ADMIN;
     
     // Admin can view any member, others need permission if not viewing own profile
     if (sessionUserId !== memberId && !isAdmin) {
@@ -401,7 +401,7 @@ export async function PATCH(
     
     const session = await requireAuth();
     const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    const isAdmin = userRole === UserRole.ADMIN;
     
     const { id } = await params;
     const memberId = parseInt(id);
@@ -427,7 +427,7 @@ export async function PATCH(
     // Check if member exists and belongs to same company
     const existingMember = await prisma.users.findUnique({
       where: { id: memberId },
-      select: { companyId: true, role: true },
+      select: { companyId: true, role: true, email: true, isActive: true },
     });
 
     if (!existingMember) {
@@ -449,7 +449,7 @@ export async function PATCH(
     // Note: isAdmin is already defined above (line 398)
     
     // Only allow editing team member roles (all team module roles)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,
@@ -684,7 +684,7 @@ export async function PATCH(
         select: { role: true },
       });
       
-      if (adminCheck && adminCheck.role !== UserRole.ADMIN && adminCheck.role !== "ADMIN") {
+      if (adminCheck && adminCheck.role !== UserRole.ADMIN) {
         // Emergency rollback - restore original role
         await prisma.users.update({
           where: { id: userId },
@@ -767,7 +767,7 @@ export async function DELETE(
     }
 
     // Only allow deleting team member roles (not Admin)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,

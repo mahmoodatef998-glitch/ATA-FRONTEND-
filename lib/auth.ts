@@ -6,6 +6,38 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { logger } from "@/lib/logger";
 
+const ensureNextAuthUrl = () => {
+  const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+  let providedUrl = process.env.NEXTAUTH_URL;
+
+  if (providedUrl) {
+    providedUrl = providedUrl.replace(/^["']|["']$/g, "").trim();
+  }
+
+  if (providedUrl && /^https?:\/\//.test(providedUrl)) {
+    process.env.NEXTAUTH_URL = providedUrl;
+    return providedUrl;
+  }
+
+  if (isDevelopment) {
+    const fallbackUrl = "http://localhost:3005";
+    logger.warn("NEXTAUTH_URL not found or invalid. Using fallback for development.", {
+      context: "auth",
+      note: "Set NEXTAUTH_URL to your app's public URL (https://yourdomain.com).",
+    });
+    process.env.NEXTAUTH_URL = fallbackUrl;
+    return fallbackUrl;
+  }
+
+  logger.error("NEXTAUTH_URL is required in production", {
+    context: "auth",
+    providedUrl,
+  });
+  throw new Error("NEXTAUTH_URL environment variable is required and must be a valid URL.");
+};
+
+ensureNextAuthUrl();
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -199,56 +231,55 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   secret: (() => {
+    const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+    const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
+
     try {
-      // Use process.env directly to avoid circular dependencies with env.ts
-      // env.ts uses lazy initialization which can cause issues during NextAuth initialization
       let providedSecret = process.env.NEXTAUTH_SECRET;
-      
-      // Remove quotes if present (sometimes .env files have quotes)
+
       if (providedSecret) {
-        providedSecret = providedSecret.replace(/^["']|["']$/g, '').trim();
+        providedSecret = providedSecret.replace(/^["']|["']$/g, "").trim();
       }
-      
-      // Validate secret length
+
       if (providedSecret && providedSecret.length >= 32) {
+        process.env.NEXTAUTH_SECRET = providedSecret;
         return providedSecret;
       }
-      
-      // Generate a fallback secret in development if not provided or too short
-      const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+
       if (isDevelopment) {
-        const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
         if (!providedSecret) {
           logger.warn("NEXTAUTH_SECRET not found in .env file. Using fallback secret for development.", {
             context: "auth",
-            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
+            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example.",
           });
-        } else if (providedSecret.length < 32) {
+        } else {
           logger.warn("NEXTAUTH_SECRET is too short in .env file. Using fallback secret for development.", {
             context: "auth",
             providedLength: providedSecret.length,
-            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
+            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example.",
           });
         }
+
+        process.env.NEXTAUTH_SECRET = fallbackSecret;
         return fallbackSecret;
       }
-      
-      // In production, throw error if secret is missing or too short
-      logger.error("NEXTAUTH_SECRET is required in production environment (min 32 characters)", { 
+
+      logger.error("NEXTAUTH_SECRET is required in production environment (min 32 characters)", {
         context: "auth",
         hasSecret: !!providedSecret,
-        secretLength: providedSecret?.length || 0
+        secretLength: providedSecret?.length || 0,
       });
-      throw new Error("NEXTAUTH_SECRET environment variable is required and must be at least 32 characters. Please add it to your .env file. See ENV_TEMPLATE.txt for example.");
+      throw new Error(
+        "NEXTAUTH_SECRET environment variable is required and must be at least 32 characters. Please add it to your .env file. See ENV_TEMPLATE.txt for example."
+      );
     } catch (error) {
-      // If there's an error, use fallback in development
-      const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
       if (isDevelopment) {
-        logger.warn("Error getting NEXTAUTH_SECRET, using fallback for development.", {
+        logger.warn("Error resolving NEXTAUTH_SECRET, using fallback for development.", {
           context: "auth",
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
-        return "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
+        process.env.NEXTAUTH_SECRET = fallbackSecret;
+        return fallbackSecret;
       }
       throw error;
     }

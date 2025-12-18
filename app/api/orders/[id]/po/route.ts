@@ -9,6 +9,7 @@ import { join } from "path";
 import { uploadFile, isCloudinaryConfigured } from "@/lib/cloudinary";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
+import { auth } from "@/lib/auth";
 
 export async function POST(
   request: NextRequest,
@@ -17,7 +18,6 @@ export async function POST(
   try {
     // Use RBAC: Allow Admin and Accountant to create purchase orders
     const { userId, companyId } = await authorize(PermissionAction.PO_CREATE);
-    const session = await requireAuth(); // Get session for user name
     const { id } = await params;
     const orderId = parseInt(id);
 
@@ -143,6 +143,8 @@ export async function POST(
         clientId: true,
         status: true,
         stage: true,
+        totalAmount: true,
+        currency: true,
         clients: {
           select: {
             id: true,

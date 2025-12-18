@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, MapPin, Clock, User, CheckCircle, XCircle } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface AttendanceRecord {
   id: number;
@@ -33,11 +34,7 @@ export default function AttendanceApprovalPage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [processing, setProcessing] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchPendingAttendance();
-  }, []);
-
-  const fetchPendingAttendance = async () => {
+  const fetchPendingAttendance = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/attendance/pending");
@@ -62,7 +59,11 @@ export default function AttendanceApprovalPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useStableAsyncEffect(() => {
+    fetchPendingAttendance();
+  }, [fetchPendingAttendance]);
 
   const handleApproval = async (attendanceId: number, approved: boolean, rejectionReason?: string) => {
     try {

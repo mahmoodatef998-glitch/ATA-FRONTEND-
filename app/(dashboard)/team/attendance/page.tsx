@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ import { AttendanceDetailModal } from "@/components/attendance/attendance-detail
 import { DateDetailModal } from "@/components/attendance/date-detail-modal";
 import { EmployeeDetailModal } from "@/components/attendance/employee-detail-modal";
 import { MonthCalendar } from "@/components/attendance/month-calendar";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -75,18 +76,7 @@ export default function AttendancePage() {
 
   const isSupervisor = session?.user?.role === UserRole.SUPERVISOR || session?.user?.role === UserRole.ADMIN;
 
-  useEffect(() => {
-    if (isSupervisor) {
-      fetchUsers();
-      fetchTodayTeamAttendance();
-    } else {
-      // For technicians, fetch their own attendance
-      fetchTodayTeamAttendance();
-    }
-    fetchLatestMonth();
-  }, [currentMonth, currentYear, selectedUserId]);
-
-  const fetchTodayTeamAttendance = async () => {
+  const fetchTodayTeamAttendance = useCallback(async () => {
     try {
       const response = await fetch("/api/attendance/today-team");
       const result = await response.json();
@@ -96,11 +86,11 @@ export default function AttendancePage() {
     } catch (error) {
       console.error("Error fetching today team attendance:", error);
     }
-  };
+  }, []);
 
   // Remove auto-open modal - now showing cards by default
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch("/api/users?role=TECHNICIAN&role=SUPERVISOR");
       const result = await response.json();
@@ -113,9 +103,9 @@ export default function AttendancePage() {
       console.error("Error fetching users:", error);
       setUsers([]); // Set empty array on error
     }
-  };
+  }, []);
 
-  const fetchLatestMonth = async () => {
+  const fetchLatestMonth = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -161,7 +151,25 @@ export default function AttendancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentMonth, currentYear, isSupervisor, selectedUserId, toast]);
+
+  useStableAsyncEffect(() => {
+    if (isSupervisor) {
+      fetchUsers();
+      fetchTodayTeamAttendance();
+    } else {
+      fetchTodayTeamAttendance();
+    }
+    fetchLatestMonth();
+  }, [
+    isSupervisor,
+    fetchUsers,
+    fetchTodayTeamAttendance,
+    fetchLatestMonth,
+    currentMonth,
+    currentYear,
+    selectedUserId,
+  ]);
 
   const handlePreviousMonth = () => {
     if (currentMonth === 1) {

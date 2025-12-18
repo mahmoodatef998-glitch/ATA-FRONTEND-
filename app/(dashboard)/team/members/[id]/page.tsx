@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,7 @@ import Image from "next/image";
 import { usePermission } from "@/lib/permissions/hooks";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { RoleAssignmentGuard } from "@/lib/permissions/components";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface AttendanceRecord {
   id: number;
@@ -92,6 +93,7 @@ const roleColors: Record<UserRole, string> = {
   CLIENT: "bg-gray-100 text-gray-800",
   TECHNICIAN: "bg-cyan-100 text-cyan-800",
   SUPERVISOR: "bg-orange-100 text-orange-800",
+  HR: "bg-pink-100 text-pink-800",
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -103,6 +105,7 @@ const roleLabels: Record<UserRole, string> = {
   CLIENT: "Client",
   TECHNICIAN: "Technician",
   SUPERVISOR: "Supervisor",
+  HR: "HR",
 };
 
 const monthNames = [
@@ -126,7 +129,13 @@ export default function TeamMemberDetailsPage() {
   const [saving, setSaving] = useState(false);
   
   // Profile edit form
-  const [profileForm, setProfileForm] = useState({
+  const [profileForm, setProfileForm] = useState<{
+    name: string;
+    email: string;
+    department: string;
+    specialization: string;
+    role: UserRole;
+  }>({
     name: "",
     email: "",
     department: "",
@@ -146,13 +155,7 @@ export default function TeamMemberDetailsPage() {
   const canEditProfile = usePermission(PermissionAction.USER_UPDATE);
   const canEditAttendance = usePermission(PermissionAction.ATTENDANCE_MANAGE);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchMemberDetails();
-    }
-  }, [params.id]);
-
-  const fetchMemberDetails = async () => {
+  const fetchMemberDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/team/members/${params.id}`);
@@ -193,7 +196,13 @@ export default function TeamMemberDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, toast]);
+
+  useStableAsyncEffect(() => {
+    if (params.id) {
+      fetchMemberDetails();
+    }
+  }, [params.id, fetchMemberDetails]);
 
   const handleSaveProfile = async () => {
     try {
@@ -415,22 +424,27 @@ export default function TeamMemberDetailsPage() {
                     <Label htmlFor="role" className="text-right">Role</Label>
                     <Select
                       value={profileForm.role}
-                      onValueChange={(value: UserRole) => setProfileForm({ ...profileForm, role: value })}
+                      onValueChange={(value: string) => {
+                        const role = value as UserRole;
+                        if (Object.values(UserRole).includes(role)) {
+                          setProfileForm({ ...profileForm, role });
+                        }
+                      }}
                     >
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={UserRole.TECHNICIAN}>Technician</SelectItem>
-                        <SelectItem value={UserRole.SUPERVISOR}>Supervisor</SelectItem>
+                        <SelectItem value={UserRole.TECHNICIAN as string}>Technician</SelectItem>
+                        <SelectItem value={UserRole.SUPERVISOR as string}>Supervisor</SelectItem>
                         <RoleAssignmentGuard targetRole={UserRole.HR}>
-                          <SelectItem value={UserRole.HR}>HR</SelectItem>
+                          <SelectItem value={UserRole.HR as string}>HR</SelectItem>
                         </RoleAssignmentGuard>
                         <RoleAssignmentGuard targetRole={UserRole.OPERATIONS_MANAGER}>
-                          <SelectItem value={UserRole.OPERATIONS_MANAGER}>Operations Manager</SelectItem>
+                          <SelectItem value={UserRole.OPERATIONS_MANAGER as string}>Operations Manager</SelectItem>
                         </RoleAssignmentGuard>
                         <RoleAssignmentGuard targetRole={UserRole.ACCOUNTANT}>
-                          <SelectItem value={UserRole.ACCOUNTANT}>Accountant</SelectItem>
+                          <SelectItem value={UserRole.ACCOUNTANT as string}>Accountant</SelectItem>
                         </RoleAssignmentGuard>
                       </SelectContent>
                     </Select>

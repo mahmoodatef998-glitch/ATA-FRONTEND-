@@ -6,6 +6,8 @@ import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { authorize, authorizeAny, authorizeAll, authorizeContextual } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { ForbiddenError } from "@/lib/error-handler";
+import { UserRole } from "@prisma/client";
+import type { Session } from "next-auth";
 
 // Mock dependencies
 jest.mock("@/lib/auth-helpers", () => ({
@@ -27,6 +29,19 @@ import {
   userHasAllPermissions,
 } from "@/lib/rbac/permission-service";
 
+const sessionUser: Session["user"] = {
+  id: 1,
+  email: "test@ata-crm.com",
+  name: "Test User",
+  role: UserRole.ADMIN,
+  companyId: 1,
+};
+
+const createSession = (userOverrides?: Partial<Session["user"]>): Session => ({
+  user: { ...sessionUser, ...userOverrides },
+  expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+});
+
 describe("Authorization", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,11 +49,9 @@ describe("Authorization", () => {
 
   describe("authorize", () => {
     it("should authorize user with permission", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasPermission as jest.Mock).mockResolvedValue(true);
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasPermission).mockResolvedValue(true);
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.USER_CREATE,
         PermissionAction.USER_READ,
       ]);
@@ -53,10 +66,8 @@ describe("Authorization", () => {
     });
 
     it("should throw ForbiddenError if user lacks permission", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasPermission as jest.Mock).mockResolvedValue(false);
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasPermission).mockResolvedValue(false);
 
       await expect(authorize(PermissionAction.USER_CREATE)).rejects.toThrow(
         ForbiddenError
@@ -66,11 +77,9 @@ describe("Authorization", () => {
 
   describe("authorizeAny", () => {
     it("should authorize if user has any permission", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasAnyPermission as jest.Mock).mockResolvedValue(true);
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasAnyPermission).mockResolvedValue(true);
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.USER_READ,
       ]);
 
@@ -84,10 +93,8 @@ describe("Authorization", () => {
     });
 
     it("should throw ForbiddenError if user lacks all permissions", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasAnyPermission as jest.Mock).mockResolvedValue(false);
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasAnyPermission).mockResolvedValue(false);
 
       await expect(
         authorizeAny([PermissionAction.USER_CREATE, PermissionAction.USER_DELETE])
@@ -97,11 +104,9 @@ describe("Authorization", () => {
 
   describe("authorizeAll", () => {
     it("should authorize if user has all permissions", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasAllPermissions as jest.Mock).mockResolvedValue(true);
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasAllPermissions).mockResolvedValue(true);
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.USER_CREATE,
         PermissionAction.USER_READ,
       ]);
@@ -115,10 +120,8 @@ describe("Authorization", () => {
     });
 
     it("should throw ForbiddenError if user lacks any permission", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1 },
-      });
-      (userHasAllPermissions as jest.Mock).mockResolvedValue(false);
+      jest.mocked(requireAuth).mockResolvedValue(createSession());
+      jest.mocked(userHasAllPermissions).mockResolvedValue(false);
 
       await expect(
         authorizeAll([PermissionAction.USER_CREATE, PermissionAction.USER_DELETE])
@@ -128,11 +131,11 @@ describe("Authorization", () => {
 
   describe("authorizeContextual", () => {
     it("should enforce contextual rules", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        user: { id: 1, companyId: 1, role: "SUPERVISOR" },
-      });
-      (userHasPermission as jest.Mock).mockResolvedValue(true);
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(requireAuth).mockResolvedValue(
+        createSession({ role: UserRole.SUPERVISOR })
+      );
+      jest.mocked(userHasPermission).mockResolvedValue(true);
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.TASK_ASSIGN,
       ]);
 

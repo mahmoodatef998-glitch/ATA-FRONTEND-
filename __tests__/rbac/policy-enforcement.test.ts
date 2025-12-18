@@ -12,6 +12,7 @@ import {
 } from "@/lib/rbac/policy-enforcement";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/error-handler";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -40,39 +41,39 @@ describe("Policy Enforcement", () => {
 
   describe("checkResourceOwnership", () => {
     it("should return true if user owns the task", async () => {
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         createdById: 1,
         assignedTo: null,
-      });
+      } as any);
 
       const result = await checkResourceOwnership(1, "task", 1);
       expect(result).toBe(true);
     });
 
     it("should return true if user is assigned to the task", async () => {
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         createdById: 2,
         assignedTo: 1,
-      });
+      } as any);
 
       const result = await checkResourceOwnership(1, "task", 1);
       expect(result).toBe(true);
     });
 
     it("should return false if user doesn't own the task", async () => {
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         createdById: 2,
         assignedTo: 3,
-      });
+      } as any);
 
       const result = await checkResourceOwnership(1, "task", 1);
       expect(result).toBe(false);
     });
 
     it("should return true if user owns their own attendance", async () => {
-      (prisma.attendance.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.attendance.findUnique).mockResolvedValue({
         userId: 1,
-      });
+      } as any);
 
       const result = await checkResourceOwnership(1, "attendance", 1);
       expect(result).toBe(true);
@@ -81,24 +82,24 @@ describe("Policy Enforcement", () => {
 
   describe("checkCompanyAccess", () => {
     it("should return true if user and resource belong to same company", async () => {
-      (prisma.users.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.users.findUnique).mockResolvedValue({
         companyId: 1,
-      });
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      } as any);
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         companyId: 1,
-      });
+      } as any);
 
       const result = await checkCompanyAccess(1, 1, "task", 1);
       expect(result).toBe(true);
     });
 
     it("should return false if user and resource belong to different companies", async () => {
-      (prisma.users.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.users.findUnique).mockResolvedValue({
         companyId: 1,
-      });
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      } as any);
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         companyId: 2,
-      });
+      } as any);
 
       const result = await checkCompanyAccess(1, 1, "task", 1);
       expect(result).toBe(false);
@@ -107,15 +108,15 @@ describe("Policy Enforcement", () => {
 
   describe("canAccessResource", () => {
     it("should return true if user has permission and company access", async () => {
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.TASK_READ,
       ]);
-      (prisma.users.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.users.findUnique).mockResolvedValue({
         companyId: 1,
-      });
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      } as any);
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         companyId: 1,
-      });
+      } as any);
 
       const result = await canAccessResource(
         1,
@@ -129,7 +130,7 @@ describe("Policy Enforcement", () => {
     });
 
     it("should return false if user lacks permission", async () => {
-      (getUserPermissions as jest.Mock).mockResolvedValue([]);
+      jest.mocked(getUserPermissions).mockResolvedValue([]);
 
       const result = await canAccessResource(
         1,
@@ -145,15 +146,15 @@ describe("Policy Enforcement", () => {
 
   describe("enforceResourceAccess", () => {
     it("should not throw if user has full permission", async () => {
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.TASK_READ,
       ]);
-      (prisma.users.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.users.findUnique).mockResolvedValue({
         companyId: 1,
-      });
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      } as any);
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         companyId: 1,
-      });
+      } as any);
 
       await expect(
         enforceResourceAccess(1, 1, PermissionAction.TASK_READ, "task", 1)
@@ -161,15 +162,15 @@ describe("Policy Enforcement", () => {
     });
 
     it("should throw if user lacks company access", async () => {
-      (getUserPermissions as jest.Mock).mockResolvedValue([
+      jest.mocked(getUserPermissions).mockResolvedValue([
         PermissionAction.TASK_READ,
       ]);
-      (prisma.users.findUnique as jest.Mock).mockResolvedValue({
+      jest.mocked(prisma.users.findUnique).mockResolvedValue({
         companyId: 1,
-      });
-      (prisma.tasks.findUnique as jest.Mock).mockResolvedValue({
+      } as any);
+      jest.mocked(prisma.tasks.findUnique).mockResolvedValue({
         companyId: 2,
-      });
+      } as any);
 
       await expect(
         enforceResourceAccess(1, 1, PermissionAction.TASK_READ, "task", 1)
@@ -179,18 +180,20 @@ describe("Policy Enforcement", () => {
 
   describe("checkTeamMembership", () => {
     it("should return true if users are in same company", async () => {
-      (prisma.users.findUnique as jest.Mock)
-        .mockResolvedValueOnce({ companyId: 1, role: "SUPERVISOR" })
-        .mockResolvedValueOnce({ companyId: 1, role: "TECHNICIAN" });
+      const userFind = jest.mocked(prisma.users.findUnique);
+      userFind
+        .mockResolvedValueOnce({ companyId: 1, role: "SUPERVISOR" } as any)
+        .mockResolvedValueOnce({ companyId: 1, role: "TECHNICIAN" } as any);
 
       const result = await checkTeamMembership(1, 2);
       expect(result).toBe(true);
     });
 
     it("should return false if users are in different companies", async () => {
-      (prisma.users.findUnique as jest.Mock)
-        .mockResolvedValueOnce({ companyId: 1, role: "SUPERVISOR" })
-        .mockResolvedValueOnce({ companyId: 2, role: "TECHNICIAN" });
+      const userFindBatch = jest.mocked(prisma.users.findUnique);
+      userFindBatch
+        .mockResolvedValueOnce({ companyId: 1, role: "SUPERVISOR" } as any)
+        .mockResolvedValueOnce({ companyId: 2, role: "TECHNICIAN" } as any);
 
       const result = await checkTeamMembership(1, 2);
       expect(result).toBe(false);

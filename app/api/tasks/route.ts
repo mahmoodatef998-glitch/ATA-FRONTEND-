@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { authorize, authorizeAny } from "@/lib/rbac/authorize";
-import { UserRole, Prisma, TaskStatus } from "@prisma/client";
+import { UserRole, Prisma, TaskStatus, TaskPriority } from "@prisma/client";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 
@@ -21,18 +21,20 @@ import { logger } from "@/lib/logger";
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
+ *         default: 1
+ *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 30
+ *         default: 30
+ *         description: Items per page
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED]
- *         description: Filter by task status (can be multiple: status=PENDING&status=IN_PROGRESS)
+ *         description: Filter by task status
  *       - in: query
  *         name: assignedToId
  *         schema:
@@ -273,7 +275,7 @@ export async function POST(request: NextRequest) {
         description,
         assignedToId: assigneeIdsArray.length > 0 ? assigneeIdsArray[0] : null, // Legacy - first assignee
         assignedById: userId,
-        priority: priority as Prisma.TaskPriority,
+        priority: priority as TaskPriority,
         deadline: deadline ? new Date(deadline) : null,
         location,
         locationLat,

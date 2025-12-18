@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     // Group data by userId for quick lookup
     const attendanceByUser = new Map<number, typeof allAttendanceRecords>();
     const overtimeByUser = new Map<number, typeof allOvertimeRecords>();
-    const todayAttendanceByUser = new Map<number, typeof todayAttendanceRecords>();
+    const todayAttendanceByUser = new Map<number, (typeof todayAttendanceRecords)[0]>();
 
     allAttendanceRecords.forEach(record => {
       if (!attendanceByUser.has(record.userId)) {
@@ -128,7 +128,10 @@ export async function GET(request: NextRequest) {
     });
 
     todayAttendanceRecords.forEach(record => {
-      todayAttendanceByUser.set(record.userId, record);
+      // Store single attendance record per user (most recent)
+      if (!todayAttendanceByUser.has(record.userId)) {
+        todayAttendanceByUser.set(record.userId, record);
+      }
     });
 
     // Calculate stats for each member

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
-import { UserRole, Prisma } from "@prisma/client";
+import { UserRole, Prisma, WorkLogStatus } from "@prisma/client";
 import { uploadFile, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 // GET - List work logs
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as WorkLogStatus;
     }
 
     const [workLogs, total] = await Promise.all([
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         description,
         startTime: new Date(startTime),
         endTime: endTime ? new Date(endTime) : null,
-        photos: photoUrls.length > 0 ? photoUrls : null,
+        photos: photoUrls.length > 0 ? photoUrls : Prisma.JsonNull,
         status: "SUBMITTED",
       },
       include: {

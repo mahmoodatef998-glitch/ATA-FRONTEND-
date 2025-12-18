@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ import { useCan } from "@/lib/permissions/frontend-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { Shield, Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { useApiErrorHandler } from "@/lib/api-error-handler";
+import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface Permission {
   id: number;
@@ -75,14 +76,7 @@ export default function RolesManagementPage() {
     permissionIds: [] as number[],
   });
 
-  useEffect(() => {
-    if (canManage) {
-      fetchRoles();
-      fetchPermissions();
-    }
-  }, [canManage]);
-
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/rbac/roles");
@@ -98,9 +92,9 @@ export default function RolesManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError]);
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = useCallback(async () => {
     try {
       const response = await fetch("/api/rbac/permissions");
       const result = await response.json();
@@ -113,7 +107,14 @@ export default function RolesManagementPage() {
     } catch (error) {
       handleError(error);
     }
-  };
+  }, [handleError]);
+
+  useStableAsyncEffect(() => {
+    if (canManage) {
+      fetchRoles();
+      fetchPermissions();
+    }
+  }, [canManage, fetchRoles, fetchPermissions]);
 
   const groupedPermissions = permissions.reduce((acc, perm) => {
     if (!acc[perm.category]) {

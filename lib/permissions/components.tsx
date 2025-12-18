@@ -31,18 +31,18 @@ export function PermissionGuard({
   children: ReactNode;
 }) {
   // Always call hooks unconditionally (React Hooks rules)
-  // Use SYSTEM_READ as default if not provided
-  const defaultAction = PermissionAction.SYSTEM_READ;
-  const defaultActions = [PermissionAction.SYSTEM_READ];
+  // Use OVERVIEW_VIEW as a safe default that won't break the build
+  const defaultAction = PermissionAction.OVERVIEW_VIEW;
+  const defaultActions = [PermissionAction.OVERVIEW_VIEW];
   
   const singlePermissionResult = usePermission(action || defaultAction);
   const anyPermissionResult = useAnyPermission(actions || defaultActions);
   
   // Determine which result to use based on props
   const hasAccess = action 
-    ? singlePermissionResult && action !== defaultAction
+    ? (action === defaultAction ? false : singlePermissionResult)
     : actions 
-    ? anyPermissionResult && actions.length > 0
+    ? (actions.length === 0 ? false : anyPermissionResult)
     : false;
 
   if (!hasAccess) {
@@ -130,13 +130,16 @@ export function PermissionButton({
   [key: string]: any;
 }) {
   // Always call hooks unconditionally (React Hooks rules)
-  // Pass empty array or dummy value if not provided, but hooks must be called
-  const singlePermissionResult = usePermission(action || PermissionAction.SYSTEM_READ);
-  const anyPermissionResult = useAnyPermission(actions || [PermissionAction.SYSTEM_READ]);
+  // Use OVERVIEW_VIEW as a safe default that won't break the build
+  const defaultAction = PermissionAction.OVERVIEW_VIEW;
+  const defaultActions = [PermissionAction.OVERVIEW_VIEW];
+  
+  const singlePermissionResult = usePermission(action || defaultAction);
+  const anyPermissionResult = useAnyPermission(actions || defaultActions);
   
   // Determine which result to use based on props
   const hasAccess = action 
-    ? (action === PermissionAction.SYSTEM_READ ? false : singlePermissionResult)
+    ? (action === defaultAction ? false : singlePermissionResult)
     : actions 
     ? (actions.length === 0 ? false : anyPermissionResult)
     : false;
