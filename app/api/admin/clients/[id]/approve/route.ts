@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
 
 export async function GET() {
   return NextResponse.json(
     {
-      success: false,
-      message: "This endpoint only supports PATCH requests.",
+      success: true,
+      message: "Endpoint requires PATCH; build-time probe handled.",
     },
     { status: 200 }
   );
@@ -18,6 +15,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const [{ requireRole }, { UserRole }, { prisma }] = await Promise.all([
+      import("@/lib/auth-helpers"),
+      import("@prisma/client"),
+      import("@/lib/prisma"),
+    ]);
     const session = await requireRole([UserRole.ADMIN]);
     const { id } = await params;
     const clientId = parseInt(id);
