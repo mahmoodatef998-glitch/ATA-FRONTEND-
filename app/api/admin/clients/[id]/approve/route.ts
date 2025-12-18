@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-helpers";
 import { UserRole } from "@prisma/client";
 
+export async function GET() {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "This endpoint only supports PATCH requests.",
+    },
+    { status: 200 }
+  );
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
