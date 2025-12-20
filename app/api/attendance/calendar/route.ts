@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
-import { getCalendarSummary } from "@/lib/attendance-service";
 
 /**
  * GET /api/attendance/calendar?userId=&month=&year=
@@ -11,6 +8,19 @@ import { getCalendarSummary } from "@/lib/attendance-service";
  */
 export async function GET(request: NextRequest) {
   try {
+    // Build-time probe safe response (avoid auth/prisma during Next build probes)
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return NextResponse.json({ success: true, ok: true }, { status: 200 });
+    }
+
+    const [{ requireAuth }, prismaClient, attendanceService] = await Promise.all([
+      import("@/lib/auth-helpers"),
+      import("@prisma/client"),
+      import("@/lib/attendance-service"),
+    ]);
+    const { UserRole } = prismaClient;
+    const { getCalendarSummary } = attendanceService;
+
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
     

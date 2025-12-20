@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
-import { normalizeDateToDubai } from "@/lib/attendance-service";
-import { getUaeTime } from "@/lib/timezone-utils";
 import { handleApiError } from "@/lib/error-handler";
 import type { AttendanceTask, TeamMemberWithAttendance } from "@/lib/types/api";
 
@@ -16,6 +11,29 @@ import type { AttendanceTask, TeamMemberWithAttendance } from "@/lib/types/api";
  */
 export async function GET(request: NextRequest) {
   try {
+    // Build-time probe safe response (avoid auth/prisma during Next build probes)
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return NextResponse.json({ success: true, ok: true }, { status: 200 });
+    }
+
+    const [
+      { prisma },
+      { requireAuth },
+      prismaClient,
+      attendanceService,
+      timezoneUtils,
+    ] = await Promise.all([
+      import("@/lib/prisma"),
+      import("@/lib/auth-helpers"),
+      import("@prisma/client"),
+      import("@/lib/attendance-service"),
+      import("@/lib/timezone-utils"),
+    ]);
+
+    const { UserRole } = prismaClient;
+    const { normalizeDateToDubai } = attendanceService;
+    const { getUaeTime } = timezoneUtils;
+
     const session = await requireAuth();
     const companyId = session.user.companyId;
 
