@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-helpers";
-import { getAttendanceDetails, calculateDailyPerformanceScore } from "@/lib/attendance-service";
 
 /**
  * GET /api/attendance/:id
@@ -12,6 +10,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Build-time probe safe response (avoid auth/service calls during Next build probes)
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return NextResponse.json({ success: true, ok: true }, { status: 200 });
+    }
+
+    const [{ requireAuth }, attendanceService] = await Promise.all([
+      import("@/lib/auth-helpers"),
+      import("@/lib/attendance-service"),
+    ]);
+
     await requireAuth();
     const { id } = await params;
     const attendanceId = parseInt(id);
@@ -23,7 +31,7 @@ export async function GET(
       );
     }
 
-    const attendance = await getAttendanceDetails(attendanceId);
+    const attendance = await attendanceService.getAttendanceDetails(attendanceId);
 
     if (!attendance) {
       return NextResponse.json(
@@ -33,7 +41,7 @@ export async function GET(
     }
 
     // Calculate performance score
-    const performanceScore = calculateDailyPerformanceScore(attendance);
+    const performanceScore = attendanceService.calculateDailyPerformanceScore(attendance);
 
     return NextResponse.json({
       success: true,
