@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
-import { getUaeTime } from "@/lib/timezone-utils";
-import { getCompanyLocation, isWithinRadius } from "@/lib/location-utils";
+
+export async function GET() {
+  // Build-time probe safe response (avoid auth/prisma during Next build probes)
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return NextResponse.json({ success: true, ok: true }, { status: 200 });
+  }
+  return NextResponse.json(
+    { success: true, message: "Endpoint requires POST; probe handled." },
+    { status: 200 }
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const [{ prisma }, { requireAuth }, prismaClient, timezoneUtils, locationUtils] =
+      await Promise.all([
+        import("@/lib/prisma"),
+        import("@/lib/auth-helpers"),
+        import("@prisma/client"),
+        import("@/lib/timezone-utils"),
+        import("@/lib/location-utils"),
+      ]);
+
+    const { UserRole } = prismaClient;
+    const { getUaeTime } = timezoneUtils;
+    const { getCompanyLocation, isWithinRadius } = locationUtils;
+
     const session = await requireAuth();
     const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
 

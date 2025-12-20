@@ -1,17 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
-import { getUaeTime } from "@/lib/timezone-utils";
-import { normalizeDateToDubai } from "@/lib/attendance-service";
-import { calculateDistance, getCompanyLocation } from "@/lib/location-utils";
-import { PermissionAction } from "@/lib/permissions/role-permissions";
-import { authorize } from "@/lib/rbac/authorize";
-import { logger } from "@/lib/logger";
-import { ForbiddenError } from "@/lib/error-handler";
+
+export async function GET() {
+  // Build-time probe safe response (avoid auth/prisma during Next build probes)
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return NextResponse.json({ success: true, ok: true }, { status: 200 });
+  }
+  return NextResponse.json(
+    { success: true, message: "Endpoint requires POST; probe handled." },
+    { status: 200 }
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const [
+      { authorize },
+      { PermissionAction },
+      { requireAuth },
+      { prisma },
+      prismaClient,
+      timezoneUtils,
+      attendanceService,
+      locationUtils,
+      loggerModule,
+    ] = await Promise.all([
+      import("@/lib/rbac/authorize"),
+      import("@/lib/permissions/role-permissions"),
+      import("@/lib/auth-helpers"),
+      import("@/lib/prisma"),
+      import("@prisma/client"),
+      import("@/lib/timezone-utils"),
+      import("@/lib/attendance-service"),
+      import("@/lib/location-utils"),
+      import("@/lib/logger"),
+    ]);
+
+    const { UserRole } = prismaClient;
+    const { getUaeTime } = timezoneUtils;
+    const { normalizeDateToDubai } = attendanceService;
+    const { calculateDistance, getCompanyLocation } = locationUtils;
+    const { logger } = loggerModule;
+
     // Require authentication
     // Check permission to create attendance (check-in)
     // All employees (except Admin) can request check-in
@@ -176,7 +205,12 @@ export async function POST(request: NextRequest) {
       distance: Math.round(distance),
     });
   } catch (error: any) {
-    logger.error("[Request Check-in API] Error", error, "attendance");
+    try {
+      const { logger } = await import("@/lib/logger");
+      logger.error("[Request Check-in API] Error", error, "attendance");
+    } catch {
+      console.error("[Request Check-in API] Error:", error);
+    }
     
     // Handle Prisma errors
     if (error.code === 'P2002') {
