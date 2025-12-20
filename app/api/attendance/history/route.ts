@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/error-handler";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { UserRole, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
+    // Build-time probe safe response (avoid auth/prisma during Next build probes)
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return NextResponse.json({ success: true, ok: true }, { status: 200 });
+    }
+
+    const [{ prisma }, { requireAuth }, prismaClient] = await Promise.all([
+      import("@/lib/prisma"),
+      import("@/lib/auth-helpers"),
+      import("@prisma/client"),
+    ]);
+    const { UserRole } = prismaClient;
+
     const session = await requireAuth();
     const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
 

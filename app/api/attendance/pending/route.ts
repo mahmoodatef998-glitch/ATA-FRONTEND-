@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-helpers";
-import { UserRole } from "@prisma/client";
 import { handleApiError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
+    // Build-time probe safe response (avoid auth/prisma during Next build probes)
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return NextResponse.json({ success: true, ok: true }, { status: 200 });
+    }
+
+    const [{ prisma }, { requireRole }, { UserRole }] = await Promise.all([
+      import("@/lib/prisma"),
+      import("@/lib/auth-helpers"),
+      import("@prisma/client"),
+    ]);
+
     // Allow both ADMIN and SUPERVISOR to view pending requests
     const session = await requireRole([UserRole.ADMIN, UserRole.SUPERVISOR]);
 
