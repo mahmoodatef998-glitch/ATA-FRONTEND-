@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { authorize, authorizeAny } from "@/lib/rbac/authorize";
-import { PermissionAction } from "@/lib/permissions/role-permissions";
-import { UserRole } from "@prisma/client";
 import { handleApiError } from "@/lib/error-handler";
 import { validateId } from "@/lib/utils/validation-helpers";
 
@@ -13,6 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const [{ authorizeAny }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
+      await Promise.all([
+        import("@/lib/rbac/authorize"),
+        import("@/lib/permissions/role-permissions"),
+        import("@/lib/auth-helpers"),
+        import("@/lib/prisma"),
+        import("@prisma/client"),
+      ]);
+
     // Check permission using RBAC - allow reading own tasks or all tasks
     const { userId, companyId } = await authorizeAny([
       PermissionAction.TASK_READ,
@@ -139,6 +143,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const [{ authorizeAny }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
+      await Promise.all([
+        import("@/lib/rbac/authorize"),
+        import("@/lib/permissions/role-permissions"),
+        import("@/lib/auth-helpers"),
+        import("@/lib/prisma"),
+        import("@prisma/client"),
+      ]);
+
     // Check permission using RBAC - allow updating own tasks or all tasks
     const { userId: authUserId, companyId: authCompanyId } = await authorizeAny([
       PermissionAction.TASK_UPDATE,
@@ -383,6 +396,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const [{ authorize }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
+      await Promise.all([
+        import("@/lib/rbac/authorize"),
+        import("@/lib/permissions/role-permissions"),
+        import("@/lib/auth-helpers"),
+        import("@/lib/prisma"),
+        import("@prisma/client"),
+      ]);
+
     const session = await requireAuth();
     const { userId, companyId } = await authorize(PermissionAction.TASK_UPDATE);
 
