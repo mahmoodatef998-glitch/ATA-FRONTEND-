@@ -122,7 +122,7 @@ export default function TeamMembersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useStableAsyncEffect(() => {
     fetchMembers();

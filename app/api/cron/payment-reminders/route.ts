@@ -14,6 +14,14 @@ import { getDubaiDaysAgo, formatDubaiDate } from "@/lib/cron-timezone-utils";
  * - Security: Requires CRON_SECRET
  */
 export async function GET(request: Request) {
+  // Build-time probe safe response
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   try {
     // Security check
     const authHeader = request.headers.get('authorization');

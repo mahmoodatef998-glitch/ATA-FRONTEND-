@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,13 +27,7 @@ export function AttendanceDetailModal({
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState<any>(null);
 
-  useEffect(() => {
-    if (isOpen && attendanceId) {
-      fetchAttendanceDetails();
-    }
-  }, [isOpen, attendanceId]);
-
-  const fetchAttendanceDetails = async () => {
+  const fetchAttendanceDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/attendance/${attendanceId}`);
@@ -47,7 +41,13 @@ export function AttendanceDetailModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [attendanceId]);
+
+  useEffect(() => {
+    if (isOpen && attendanceId) {
+      fetchAttendanceDetails();
+    }
+  }, [isOpen, attendanceId, fetchAttendanceDetails]);
 
   const getTaskStatusColor = (status: string) => {
     switch (status) {

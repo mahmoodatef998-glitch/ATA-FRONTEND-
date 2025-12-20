@@ -8,6 +8,14 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { getUserPermissions, getUserRoles } from "@/lib/rbac/permission-service";
 
 export async function GET(request: NextRequest) {
+  // Build-time probe safe response
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   try {
     const session = await requireAuth();
     const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;

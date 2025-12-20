@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Package, User, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 import { formatTime, formatDateTime } from "@/lib/utils";
+import Image from "next/image";
 
 interface EmployeeCardProps {
   employee: {
@@ -67,10 +68,13 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               }`}
             >
               {employee.profilePicture ? (
-                <img
+                <Image
                   src={employee.profilePicture}
                   alt={employee.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <User className={`h-6 w-6 ${isPresent ? "text-green-600" : "text-red-600"}`} />

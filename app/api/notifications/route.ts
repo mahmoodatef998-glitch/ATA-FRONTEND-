@@ -6,6 +6,14 @@ import { handleApiError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
+  // Build-time probe safe response
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   try {
     // Require authentication
     const session = await getServerSession();

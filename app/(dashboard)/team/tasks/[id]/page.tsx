@@ -13,6 +13,7 @@ import { WorkLogForm } from "@/components/technician/work-log-form";
 import { useSession } from "next-auth/react";
 import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 import { UserRole } from "@prisma/client";
+import Image from "next/image";
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -358,10 +359,13 @@ export default function TaskDetailPage() {
                             rel="noopener noreferrer"
                             className="block"
                           >
-                            <img
+                            <Image
                               src={photo}
                               alt={`Photo ${idx + 1}`}
+                              width={240}
+                              height={96}
                               className="w-full h-24 object-cover rounded border hover:opacity-80 transition-opacity"
+                              unoptimized
                             />
                           </a>
                         ))}

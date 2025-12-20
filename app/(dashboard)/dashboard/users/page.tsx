@@ -96,7 +96,7 @@ export default function UsersPage() {
   // Fetch users (Admin only)
   const showToast = useCallback(
     (options: Parameters<typeof toast>[0]) => toast(options),
-    [toast]
+    []
   );
 
   const fetchUsers = useCallback(async () => {

@@ -1,5 +1,6 @@
-import { getBaseUrl } from "@/lib/utils";
 import { NotificationsList } from "@/components/dashboard/notifications-list";
+
+export const dynamic = "force-dynamic";
 
 async function getNotifications() {
   try {

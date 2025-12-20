@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -24,12 +24,7 @@ export function MonthCalendar({
   const [calendar, setCalendar] = useState<any[]>([]);
   const [attendancesMap, setAttendancesMap] = useState<Map<string, any>>(new Map());
 
-  useEffect(() => {
-    fetchCalendar();
-    fetchAttendances();
-  }, [year, month, userId]);
-
-  const fetchCalendar = async () => {
+  const fetchCalendar = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -49,9 +44,9 @@ export function MonthCalendar({
     } finally {
       setLoading(false);
     }
-  };
+  }, [month, userId, year]);
 
-  const fetchAttendances = async () => {
+  const fetchAttendances = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         month: month.toString(),
@@ -74,7 +69,12 @@ export function MonthCalendar({
     } catch (error) {
       console.error("Error fetching attendances:", error);
     }
-  };
+  }, [month, userId, year]);
+
+  useEffect(() => {
+    fetchCalendar();
+    fetchAttendances();
+  }, [fetchCalendar, fetchAttendances]);
 
   if (loading) {
     return (

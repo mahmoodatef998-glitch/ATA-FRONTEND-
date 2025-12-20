@@ -181,6 +181,7 @@ export function WorkLogForm({ taskId, onSuccess }: WorkLogFormProps) {
               <div className="grid grid-cols-4 gap-2 mt-4">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={URL.createObjectURL(photo)}
                       alt={`Photo ${index + 1}`}
