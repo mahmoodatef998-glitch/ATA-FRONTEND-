@@ -153,7 +153,7 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
       error: "An unexpected error occurred",
       details:
         process.env.NODE_ENV === "development"
-          ? { error: String(error) }
+          ? { message: String(error) }
           : undefined,
     },
     { status: 500 }
@@ -205,7 +205,7 @@ function handlePrismaError(
           error: "Referenced record does not exist",
           details:
             process.env.NODE_ENV === "development"
-              ? { code: error.code, field: error.meta?.field_name }
+              ? { code: error.code, field: String(error.meta?.field_name || '') }
               : { code: error.code },
         },
         { status: 400 }
@@ -219,7 +219,7 @@ function handlePrismaError(
           error: "Required relation is missing",
           details:
             process.env.NODE_ENV === "development"
-              ? { code: error.code, relation: error.meta?.relation_name }
+              ? { code: error.code, message: String(error.meta?.relation_name || '') }
               : { code: error.code },
         },
         { status: 400 }

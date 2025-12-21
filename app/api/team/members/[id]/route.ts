@@ -427,7 +427,7 @@ export async function PATCH(
     // Check if member exists and belongs to same company
     const existingMember = await prisma.users.findUnique({
       where: { id: memberId },
-      select: { companyId: true, role: true },
+      select: { companyId: true, role: true, email: true, isActive: true },
     });
 
     if (!existingMember) {
@@ -684,7 +684,7 @@ export async function PATCH(
         select: { role: true },
       });
       
-      if (adminCheck && adminCheck.role !== UserRole.ADMIN && adminCheck.role !== "ADMIN") {
+      if (adminCheck && adminCheck.role !== UserRole.ADMIN) {
         // Emergency rollback - restore original role
         await prisma.users.update({
           where: { id: userId },
@@ -749,7 +749,7 @@ export async function DELETE(
     // Check if member exists and belongs to same company
     const existingMember = await prisma.users.findUnique({
       where: { id: memberId },
-      select: { companyId: true, role: true },
+      select: { companyId: true, role: true, email: true, isActive: true },
     });
 
     if (!existingMember) {
@@ -767,7 +767,7 @@ export async function DELETE(
     }
 
     // Only allow deleting team member roles (not Admin)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,
@@ -775,7 +775,7 @@ export async function DELETE(
       UserRole.ACCOUNTANT,
     ];
     
-    if (!allowedTeamRoles.includes(existingMember.role)) {
+    if (!allowedTeamRoles.includes(existingMember.role as UserRole)) {
       return NextResponse.json(
         { success: false, error: "Can only delete team member accounts" },
         { status: 403 }
