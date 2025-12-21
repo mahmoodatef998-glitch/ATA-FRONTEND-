@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIp(request);
     const rateLimit = await rateLimiter.check(
       `public-order:${clientIp}`,
-      RATE_LIMITS.PUBLIC_ORDER.limit,
-      RATE_LIMITS.PUBLIC_ORDER.windowMs
+      RATE_LIMITS.PUBLIC_ORDER_CREATE.limit,
+      RATE_LIMITS.PUBLIC_ORDER_CREATE.windowMs
     );
 
     if (!rateLimit.success) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
-            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
+            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
             "X-RateLimit-Remaining": rateLimit.remaining.toString(),
             "X-RateLimit-Reset": rateLimit.resetAt.toString(),
           },
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         });
       }
       
-      const defaultCompanyId = company.id;
+      const companyId = company.id;
 
       // Generate unique public token
       let publicToken = generatePublicToken();
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       // Create order
       const order = await tx.orders.create({
         data: {
-          companyId: defaultCompanyId,
+          companyId: companyId,
           clientId: client.id,
           publicToken,
           details: details || undefined,
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       // Create notifications for company admins and brokers
       const companyUsers = await tx.users.findMany({
         where: {
-          companyId: defaultCompanyId,
+          companyId: companyId,
           role: UserRole.ADMIN,
         },
       });
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
         companyUsers.map((user) =>
           tx.notifications.create({
             data: {
-              companyId: defaultCompanyId,
+              companyId: companyId,
               userId: user.id,
               title: `New Order from ${client.name}`,
               body: `Order #${order.id} - ${details || "No details provided"}`,
@@ -182,18 +182,18 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      return { order, client };
+      return { order, client, companyId };
     });
 
     // Emit Socket.io event for real-time notification
     if (global.io) {
-      global.io.to(`company_${defaultCompanyId}`).emit("new_notification", {
+      global.io.to(`company_${result.companyId}`).emit("new_notification", {
         orderId: result.order.id,
         title: `New Order from ${result.client.name}`,
         body: `Order #${result.order.id} created`,
         type: "new_order",
       });
-      console.log(`🔌 Emitted new_order notification to company_${defaultCompanyId}`);
+      console.log(`🔌 Emitted new_order notification to company_${result.companyId}`);
     }
 
     const trackingUrl = `${request.nextUrl.origin}/order/track/${result.order.publicToken}`;
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
       {
         status: 201,
         headers: {
-          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
+          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
           "X-RateLimit-Remaining": rateLimit.remaining.toString(),
           "X-RateLimit-Reset": rateLimit.resetAt.toString(),
         },

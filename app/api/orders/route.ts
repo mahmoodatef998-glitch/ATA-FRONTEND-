@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status
     if (status) {
-      where.status = status;
+      where.status = status as Prisma.EnumOrderStatusFilter;
     }
 
     // Search by client name or phone

@@ -96,6 +96,7 @@ export async function POST(
         clientId: true,
         status: true,
         stage: true,
+        finalPaymentReceived: true,
         clients: {
           select: {
             id: true,

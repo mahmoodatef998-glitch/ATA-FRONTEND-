@@ -31,11 +31,19 @@ export async function GET(request: NextRequest) {
         createdAt: {
           lt: threeDaysFromNow,
         },
+        quotations: {
+          some: {
+            depositRequired: true,
+          },
+        },
       },
       include: {
         clients: true,
         companies: true,
         purchase_orders: {
+          take: 1,
+        },
+        quotations: {
           where: { depositRequired: true },
           take: 1,
         },
@@ -84,6 +92,7 @@ export async function GET(request: NextRequest) {
     for (const order of overdueDeposits) {
       if (order.clients?.email) {
         const po = order.purchase_orders[0];
+        const quotation = order.quotations[0];
         const daysOverdue = Math.floor((now.getTime() - order.createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
         sendEmail({
@@ -93,7 +102,7 @@ export async function GET(request: NextRequest) {
             <h2>Payment Reminder</h2>
             <p>Dear ${order.clients.name},</p>
             <p>This is a friendly reminder that your deposit payment for Order #${order.id} is pending.</p>
-            ${po ? `<p><strong>Deposit Amount:</strong> ${po.depositPercent}% = AED ${po.depositAmount}</p>` : ''}
+            ${quotation ? `<p><strong>Deposit Amount:</strong> ${quotation.depositPercent}% = AED ${quotation.depositAmount}</p>` : ''}
             <p><strong>Days since order:</strong> ${daysOverdue} days</p>
             <p>Please complete the payment to proceed with manufacturing.</p>
             <p>If you have already made the payment, please contact us.</p>

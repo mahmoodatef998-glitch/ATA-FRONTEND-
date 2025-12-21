@@ -4,7 +4,14 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
-import { logger } from "@/lib/logger";
+
+// Simple logger for Edge Runtime compatibility
+// Don't import full logger as it uses Node.js modules
+const authLogger = {
+  info: (msg: string, data?: any) => console.log(`[AUTH] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[AUTH] ${msg}`, data || ''),
+  error: (msg: string, data?: any) => console.error(`[AUTH] ${msg}`, data || ''),
+};
 
 declare module "next-auth" {
   interface Session {
@@ -42,7 +49,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            logger.warn("Authentication attempt with missing credentials", { context: "auth" });
+            authLogger.warn("Authentication attempt with missing credentials");
             throw new Error("Email and password required");
           }
 
@@ -52,19 +59,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           if (!user) {
-            logger.warn("Authentication attempt with non-existent email", { 
+            authLogger.warn("Authentication attempt with non-existent email", { 
               email: credentials.email,
-              context: "auth" 
             });
             throw new Error("Username or password incorrect");
           }
 
           // Check account status - only APPROVED users can login
           if (user.accountStatus !== "APPROVED") {
-            logger.warn("Authentication attempt with non-approved account", { 
+            authLogger.warn("Authentication attempt with non-approved account", { 
               email: credentials.email,
               accountStatus: user.accountStatus,
-              context: "auth" 
             });
             throw new Error(
               user.accountStatus === "PENDING"
@@ -76,10 +81,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           if (!user.password) {
-            logger.error("User account has no password set", { 
+            authLogger.error("User account has no password set", { 
               userId: user.id,
               email: credentials.email,
-              context: "auth" 
             });
             throw new Error("Username or password incorrect");
           }
@@ -90,18 +94,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
 
           if (!isPasswordValid) {
-            logger.warn("Authentication attempt with invalid password", { 
+            authLogger.warn("Authentication attempt with invalid password", { 
               email: credentials.email,
-              context: "auth" 
             });
             throw new Error("Username or password incorrect");
           }
 
-          logger.info("Successful authentication", { 
+          authLogger.info("Successful authentication", { 
             userId: user.id,
             email: user.email,
             role: user.role,
-            context: "auth" 
           });
 
           return {
@@ -112,9 +114,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             companyId: user.companyId,
           };
         } catch (error) {
-          logger.error("Authentication error", { 
+          authLogger.error("Authentication error", { 
             error: error instanceof Error ? error.message : String(error),
-            context: "auth" 
           });
           // Re-throw error so NextAuth can handle it properly
           if (error instanceof Error) {
@@ -219,23 +220,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (isDevelopment) {
         const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
         if (!providedSecret) {
-          logger.warn("NEXTAUTH_SECRET not found in .env file. Using fallback secret for development.", {
-            context: "auth",
-            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
-          });
+          authLogger.warn("NEXTAUTH_SECRET not found in .env file. Using fallback secret for development.");
         } else if (providedSecret.length < 32) {
-          logger.warn("NEXTAUTH_SECRET is too short in .env file. Using fallback secret for development.", {
-            context: "auth",
+          authLogger.warn("NEXTAUTH_SECRET is too short in .env file. Using fallback secret for development.", {
             providedLength: providedSecret.length,
-            note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
           });
         }
         return fallbackSecret;
       }
       
       // In production, throw error if secret is missing or too short
-      logger.error("NEXTAUTH_SECRET is required in production environment (min 32 characters)", { 
-        context: "auth",
+      authLogger.error("NEXTAUTH_SECRET is required in production environment (min 32 characters)", { 
         hasSecret: !!providedSecret,
         secretLength: providedSecret?.length || 0
       });
@@ -244,8 +239,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // If there's an error, use fallback in development
       const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
       if (isDevelopment) {
-        logger.warn("Error getting NEXTAUTH_SECRET, using fallback for development.", {
-          context: "auth",
+        authLogger.warn("Error getting NEXTAUTH_SECRET, using fallback for development.", {
           error: error instanceof Error ? error.message : String(error)
         });
         return "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";

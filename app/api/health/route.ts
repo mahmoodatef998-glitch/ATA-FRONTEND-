@@ -11,13 +11,13 @@ import { isCloudinaryConfigured, getCloudinaryInstance } from "@/lib/cloudinary"
  */
 export async function GET() {
   const health = {
-    status: "healthy" as const,
+    status: "healthy" as "healthy" | "unhealthy" | "error",
     timestamp: new Date().toISOString(),
     services: {
-      database: "unknown" as const,
-      email: "unknown" as const,
-      storage: "unknown" as const,
-      cloudinary: "unknown" as const,
+      database: "unknown" as "connected" | "disconnected" | "unknown",
+      email: "unknown" as "configured" | "not_configured" | "error" | "unknown",
+      storage: "unknown" as "available" | "unavailable" | "error" | "unknown",
+      cloudinary: "unknown" as "configured" | "not_configured" | "error" | "unknown",
     },
     version: process.env.npm_package_version || "1.0.0",
     environment: process.env.NODE_ENV || "development",

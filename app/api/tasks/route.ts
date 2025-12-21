@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { authorize, authorizeAny } from "@/lib/rbac/authorize";
-import { UserRole, Prisma, TaskStatus } from "@prisma/client";
+import { UserRole, Prisma, TaskStatus, TaskPriority } from "@prisma/client";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
         description,
         assignedToId: assigneeIdsArray.length > 0 ? assigneeIdsArray[0] : null, // Legacy - first assignee
         assignedById: userId,
-        priority: priority as Prisma.TaskPriority,
+        priority: priority as TaskPriority,
         deadline: deadline ? new Date(deadline) : null,
         location,
         locationLat,

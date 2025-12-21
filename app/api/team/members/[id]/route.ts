@@ -58,7 +58,7 @@ export async function GET(
     // Others need TEAM_MEMBERS_READ permission
     const sessionUserId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
     const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    const isAdmin = userRole === UserRole.ADMIN;
     
     // Admin can view any member, others need permission if not viewing own profile
     if (sessionUserId !== memberId && !isAdmin) {
@@ -401,7 +401,7 @@ export async function PATCH(
     
     const session = await requireAuth();
     const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    const isAdmin = userRole === UserRole.ADMIN;
     
     const { id } = await params;
     const memberId = parseInt(id);
@@ -449,7 +449,7 @@ export async function PATCH(
     // Note: isAdmin is already defined above (line 398)
     
     // Only allow editing team member roles (all team module roles)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,
@@ -467,7 +467,7 @@ export async function PATCH(
     }
     
     // If member is not in allowed roles, check if Admin is trying to edit them
-    if (!allowedTeamRoles.includes(existingMember.role) && !isAdmin) {
+    if (!allowedTeamRoles.includes(existingMember.role as UserRole) && !isAdmin) {
       return NextResponse.json(
         { success: false, error: "Can only edit team member accounts" },
         { status: 403 }
