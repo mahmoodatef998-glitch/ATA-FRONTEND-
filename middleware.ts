@@ -1,34 +1,18 @@
-import { auth } from "@/lib/auth";
+/**
+ * Middleware - Temporarily disabled for Vercel deployment
+ * Authentication will be handled by individual pages
+ */
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  
-  // Simple authentication check for protected routes
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/team")) {
-    const session = await auth();
-    
-    if (!session) {
-      const url = new URL("/login", request.url);
-      url.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(url);
-    }
-    
-    // Redirect technicians/supervisors/HR from dashboard to team
-    if (pathname.startsWith("/dashboard")) {
-      const role = session.user?.role;
-      if (role === "TECHNICIAN" || role === "SUPERVISOR" || role === "HR") {
-        return NextResponse.redirect(new URL("/team", request.url));
-      }
-    }
-  }
-
+  // Minimal middleware - just pass through
+  // Authentication handled by pages themselves
   return NextResponse.next();
 }
 
+// Restrict matcher to minimum paths to reduce bundle size
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: [],
 };
