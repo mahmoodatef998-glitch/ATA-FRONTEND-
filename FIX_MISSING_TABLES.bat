@@ -24,6 +24,13 @@ call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-
 
 if errorlevel 1 (
     echo.
+    echo ⚠️  First attempt failed. Trying without accept-data-loss...
+    echo.
+    call npx prisma db push --schema=prisma/schema.prisma --skip-generate
+)
+
+if errorlevel 1 (
+    echo.
     echo ❌ Schema push failed!
     echo.
     echo The error above shows which table is missing.

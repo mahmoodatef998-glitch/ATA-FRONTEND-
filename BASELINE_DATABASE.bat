@@ -32,7 +32,7 @@ echo [2/2] Syncing schema with db push...
 echo ⚠️  This will create all missing tables...
 echo.
 
-call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --force-reset --skip-generate
+call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
 
 if errorlevel 1 (
     echo.
