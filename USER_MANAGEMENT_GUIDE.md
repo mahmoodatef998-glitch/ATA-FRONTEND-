@@ -308,6 +308,91 @@ npx prisma studio
 
 ---
 
+## 🎭 إنشاء RBAC Role جديد
+
+### ما هو RBAC Role؟
+
+**RBAC Roles** هي أدوار مخصصة يمكنك إنشاؤها في النظام، مختلفة عن **UserRole** enum الثابتة.
+
+**الفرق:**
+- **UserRole** (enum): أدوار ثابتة محددة في النظام (ADMIN, ACCOUNTANT, etc.)
+- **RBAC Role**: أدوار مخصصة يمكنك إنشاؤها وتعيين permissions لها
+
+### الطريقة 1: استخدام Batch File (موصى به) ⭐⭐⭐
+
+**شغّل:**
+```bash
+CREATE_NEW_ROLE.bat
+```
+
+**أو النسخة البسيطة:**
+```bash
+CREATE_ROLE_SIMPLE.bat
+```
+
+**سيسألك عن:**
+- Role Name (lowercase, underscores)
+- Display Name
+- Description (optional)
+- Company ID (Global أو Company-specific)
+
+---
+
+### الطريقة 2: يدوياً (PowerShell)
+
+**مثال: إنشاء Global Role:**
+```powershell
+$env:DIRECT_URL="postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres"
+$env:ROLE_NAME="sales_manager"
+$env:ROLE_DISPLAY_NAME="Sales Manager"
+$env:ROLE_DESCRIPTION="Manages sales operations and client relationships"
+npx tsx scripts/create-role.ts
+```
+
+**مثال: إنشاء Company-Specific Role:**
+```powershell
+$env:DIRECT_URL="postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres"
+$env:ROLE_NAME="project_lead"
+$env:ROLE_DISPLAY_NAME="Project Lead"
+$env:ROLE_DESCRIPTION="Leads specific projects"
+$env:COMPANY_ID="1"
+npx tsx scripts/create-role.ts
+```
+
+---
+
+### أمثلة على Role Names:
+
+```
+✅ صحيح:
+- sales_manager
+- project_lead
+- quality_controller
+- warehouse_supervisor
+- customer_service
+
+❌ خطأ:
+- Sales Manager (يجب lowercase)
+- sales manager (يجب underscores)
+- sales-manager (يجب underscores)
+```
+
+---
+
+### بعد إنشاء Role:
+
+**1. تعيين Permissions:**
+- اذهب إلى Dashboard → RBAC → Roles
+- اختر Role
+- Assign Permissions
+
+**2. تعيين Role للمستخدمين:**
+- Dashboard → RBAC → Users
+- اختر User
+- Assign Role
+
+---
+
 ## 📝 Scripts جاهزة للاستخدام
 
 ### 1. CREATE_ADMIN.bat (إنشاء Admin جديد)
