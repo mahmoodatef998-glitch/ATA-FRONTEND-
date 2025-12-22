@@ -18,8 +18,10 @@ echo   4. SUPERVISOR
 echo   5. TECHNICIAN
 echo   6. FACTORY_SUPERVISOR
 echo   7. HR
+echo   8. SALES_REP
+echo   9. CLIENT
 echo.
-set /p ROLE_CHOICE="Select Role (1-7): "
+set /p ROLE_CHOICE="Select Role (1-9): "
 
 if "%ROLE_CHOICE%"=="1" set USER_ROLE=ADMIN
 if "%ROLE_CHOICE%"=="2" set USER_ROLE=OPERATIONS_MANAGER
@@ -28,6 +30,8 @@ if "%ROLE_CHOICE%"=="4" set USER_ROLE=SUPERVISOR
 if "%ROLE_CHOICE%"=="5" set USER_ROLE=TECHNICIAN
 if "%ROLE_CHOICE%"=="6" set USER_ROLE=FACTORY_SUPERVISOR
 if "%ROLE_CHOICE%"=="7" set USER_ROLE=HR
+if "%ROLE_CHOICE%"=="8" set USER_ROLE=SALES_REP
+if "%ROLE_CHOICE%"=="9" set USER_ROLE=CLIENT
 
 set COMPANY_ID=1
 
