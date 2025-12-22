@@ -18,7 +18,16 @@ echo Checking database for admin user...
 echo Database URL: %DIRECT_URL%
 echo.
 
-call npx tsx scripts/check-admin.ts
+REM Use full path to script
+if exist "%~dp0scripts\check-admin.ts" (
+    call npx tsx "%~dp0scripts\check-admin.ts"
+) else (
+    echo ❌ Error: Cannot find scripts\check-admin.ts
+    echo    Current directory: %CD%
+    echo    Script directory: %~dp0
+    echo    Please make sure you're running this from the project root.
+    exit /b 1
+)
 
 if errorlevel 1 (
     echo.

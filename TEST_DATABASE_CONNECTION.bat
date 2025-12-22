@@ -16,11 +16,22 @@ set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjq
 echo Testing database connection...
 echo Database URL: %DIRECT_URL%
 echo.
+echo Current directory: %CD%
+echo.
 
 echo Step 1: Testing Prisma connection...
 echo.
 
-call npx tsx scripts/test-connection.ts
+REM Use full path to script
+if exist "%~dp0scripts\test-connection.ts" (
+    call npx tsx "%~dp0scripts\test-connection.ts"
+) else (
+    echo ❌ Error: Cannot find scripts\test-connection.ts
+    echo    Current directory: %CD%
+    echo    Script directory: %~dp0
+    echo    Please make sure you're running this from the project root.
+    exit /b 1
+)
 
 if errorlevel 1 (
     echo.
