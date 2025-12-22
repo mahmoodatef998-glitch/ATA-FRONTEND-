@@ -64,6 +64,8 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'recharts',
     ],
+    // Exclude swagger from build completely
+    serverComponentsExternalPackages: ['swagger-jsdoc', 'swagger-ui-react'],
   },
   // Security Headers & CORS Configuration
   async headers() {
