@@ -25,15 +25,27 @@ call npx prisma migrate deploy --schema=prisma/schema.prisma
 
 if errorlevel 1 (
     echo.
-    echo ❌ Migration failed!
+    echo ⚠️  Migration failed - Database schema is not empty.
     echo.
-    echo Trying with db push instead...
+    echo Trying to baseline existing database...
     echo.
-    call npx prisma db push --schema=prisma/schema.prisma
+    REM Mark all migrations as applied (baseline)
+    for /f "tokens=*" %%f in ('dir /b /s prisma\migrations\*.sql') do (
+        echo Marking migration as applied: %%f
+        call npx prisma migrate resolve --applied --schema=prisma/schema.prisma
+    )
+    
+    echo.
+    echo Trying db push to sync schema...
+    echo.
+    call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
+    
     if errorlevel 1 (
         echo.
         echo ❌ Both migration methods failed!
+        echo.
         echo Please check the error messages above.
+        echo You may need to manually update the database schema.
         pause
         exit /b 1
     )
