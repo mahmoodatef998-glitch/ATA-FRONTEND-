@@ -1,4 +1,7 @@
 @echo off
+REM Change to script directory
+cd /d "%~dp0"
+
 echo ========================================
 echo   Check if Admin User Exists
 echo ========================================
