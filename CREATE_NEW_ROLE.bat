@@ -4,7 +4,7 @@ echo   Create New RBAC Role
 echo ========================================
 echo.
 
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 echo Enter Role Details:
 echo.

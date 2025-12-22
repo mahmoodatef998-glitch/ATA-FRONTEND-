@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 REM Set Database URL - Direct connection (for migrations and scripts)
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 echo Checking database for admin user...
 echo Database URL: %DIRECT_URL%

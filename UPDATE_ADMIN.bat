@@ -4,7 +4,7 @@ echo   Update Admin User
 echo ========================================
 echo.
 
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 set /p ADMIN_EMAIL="Enter New Email: "
 set /p ADMIN_PASSWORD="Enter New Password (min 12 chars): "

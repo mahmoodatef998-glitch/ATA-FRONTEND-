@@ -4,7 +4,7 @@ echo   Create Admin User - Quick Setup
 echo ========================================
 echo.
 
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 echo Creating admin user...
 echo Email: admin@demo.co
