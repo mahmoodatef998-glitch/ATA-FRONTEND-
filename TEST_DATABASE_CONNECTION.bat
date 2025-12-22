@@ -9,9 +9,21 @@ echo.
 
 REM ⚠️ IMPORTANT: Get the correct URL from Supabase Dashboard
 REM Settings → Database → Connection string → URI
+REM 
+REM Try Direct Connection first:
 REM Format: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
-REM Replace [PROJECT_REF] with your actual project reference
+REM 
+REM If Direct Connection fails, try Pooler Connection:
+REM Format: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+REM 
+REM Replace [PROJECT_REF] with your actual project reference (xvpjqmftyqipyqomnkgm)
+REM Replace [PASSWORD] with your actual password (M00243540000m)
+
+REM Direct Connection (try this first)
 set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+REM If Direct Connection fails, uncomment this line and comment the one above:
+REM set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 
 echo Testing database connection...
 echo Database URL: %DIRECT_URL%
