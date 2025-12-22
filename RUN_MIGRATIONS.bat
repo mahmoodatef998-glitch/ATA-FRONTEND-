@@ -27,25 +27,17 @@ if errorlevel 1 (
     echo.
     echo ⚠️  Migration failed - Database schema is not empty.
     echo.
-    echo Trying to baseline existing database...
-    echo.
-    REM Mark all migrations as applied (baseline)
-    for /f "tokens=*" %%f in ('dir /b /s prisma\migrations\*.sql') do (
-        echo Marking migration as applied: %%f
-        call npx prisma migrate resolve --applied --schema=prisma/schema.prisma
-    )
-    
-    echo.
-    echo Trying db push to sync schema...
+    echo Trying db push to sync schema (this will update existing schema)...
+    echo ⚠️  Warning: This may remove old enum values (USER, BROKER, SUPERADMIN)
     echo.
     call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
     
     if errorlevel 1 (
         echo.
-        echo ❌ Both migration methods failed!
+        echo ❌ Schema sync failed!
         echo.
         echo Please check the error messages above.
-        echo You may need to manually update the database schema.
+        echo You may need to run: BASELINE_DATABASE.bat
         pause
         exit /b 1
     )
