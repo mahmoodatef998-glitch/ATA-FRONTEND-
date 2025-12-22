@@ -227,11 +227,10 @@ export async function POST(request: NextRequest) {
             companyId: admin.companyId,
             userId: admin.id,
             title: `🔔 New Client Registration - ${client.name}`,
-            body: `Client ${client.name} (${client.phone}) has registered and is waiting for approval.`,
+            body: `Client ${client.name} has registered and is waiting for approval.`,
             meta: {
               clientId: client.id,
               clientName: client.name,
-              clientPhone: client.phone,
               actionRequired: true,
               actionType: "approve_client",
               waitingFor: "admin_approval",
