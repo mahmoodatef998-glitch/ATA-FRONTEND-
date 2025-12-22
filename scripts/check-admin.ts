@@ -31,6 +31,7 @@ async function main() {
   console.log("🔍 Checking for admin user...\n");
 
   // Check for admin by role
+  // Note: accountStatus might not exist in older schemas
   const adminByRole = await prisma.users.findFirst({
     where: {
       role: "ADMIN",
@@ -40,8 +41,9 @@ async function main() {
       name: true,
       email: true,
       role: true,
-      accountStatus: true,
       createdAt: true,
+      // Only include accountStatus if it exists in schema
+      ...(await prisma.$queryRaw`SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'accountStatus'`.then(() => ({ accountStatus: true })).catch(() => ({}))),
     },
   });
 
@@ -117,7 +119,9 @@ async function main() {
       console.log(`\n${index + 1}. ${user.name}`);
       console.log(`   Email: ${user.email}`);
       console.log(`   Role: ${user.role}`);
-      console.log(`   Status: ${user.accountStatus}`);
+      if (hasAccountStatus && 'accountStatus' in user) {
+      console.log(`   Status: ${(user as any).accountStatus}`);
+    }
     });
   }
 
