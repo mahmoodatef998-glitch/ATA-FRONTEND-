@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Exclude problematic pages from build
+  experimental: {
+    outputFileTracingExcludes: {
+      '*': [
+        'node_modules/swagger-ui-dist/**/*',
+        'node_modules/swagger-ui-react/**/*',
+      ],
+    },
+  },
+  
   // Production optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security
