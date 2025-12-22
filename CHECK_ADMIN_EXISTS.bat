@@ -12,7 +12,11 @@ REM ⚠️ IMPORTANT: Get the correct URL from Supabase Dashboard
 REM Settings → Database → Connection string → URI
 REM Format: postgresql://postgres.[PROJECT_REF]:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
 REM Replace [PROJECT_REF] with your actual project reference
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+REM Try Pooler Connection (more reliable for external connections)
+set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+REM If Pooler Connection fails, try Direct Connection:
+REM set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 echo Checking database for admin user...
 echo Database URL: %DIRECT_URL%

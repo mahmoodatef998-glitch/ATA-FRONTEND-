@@ -19,11 +19,12 @@ REM
 REM Replace [PROJECT_REF] with your actual project reference (xvpjqmftyqipyqomnkgm)
 REM Replace [PASSWORD] with your actual password (M00243540000m)
 
-REM Direct Connection (try this first)
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+REM Try Pooler Connection first (more reliable for external connections)
+REM If this fails, try Direct Connection below
+set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 
-REM If Direct Connection fails, uncomment this line and comment the one above:
-REM set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+REM If Pooler Connection fails, uncomment this line and comment the one above:
+REM set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 echo Testing database connection...
 echo Database URL: %DIRECT_URL%
