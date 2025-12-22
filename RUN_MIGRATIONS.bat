@@ -7,9 +7,14 @@ echo   Run Database Migrations
 echo ========================================
 echo.
 
-REM Use Direct Connection for migrations (best for schema changes)
-set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+REM Try Session Pooler first (more reliable for external connections)
+REM If this fails, try Direct Connection below
+set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
 set DATABASE_URL=%DIRECT_URL%
+
+REM If Session Pooler fails, uncomment this line and comment the one above:
+REM set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+REM set DATABASE_URL=%DIRECT_URL%
 
 echo Running Prisma migrations...
 echo Database URL: %DIRECT_URL%
