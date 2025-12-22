@@ -5,23 +5,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  // Exclude problematic pages from build
-  experimental: {
-    outputFileTracingExcludes: {
-      '*': [
-        'node_modules/swagger-ui-dist/**/*',
-        'node_modules/swagger-ui-react/**/*',
-      ],
-    },
-  },
   
   // Production optimizations
-  compress: true, // Enable gzip compression
-  poweredByHeader: false, // Remove X-Powered-By header for security
+  compress: true,
+  poweredByHeader: false,
   
   // Disable logging in production for better performance
   logging: process.env.NODE_ENV === "production" ? undefined : {
@@ -30,21 +17,12 @@ const nextConfig: NextConfig = {
     },
   },
   
-  // Development optimizations for faster startup
-  ...(process.env.NODE_ENV === "development" && {
-    // Faster compilation in development
-    experimental: {
-      // Optimize server components
-      optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-select'],
-    },
-  }),
-  
-  // External packages for server components (moved from experimental in Next.js 15)
+  // External packages for server components
   serverExternalPackages: ['@prisma/client'],
   
   // Production build optimizations
-  // Note: SWC minification is enabled by default in Next.js 15+
-  reactStrictMode: true, // Enable React strict mode
+  reactStrictMode: true,
+  
   images: {
     remotePatterns: [
       {
@@ -54,6 +32,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  
   // Bundle size optimization
   experimental: {
     optimizePackageImports: [
@@ -64,12 +43,11 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'recharts',
     ],
-    // Exclude swagger from build completely
-    serverComponentsExternalPackages: ['swagger-jsdoc', 'swagger-ui-react'],
+    serverComponentsExternalPackages: ['@prisma/client', 'swagger-jsdoc', 'swagger-ui-react'],
   },
+  
   // Security Headers & CORS Configuration
   async headers() {
-    // Security headers for all routes
     const securityHeaders = [
       {
         key: 'X-DNS-Prefetch-Control',
@@ -103,12 +81,10 @@ const nextConfig: NextConfig = {
 
     return [
       {
-        // Apply security headers to all routes
         source: '/:path*',
         headers: securityHeaders,
       },
       {
-        // Apply CORS to API routes
         source: '/api/:path*',
         headers: [
           ...securityHeaders,
@@ -134,10 +110,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Webpack configuration to exclude Node.js modules from client-side bundle
+  
+  // Webpack configuration
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Exclude Node.js modules from client-side bundle
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -153,13 +129,11 @@ const nextConfig: NextConfig = {
         zlib: false,
       };
       
-      // Exclude logger-winston.ts from client-side bundle
       config.resolve.alias = {
         ...config.resolve.alias,
         '@/lib/logger-winston': false,
       };
 
-      // Code splitting optimization
       config.optimization = {
         ...config.optimization,
         splitChunks: {
@@ -167,14 +141,12 @@ const nextConfig: NextConfig = {
           cacheGroups: {
             default: false,
             vendors: false,
-            // Vendor chunk
             vendor: {
               name: 'vendor',
               chunks: 'all',
               test: /node_modules/,
               priority: 20,
             },
-            // Common chunk
             common: {
               name: 'common',
               minChunks: 2,
