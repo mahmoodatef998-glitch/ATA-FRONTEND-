@@ -2,6 +2,10 @@ import { getBaseUrl } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { NotificationsList } from "@/components/dashboard/notifications-list";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getNotifications() {
   try {
     const { auth } = await import("@/lib/auth");
