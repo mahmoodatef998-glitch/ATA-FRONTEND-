@@ -7,13 +7,13 @@
 # ملاحظة: Backend موجود على Railway منفصل
 # ============================================
 
-# 1. DATABASE_URL (Connection Pooling - للـ Frontend)
-# استخدام pgbouncer للـ connection pooling
-DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+# 1. DATABASE_URL (Transaction Pooler - للـ Frontend Production)
+# استخدام Transaction Pooler للـ connection pooling في Production
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
 
 # 2. DIRECT_URL (Direct Connection - للـ Migrations)
-# استخدام الاتصال المباشر للـ migrations
-DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+# استخدام الاتصال المباشر للـ migrations (أفضل للـ schema changes)
+DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
 # 3. NEXTAUTH_SECRET (نفس المفتاح المستخدم في Backend)
 NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d

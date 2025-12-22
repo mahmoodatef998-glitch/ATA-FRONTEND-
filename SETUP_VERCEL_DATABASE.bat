@@ -12,7 +12,8 @@ pause > nul
 
 echo.
 echo [1/3] Setting DATABASE_URL...
-set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+REM Use Direct Connection for migrations (best for schema changes)
+set DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 set DATABASE_URL=%DIRECT_URL%
 
 echo.
