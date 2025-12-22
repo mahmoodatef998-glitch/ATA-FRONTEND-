@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Turbopack config (required for Next.js 16)
+  turbopack: {},
+  
   // Disable TypeScript checking during build (temporary - for faster deployment)
   typescript: {
     ignoreBuildErrors: true,
