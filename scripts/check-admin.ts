@@ -8,7 +8,24 @@
 
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// Use DIRECT_URL if available, otherwise DATABASE_URL
+const databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  console.error("❌ Database URL not found!");
+  console.error("   Please set DIRECT_URL or DATABASE_URL environment variable");
+  console.error("\n   Example:");
+  console.error('   $env:DIRECT_URL="postgresql://user:pass@host:5432/db"');
+  process.exit(1);
+}
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl,
+    },
+  },
+});
 
 async function main() {
   console.log("🔍 Checking for admin user...\n");
