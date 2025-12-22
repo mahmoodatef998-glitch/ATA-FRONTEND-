@@ -19,8 +19,8 @@ DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmfty
 NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
 
 # 4. NEXTAUTH_URL (URL الـ Frontend على Vercel)
-# ⚠️ حدث هذا بعد Deploy الأول بالـ URL الفعلي
-NEXTAUTH_URL=https://your-frontend-name.vercel.app
+# ⚠️ URL الفعلي للموقع
+NEXTAUTH_URL=https://ata-frontend-pied.vercel.app
 
 # 5. NODE_ENV
 NODE_ENV=production
@@ -37,7 +37,7 @@ NEXT_PUBLIC_BACKEND_URL=https://ata-backend-production.up.railway.app
 
 # 9. ALLOWED_ORIGINS (للـ CORS)
 # السماح للـ Backend بالاتصال من Frontend
-ALLOWED_ORIGINS=https://your-frontend-name.vercel.app,https://ata-backend-production.up.railway.app
+ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-production.up.railway.app
 
 # ============================================
 # كيفية الإضافة في Vercel:

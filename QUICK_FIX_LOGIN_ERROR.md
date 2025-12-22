@@ -42,8 +42,8 @@ NEXTAUTH_SECRET may be missing or invalid
 **يجب أن يكون مطابق لـ URL الفعلي:**
 
 1. Edit `NEXTAUTH_URL`
-2. Value: `https://ata-frontend-jofc28pb8-mahmood-atef-s-projects.vercel.app`
-   (أو URL الفعلي لموقعك من Vercel)
+2. Value: `https://ata-frontend-pied.vercel.app`
+   (URL الفعلي لموقعك)
 3. Environment: ✅ Production ✅ Preview ✅ Development
 4. Save
 
@@ -74,7 +74,7 @@ NEXTAUTH_SECRET may be missing or invalid
 ☐ NEXTAUTH_SECRET موجود في Vercel
 ☐ NEXTAUTH_SECRET = 00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
 ☐ NEXTAUTH_URL موجود في Vercel
-☐ NEXTAUTH_URL = https://ata-frontend-jofc28pb8-mahmood-atef-s-projects.vercel.app
+☐ NEXTAUTH_URL = https://ata-frontend-pied.vercel.app
 ☐ Environment: Production, Preview, Development (كلها محددة)
 ☐ Redeploy تم
 ☐ جرب Login - يعمل! ✅
@@ -102,12 +102,12 @@ NEXTAUTH_SECRET may be missing or invalid
 
 ```
 ✅ NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
-✅ NEXTAUTH_URL=https://ata-frontend-jofc28pb8-mahmood-atef-s-projects.vercel.app
+✅ NEXTAUTH_URL=https://ata-frontend-pied.vercel.app
 ✅ DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 ✅ DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 ✅ NODE_ENV=production
 ✅ NEXT_PUBLIC_BACKEND_URL=https://ata-backend-production.up.railway.app
-✅ ALLOWED_ORIGINS=https://ata-frontend-jofc28pb8-mahmood-atef-s-projects.vercel.app,https://ata-backend-production.up.railway.app
+✅ ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-production.up.railway.app
 ```
 
 ---
