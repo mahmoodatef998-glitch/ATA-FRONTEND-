@@ -30,7 +30,8 @@ if errorlevel 1 (
     echo Trying db push to sync schema (this will update existing schema)...
     echo ⚠️  Warning: This may remove old enum values (USER, BROKER, SUPERADMIN)
     echo.
-    call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
+    REM Use echo to auto-answer "y" to prompts
+    echo y | call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
     
     if errorlevel 1 (
         echo.

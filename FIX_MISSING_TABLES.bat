@@ -20,13 +20,14 @@ echo.
 echo [1/2] Pushing schema to database (creating missing tables)...
 echo.
 
-call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
+REM Use echo to auto-answer "y" to prompts
+echo y | call npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
 
 if errorlevel 1 (
     echo.
     echo ⚠️  First attempt failed. Trying without accept-data-loss...
     echo.
-    call npx prisma db push --schema=prisma/schema.prisma --skip-generate
+    echo y | call npx prisma db push --schema=prisma/schema.prisma --skip-generate
 )
 
 if errorlevel 1 (
