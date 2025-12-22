@@ -6,8 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2 } from "lucide-react";
 
 // Dynamically import SwaggerUI to avoid SSR issues
-const SwaggerUI = dynamic(() => import("swagger-ui-react"), { ssr: false });
-import "swagger-ui-react/swagger-ui.css";
+const SwaggerUI = dynamic(() => import("swagger-ui-react"), { 
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+});
+// Note: swagger-ui.css is not imported to avoid build issues on Vercel
 
 export default function ApiDocsPage() {
   const [spec, setSpec] = useState<any>(null);
