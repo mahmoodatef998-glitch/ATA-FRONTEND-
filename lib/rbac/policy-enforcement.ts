@@ -19,9 +19,9 @@ export async function checkResourceOwnership(
     case "task":
       const task = await prisma.tasks.findUnique({
         where: { id: resourceId },
-        select: { assignedById: true, assignedToId: true },
+        select: { createdById: true, assignedTo: true },
       });
-      return task?.assignedById === userId || task?.assignedToId === userId;
+      return task?.createdById === userId || task?.assignedTo === userId;
 
     case "attendance":
       const attendance = await prisma.attendance.findUnique({

@@ -1,4 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
+import { authorize, authorizeAny } from "@/lib/rbac/authorize";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
+import { UserRole } from "@prisma/client";
 import { handleApiError } from "@/lib/error-handler";
 import { validateId } from "@/lib/utils/validation-helpers";
 
@@ -7,23 +12,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
   try {
-    const [{ authorizeAny }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
-      await Promise.all([
-        import("@/lib/rbac/authorize"),
-        import("@/lib/permissions/role-permissions"),
-        import("@/lib/auth-helpers"),
-        import("@/lib/prisma"),
-        import("@prisma/client"),
-      ]);
-
     // Check permission using RBAC - allow reading own tasks or all tasks
     const { userId, companyId } = await authorizeAny([
       PermissionAction.TASK_READ,
@@ -150,15 +139,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [{ authorizeAny }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
-      await Promise.all([
-        import("@/lib/rbac/authorize"),
-        import("@/lib/permissions/role-permissions"),
-        import("@/lib/auth-helpers"),
-        import("@/lib/prisma"),
-        import("@prisma/client"),
-      ]);
-
     // Check permission using RBAC - allow updating own tasks or all tasks
     const { userId: authUserId, companyId: authCompanyId } = await authorizeAny([
       PermissionAction.TASK_UPDATE,
@@ -177,7 +157,7 @@ export async function PATCH(
     const existingTask = await prisma.tasks.findFirst({
       where: {
         id: taskId,
-        companyId: authCompanyId,
+        companyId: companyId,
       },
     });
 
@@ -364,7 +344,7 @@ export async function PATCH(
       // Legacy: Notify if assignedToId changed
       await prisma.notifications.create({
         data: {
-          companyId: authCompanyId,
+          companyId: companyId,
           userId: parseInt(body.assignedToId),
           title: `Task Assigned: ${task.title}`,
           body: "You have been assigned a new task",
@@ -403,15 +383,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [{ authorize }, { PermissionAction }, { requireAuth }, { prisma }, { UserRole }] =
-      await Promise.all([
-        import("@/lib/rbac/authorize"),
-        import("@/lib/permissions/role-permissions"),
-        import("@/lib/auth-helpers"),
-        import("@/lib/prisma"),
-        import("@prisma/client"),
-      ]);
-
     const session = await requireAuth();
     const { userId, companyId } = await authorize(PermissionAction.TASK_UPDATE);
 

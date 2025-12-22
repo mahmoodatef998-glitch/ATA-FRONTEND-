@@ -38,16 +38,13 @@ async function getPendingClients() {
       }),
     ]);
 
-    // Convert Date objects to strings for client-side compatibility
-    const serializedClients = clients.map((client) => ({
-      ...client,
-      createdAt: client.createdAt.toISOString(),
-      updatedAt: client.updatedAt.toISOString(),
-      approvedAt: client.approvedAt?.toISOString() ?? null,
-    }));
-
     return {
-      clients: serializedClients,
+      clients: clients.map(client => ({
+        ...client,
+        createdAt: client.createdAt.toISOString(),
+        updatedAt: client.updatedAt.toISOString(),
+        approvedAt: client.approvedAt?.toISOString() || null,
+      })),
       pagination: {
         page: 1,
         limit: 20,

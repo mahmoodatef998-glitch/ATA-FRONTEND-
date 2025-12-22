@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { FileText, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApiErrorHandler } from "@/lib/api-error-handler";
 import { formatDate } from "@/lib/utils";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface AuditLog {
   id: number;
@@ -63,7 +62,13 @@ export default function AuditLogsPage() {
     endDate: "",
   });
 
-  const fetchLogs = useCallback(async () => {
+  useEffect(() => {
+    if (canView) {
+      fetchLogs();
+    }
+  }, [canView, page, filters]);
+
+  const fetchLogs = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -91,13 +96,7 @@ export default function AuditLogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, handleError, limit, page]);
-
-  useStableAsyncEffect(() => {
-    if (canView) {
-      fetchLogs();
-    }
-  }, [canView, fetchLogs]);
+  };
 
   const formatAction = (action: string): string => {
     return action

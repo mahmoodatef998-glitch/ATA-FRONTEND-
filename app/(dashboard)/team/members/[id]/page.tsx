@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +32,6 @@ import Image from "next/image";
 import { usePermission } from "@/lib/permissions/hooks";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { RoleAssignmentGuard } from "@/lib/permissions/components";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface AttendanceRecord {
   id: number;
@@ -99,13 +98,13 @@ const roleColors: Record<UserRole, string> = {
 const roleLabels: Record<UserRole, string> = {
   ADMIN: "Admin",
   ACCOUNTANT: "Accountant",
+  HR: "HR",
   OPERATIONS_MANAGER: "Operations Manager",
   FACTORY_SUPERVISOR: "Factory Supervisor",
   SALES_REP: "Sales Rep",
   CLIENT: "Client",
   TECHNICIAN: "Technician",
   SUPERVISOR: "Supervisor",
-  HR: "HR",
 };
 
 const monthNames = [
@@ -155,7 +154,13 @@ export default function TeamMemberDetailsPage() {
   const canEditProfile = usePermission(PermissionAction.USER_UPDATE);
   const canEditAttendance = usePermission(PermissionAction.ATTENDANCE_MANAGE);
 
-  const fetchMemberDetails = useCallback(async () => {
+  useEffect(() => {
+    if (params.id) {
+      fetchMemberDetails();
+    }
+  }, [params.id]);
+
+  const fetchMemberDetails = async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/team/members/${params.id}`);
@@ -196,13 +201,7 @@ export default function TeamMemberDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id, toast]);
-
-  useStableAsyncEffect(() => {
-    if (params.id) {
-      fetchMemberDetails();
-    }
-  }, [params.id, fetchMemberDetails]);
+  };
 
   const handleSaveProfile = async () => {
     try {
@@ -424,27 +423,22 @@ export default function TeamMemberDetailsPage() {
                     <Label htmlFor="role" className="text-right">Role</Label>
                     <Select
                       value={profileForm.role}
-                      onValueChange={(value: string) => {
-                        const role = value as UserRole;
-                        if (Object.values(UserRole).includes(role)) {
-                          setProfileForm({ ...profileForm, role });
-                        }
-                      }}
+                      onValueChange={(value) => setProfileForm({ ...profileForm, role: value as UserRole })}
                     >
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={UserRole.TECHNICIAN as string}>Technician</SelectItem>
-                        <SelectItem value={UserRole.SUPERVISOR as string}>Supervisor</SelectItem>
+                        <SelectItem value={UserRole.TECHNICIAN}>Technician</SelectItem>
+                        <SelectItem value={UserRole.SUPERVISOR}>Supervisor</SelectItem>
                         <RoleAssignmentGuard targetRole={UserRole.HR}>
-                          <SelectItem value={UserRole.HR as string}>HR</SelectItem>
+                          <SelectItem value={UserRole.HR}>HR</SelectItem>
                         </RoleAssignmentGuard>
                         <RoleAssignmentGuard targetRole={UserRole.OPERATIONS_MANAGER}>
-                          <SelectItem value={UserRole.OPERATIONS_MANAGER as string}>Operations Manager</SelectItem>
+                          <SelectItem value={UserRole.OPERATIONS_MANAGER}>Operations Manager</SelectItem>
                         </RoleAssignmentGuard>
                         <RoleAssignmentGuard targetRole={UserRole.ACCOUNTANT}>
-                          <SelectItem value={UserRole.ACCOUNTANT as string}>Accountant</SelectItem>
+                          <SelectItem value={UserRole.ACCOUNTANT}>Accountant</SelectItem>
                         </RoleAssignmentGuard>
                       </SelectContent>
                     </Select>

@@ -14,14 +14,6 @@ import { getDubaiDaysAgo, formatDubaiDate } from "@/lib/cron-timezone-utils";
  * - Security: Requires CRON_SECRET
  */
 export async function GET(request: Request) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
     // Security check
     const authHeader = request.headers.get('authorization');
@@ -40,9 +32,9 @@ export async function GET(request: Request) {
       where: {
         stage: 'AWAITING_DEPOSIT',
         depositPaid: false,
-        quotations: {
+        purchase_orders: {
           some: {
-            depositRequired: true, // depositRequired is on quotations
+            depositRequired: true,
           }
         },
         updatedAt: {
@@ -53,12 +45,6 @@ export async function GET(request: Request) {
         clients: true,
         purchase_orders: true,
         companies: true,
-        quotations: {
-          where: {
-            depositRequired: true,
-          },
-          take: 1,
-        },
       },
       orderBy: {
         createdAt: 'asc'
@@ -73,7 +59,6 @@ export async function GET(request: Request) {
     // Send reminders
     for (const order of overdueOrders) {
       const po = order.purchase_orders[0];
-      const quotation = order.quotations[0];
       
       if (!order.clients?.email) {
         console.log(`⚠️ Order #${order.id}: No email available`);
@@ -126,17 +111,17 @@ export async function GET(request: Request) {
                   <div class="info-row">
                     <strong>Order Details:</strong><br>
                     Order Number: #${order.id}<br>
-                    ${po ? `Purchase Order: ${po.poNumber}<br>` : ''}
+                    Purchase Order: ${po.poNumber}<br>
                     Created: ${new Date(order.createdAt).toLocaleDateString('en-GB')}
                   </div>
                   
                   <div class="info-row">
                     <strong>Payment Required:</strong><br>
-                    Deposit Percentage: ${quotation?.depositPercent || order.depositPercentage || 'N/A'}%<br>
-                    Deposit Amount: <span class="amount">${quotation?.depositAmount || order.depositAmount ? (quotation?.depositAmount || order.depositAmount)?.toLocaleString() : 'N/A'} AED</span>
+                    Deposit Percentage: ${po.depositPercent}%<br>
+                    Deposit Amount: <span class="amount">${po.depositAmount?.toLocaleString()} AED</span>
                   </div>
                   
-                  ${po?.notes ? `
+                  ${po.notes ? `
                     <div class="info-row">
                       <strong>Notes:</strong><br>
                       ${po.notes}
@@ -173,7 +158,7 @@ export async function GET(request: Request) {
           orderId: order.id,
           client: order.clients.name,
           email: order.clients.email,
-          amount: quotation?.depositAmount || order.depositAmount,
+          amount: po.depositAmount,
           daysOverdue: daysOverdue,
           status: 'sent'
         });

@@ -5,14 +5,6 @@ import { handleApiError } from "@/lib/error-handler";
 import { requireTeamModuleAccess } from "@/lib/permissions/middleware";
 
 export async function GET(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
     // Require team module access
     const session = await requireTeamModuleAccess();
@@ -119,7 +111,7 @@ export async function GET(request: NextRequest) {
     // Group data by userId for quick lookup
     const attendanceByUser = new Map<number, typeof allAttendanceRecords>();
     const overtimeByUser = new Map<number, typeof allOvertimeRecords>();
-    const todayAttendanceByUser = new Map<number, (typeof todayAttendanceRecords)[0]>();
+    const todayAttendanceByUser = new Map<number, typeof todayAttendanceRecords>();
 
     allAttendanceRecords.forEach(record => {
       if (!attendanceByUser.has(record.userId)) {
@@ -136,10 +128,7 @@ export async function GET(request: NextRequest) {
     });
 
     todayAttendanceRecords.forEach(record => {
-      // Store single attendance record per user (most recent)
-      if (!todayAttendanceByUser.has(record.userId)) {
-        todayAttendanceByUser.set(record.userId, record);
-      }
+      todayAttendanceByUser.set(record.userId, record);
     });
 
     // Calculate stats for each member

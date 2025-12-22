@@ -1,37 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth-helpers";
+import { UserRole } from "@prisma/client";
+import { getUaeTime } from "@/lib/timezone-utils";
+import { createAuditLog, AuditAction, AuditResource, getAuditContext } from "@/lib/rbac/audit-logger";
 import { handleApiError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
-
-export async function GET() {
-  // Build-time probe safe response (avoid auth/prisma during Next build probes)
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json({ success: true, ok: true }, { status: 200 });
-  }
-  return NextResponse.json(
-    { success: true, message: "Endpoint requires POST; probe handled." },
-    { status: 200 }
-  );
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [
-      { prisma },
-      { requireRole },
-      { UserRole },
-      { getUaeTime },
-      { createAuditLog, AuditAction, AuditResource, getAuditContext },
-    ] = await Promise.all([
-      import("@/lib/prisma"),
-      import("@/lib/auth-helpers"),
-      import("@prisma/client"),
-      import("@/lib/timezone-utils"),
-      import("@/lib/rbac/audit-logger"),
-    ]);
-
     // Allow both ADMIN and SUPERVISOR to approve
     const session = await requireRole([UserRole.ADMIN, UserRole.SUPERVISOR]);
     const { id } = await params;

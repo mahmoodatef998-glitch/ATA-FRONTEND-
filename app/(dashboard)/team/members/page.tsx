@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +41,6 @@ import { useRouter } from "next/navigation";
 import { usePermission } from "@/lib/permissions/hooks";
 import { PermissionGuard, RoleAssignmentGuard } from "@/lib/permissions/components";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface TeamMember {
   id: number;
@@ -97,7 +96,11 @@ export default function TeamMembersPage() {
   const [deleting, setDeleting] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const fetchMembers = useCallback(async () => {
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const fetchMembers = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/team/members");
@@ -122,11 +125,7 @@ export default function TeamMembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
-
-  useStableAsyncEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+  };
 
   const handleEdit = (member: TeamMember, e: React.MouseEvent) => {
     e.preventDefault();

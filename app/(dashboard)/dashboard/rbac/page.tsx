@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,6 @@ import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Users, FileText, Eye, EyeOff } from "lucide-react";
 import { useIsAdmin } from "@/lib/permissions/hooks";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface RolePermissions {
   role: UserRole;
@@ -54,11 +53,18 @@ export default function RBACManagementPage() {
   const [allPermissions, setAllPermissions] = useState<PermissionAction[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("roles");
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [expandedRoles, setExpandedRoles] = useState<Set<UserRole>>(new Set());
-  const [activeTab, setActiveTab] = useState("roles");
 
-  const fetchRoles = useCallback(async () => {
+  useEffect(() => {
+    if (status === "authenticated" && isAdmin) {
+      fetchRoles();
+      fetchAuditLogs();
+    }
+  }, [status, isAdmin]);
+
+  const fetchRoles = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/rbac/roles");
@@ -84,9 +90,9 @@ export default function RBACManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  };
 
-  const fetchAuditLogs = useCallback(async () => {
+  const fetchAuditLogs = async () => {
     try {
       setAuditLoading(true);
       const response = await fetch("/api/rbac/audit-logs?limit=50");
@@ -111,14 +117,7 @@ export default function RBACManagementPage() {
     } finally {
       setAuditLoading(false);
     }
-  }, [toast]);
-
-  useStableAsyncEffect(() => {
-    if (status === "authenticated" && isAdmin) {
-      fetchRoles();
-      fetchAuditLogs();
-    }
-  }, [status, isAdmin, fetchRoles, fetchAuditLogs]);
+  };
 
   const toggleRoleExpansion = (role: UserRole) => {
     const newExpanded = new Set(expandedRoles);

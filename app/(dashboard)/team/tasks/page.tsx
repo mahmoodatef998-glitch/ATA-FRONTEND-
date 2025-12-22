@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/technician/task-card";
@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 export default function TasksPage() {
   const { toast } = useToast();
@@ -42,68 +41,64 @@ export default function TasksPage() {
     totalPages: 0,
   });
 
-  const fetchTasks = useCallback(
-    async (page = 1) => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          page: page.toString(),
-          limit: pagination.limit.toString(),
-        });
-        if (statusFilter !== "all") {
-          params.append("status", statusFilter);
-        }
+  useEffect(() => {
+    fetchTasks();
+  }, [statusFilter]);
 
-        const response = await fetch(`/api/tasks?${params}`);
-        const result = await response.json();
+  const fetchTasks = async (page = 1) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+      });
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
 
-        if (result.success) {
-          const fetchedTasks = result.data.tasks;
-          setTasks(fetchedTasks);
-          setPagination(result.data.pagination);
+      const response = await fetch(`/api/tasks?${params}`);
+      const result = await response.json();
 
-          if (result.data.stats) {
-            setStats({
-              total: result.data.stats.total,
-              pending: result.data.stats.pending,
-              inProgress: result.data.stats.inProgress,
-              completed: result.data.stats.completed,
-            });
-          } else {
-            setStats({
-              total: result.data.pagination.total,
-              pending: fetchedTasks.filter((t: any) => t.status === "PENDING")
-                .length,
-              inProgress: fetchedTasks.filter((t: any) => t.status === "IN_PROGRESS")
-                .length,
-              completed: fetchedTasks.filter((t: any) => t.status === "COMPLETED")
-                .length,
-            });
-          }
+      if (result.success) {
+        const fetchedTasks = result.data.tasks;
+        setTasks(fetchedTasks);
+        setPagination(result.data.pagination);
+        
+        // Use stats from API (calculated for all tasks, not just current page)
+        if (result.data.stats) {
+          setStats({
+            total: result.data.stats.total,
+            pending: result.data.stats.pending,
+            inProgress: result.data.stats.inProgress,
+            completed: result.data.stats.completed,
+          });
         } else {
-          toast({
-            title: "Error",
-            description: result.error || "Failed to load tasks",
-            variant: "destructive",
+          // Fallback: calculate from fetched tasks if stats not available
+          setStats({
+            total: result.data.pagination.total,
+            pending: fetchedTasks.filter((t: any) => t.status === "PENDING").length,
+            inProgress: fetchedTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
+            completed: fetchedTasks.filter((t: any) => t.status === "COMPLETED").length,
           });
         }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
+      } else {
         toast({
           title: "Error",
-          description: "Failed to load tasks",
+          description: result.error || "Failed to load tasks",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
       }
-    },
-    [pagination.limit, statusFilter, toast]
-  );
-
-  useStableAsyncEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load tasks",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading && tasks.length === 0) {
     return (

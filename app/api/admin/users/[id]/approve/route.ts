@@ -1,28 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export async function GET() {
-  // Build-time probe safe response (do not require auth during Next build probes)
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json({ success: true, ok: true }, { status: 200 });
-  }
-
-  return NextResponse.json(
-    { success: true, message: "Endpoint requires PATCH; probe handled." },
-    { status: 200 }
-  );
-}
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth-helpers";
+import { UserRole } from "@prisma/client";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [{ prisma }, { requireRole }, { UserRole }] = await Promise.all([
-      import("@/lib/prisma"),
-      import("@/lib/auth-helpers"),
-      import("@prisma/client"),
-    ]);
-
     const session = await requireRole([UserRole.ADMIN]);
     const { id } = await params;
     const userId = parseInt(id);

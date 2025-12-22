@@ -41,7 +41,7 @@ export async function POST(
       return NextResponse.json(
         { 
           success: false, 
-          error: authError instanceof Error ? authError.message : "Unauthorized",
+          error: authError?.message || "Unauthorized",
           errorType: "authentication",
         },
         { status: 401 }
@@ -67,7 +67,7 @@ export async function POST(
         { 
           success: false, 
           error: "Invalid order ID",
-          details: paramsError instanceof Error ? paramsError.message : undefined,
+          details: paramsError?.message,
         },
         { status: 400 }
       );
@@ -84,7 +84,7 @@ export async function POST(
         { 
           success: false, 
           error: "Failed to parse form data",
-          details: formError instanceof Error ? formError.message : undefined,
+          details: formError?.message,
         },
         { status: 400 }
       );

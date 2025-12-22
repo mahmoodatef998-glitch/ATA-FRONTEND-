@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { authorize, authorizeAny } from "@/lib/rbac/authorize";
-import { UserRole, Prisma, TaskStatus, TaskPriority } from "@prisma/client";
+import { UserRole, Prisma, TaskStatus } from "@prisma/client";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 
@@ -21,20 +21,18 @@ import { logger } from "@/lib/logger";
  *         name: page
  *         schema:
  *           type: integer
- *         default: 1
- *         description: Page number
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *         default: 30
- *         description: Items per page
+ *           default: 30
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED]
- *         description: Filter by task status
+ *         description: Filter by task status (can be multiple: status=PENDING&status=IN_PROGRESS)
  *       - in: query
  *         name: assignedToId
  *         schema:
@@ -48,14 +46,6 @@ import { logger } from "@/lib/logger";
  */
 // GET - List tasks
 export async function GET(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
     // Check permission using RBAC
     const { userId, companyId } = await authorizeAny([
@@ -283,7 +273,7 @@ export async function POST(request: NextRequest) {
         description,
         assignedToId: assigneeIdsArray.length > 0 ? assigneeIdsArray[0] : null, // Legacy - first assignee
         assignedById: userId,
-        priority: priority as TaskPriority,
+        priority: priority as Prisma.TaskPriority,
         deadline: deadline ? new Date(deadline) : null,
         location,
         locationLat,

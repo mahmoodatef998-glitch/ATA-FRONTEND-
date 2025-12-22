@@ -1,6 +1,6 @@
+import { getBaseUrl } from "@/lib/utils";
+import { cookies } from "next/headers";
 import { NotificationsList } from "@/components/dashboard/notifications-list";
-
-export const dynamic = "force-dynamic";
 
 async function getNotifications() {
   try {
@@ -49,14 +49,11 @@ async function getNotifications() {
       total,
     });
 
-    // Convert Date objects to strings for client-side compatibility
-    const serializedNotifications = notifications.map((notification) => ({
-      ...notification,
-      createdAt: notification.createdAt.toISOString(),
-    }));
-
     return {
-      notifications: serializedNotifications,
+      notifications: notifications.map(notification => ({
+        ...notification,
+        createdAt: notification.createdAt.toISOString(),
+      })),
       pagination: {
         page: 1,
         limit: 20,

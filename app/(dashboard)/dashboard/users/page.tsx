@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface User {
   id: number;
@@ -69,11 +68,11 @@ const roleLabels: Record<UserRole, string> = {
   ACCOUNTANT: "Accountant",
   OPERATIONS_MANAGER: "Operations Manager",
   FACTORY_SUPERVISOR: "Factory Supervisor",
+  HR: "HR",
   SALES_REP: "Sales Rep",
   CLIENT: "Client",
   TECHNICIAN: "Technician",
   SUPERVISOR: "Supervisor",
-  HR: "HR",
 };
 
 export default function UsersPage() {
@@ -94,12 +93,7 @@ export default function UsersPage() {
   });
 
   // Fetch users (Admin only)
-  const showToast = useCallback(
-    (options: Parameters<typeof toast>[0]) => toast(options),
-    []
-  );
-
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     if (!isAdmin) {
       setLoading(false);
       return;
@@ -129,7 +123,7 @@ export default function UsersPage() {
       }
       
       if (!allData.success || !pendingData.success) {
-          showToast({
+        toast({
           title: "Error",
           description: "Failed to load users",
           variant: "destructive",
@@ -137,7 +131,7 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-        showToast({
+      toast({
         title: "Error",
         description: "An error occurred while loading users",
         variant: "destructive",
@@ -145,13 +139,15 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, showToast]);
+  };
 
-  useStableAsyncEffect(() => {
+  useEffect(() => {
     if (isAdmin) {
       fetchUsers();
+    } else {
+      setLoading(false);
     }
-  }, [isAdmin, fetchUsers]);
+  }, [isAdmin]);
 
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Clock, MapPin, Package, User, CheckCircle, XCircle, TrendingUp, Download } from "lucide-react";
 import { formatTime, formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 
 interface EmployeeDetailModalProps {
   employeeId: number;
@@ -27,7 +26,13 @@ export function EmployeeDetailModal({ employeeId, date, isOpen, onClose }: Emplo
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEmployeeDetails = useCallback(async () => {
+  useEffect(() => {
+    if (isOpen && employeeId && date) {
+      fetchEmployeeDetails();
+    }
+  }, [isOpen, employeeId, date]);
+
+  const fetchEmployeeDetails = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -105,13 +110,7 @@ export function EmployeeDetailModal({ employeeId, date, isOpen, onClose }: Emplo
     } finally {
       setLoading(false);
     }
-  }, [date, employeeId]);
-
-  useEffect(() => {
-    if (isOpen && employeeId && date) {
-      fetchEmployeeDetails();
-    }
-  }, [isOpen, employeeId, date, fetchEmployeeDetails]);
+  };
 
   const getTaskStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
@@ -152,13 +151,10 @@ export function EmployeeDetailModal({ employeeId, date, isOpen, onClose }: Emplo
                 }`}
               >
                 {employee.profilePicture ? (
-                  <Image
+                  <img
                     src={employee.profilePicture}
                     alt={employee.name}
-                    width={40}
-                    height={40}
                     className="h-10 w-10 rounded-full object-cover"
-                    unoptimized
                   />
                 ) : (
                   <User className={`h-5 w-5 ${isPresent ? "text-green-600" : "text-red-600"}`} />

@@ -9,7 +9,7 @@ import { UserRole } from "@prisma/client";
  * Inline function to avoid Edge Runtime import issues
  */
 function canAccessTeamModule(role: UserRole): boolean {
-  const teamRoles: UserRole[] = [
+  const teamRoles = [
     UserRole.ADMIN,
     UserRole.HR,
     UserRole.OPERATIONS_MANAGER,

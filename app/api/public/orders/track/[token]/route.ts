@@ -12,6 +12,7 @@ export async function GET(
       headers: { "content-type": "application/json" },
     });
   }
+
   try {
     const { token } = await params;
 

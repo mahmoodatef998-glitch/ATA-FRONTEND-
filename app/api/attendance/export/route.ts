@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
+import { UserRole, Prisma } from "@prisma/client";
+import { normalizeDateToDubai, getMonthBoundsInDubai } from "@/lib/attendance-service";
+import { getUaeTime } from "@/lib/timezone-utils";
 import { handleApiError, ValidationError } from "@/lib/error-handler";
 import * as XLSX from "xlsx";
 import { formatTime, formatDate } from "@/lib/utils";
@@ -18,21 +22,6 @@ const monthNames = [
  */
 export async function GET(request: NextRequest) {
   try {
-    // Build-time probe safe response (avoid auth/prisma during Next build probes)
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return NextResponse.json({ success: true, ok: true }, { status: 200 });
-    }
-
-    const [{ prisma }, { requireAuth }, prismaClient, attendanceService] =
-      await Promise.all([
-        import("@/lib/prisma"),
-        import("@/lib/auth-helpers"),
-        import("@prisma/client"),
-        import("@/lib/attendance-service"),
-      ]);
-    const { UserRole } = prismaClient;
-    const { normalizeDateToDubai, getMonthBoundsInDubai } = attendanceService;
-
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
     

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/technician/task-card";
@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 export default function TechnicianTasksPage() {
   const { toast } = useToast();
@@ -34,56 +33,54 @@ export default function TechnicianTasksPage() {
     totalPages: 0,
   });
 
-  const fetchTasks = useCallback(
-    async (page = 1) => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          page: page.toString(),
-          limit: pagination.limit.toString(),
+  useEffect(() => {
+    fetchTasks();
+  }, [statusFilter]);
+
+  const fetchTasks = async (page = 1) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+      });
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+
+      const response = await fetch(`/api/tasks?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        const fetchedTasks = result.data.tasks;
+        setTasks(fetchedTasks);
+        setPagination(result.data.pagination);
+        
+        // Calculate stats
+        setStats({
+          total: fetchedTasks.length,
+          pending: fetchedTasks.filter((t: any) => t.status === "PENDING").length,
+          inProgress: fetchedTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
+          completed: fetchedTasks.filter((t: any) => t.status === "COMPLETED").length,
         });
-        if (statusFilter !== "all") {
-          params.append("status", statusFilter);
-        }
-
-        const response = await fetch(`/api/tasks?${params}`);
-        const result = await response.json();
-
-        if (result.success) {
-          const fetchedTasks = result.data.tasks;
-          setTasks(fetchedTasks);
-          setPagination(result.data.pagination);
-          
-          setStats({
-            total: fetchedTasks.length,
-            pending: fetchedTasks.filter((t: any) => t.status === "PENDING").length,
-            inProgress: fetchedTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
-            completed: fetchedTasks.filter((t: any) => t.status === "COMPLETED").length,
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Failed to load tasks",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
+      } else {
         toast({
           title: "Error",
-          description: "Failed to load tasks",
+          description: result.error || "Failed to load tasks",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
       }
-    },
-    [pagination.limit, statusFilter, toast]
-  );
-
-  useStableAsyncEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load tasks",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading && tasks.length === 0) {
     return (

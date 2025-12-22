@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, CheckCheck, Package } from "lucide-react";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
 import { ClientNavbar } from "@/components/client/client-navbar";
 import { useToast } from "@/hooks/use-toast";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 interface Notification {
   id: number;
@@ -28,7 +27,12 @@ export default function ClientNotificationsPage() {
   const [clientName, setClientName] = useState("");
   const [markingRead, setMarkingRead] = useState<number | null>(null);
 
-  const fetchClientInfo = useCallback(async () => {
+  useEffect(() => {
+    fetchNotifications();
+    fetchClientInfo();
+  }, []);
+
+  const fetchClientInfo = async () => {
     try {
       const response = await fetch("/api/client/orders");
       if (response.ok) {
@@ -40,9 +44,9 @@ export default function ClientNotificationsPage() {
     } catch (error) {
       console.error("Error fetching client info:", error);
     }
-  }, []);
+  };
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/client/notifications");
@@ -69,12 +73,7 @@ export default function ClientNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, toast]);
-
-  useStableAsyncEffect(() => {
-    fetchNotifications();
-    fetchClientInfo();
-  }, [fetchClientInfo, fetchNotifications]);
+  };
 
   const markAsRead = async (notificationId: number) => {
     if (markingRead === notificationId) return;

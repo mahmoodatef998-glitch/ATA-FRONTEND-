@@ -403,8 +403,6 @@ async function main() {
       await prisma.attendance.create({
         data: {
           userId: tech.id,
-          companyId: tech.companyId,
-          date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
           checkInTime: checkIn,
           checkOutTime: checkOut,
           checkInLat: 25.2048,

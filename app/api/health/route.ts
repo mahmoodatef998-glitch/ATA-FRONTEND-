@@ -10,33 +10,14 @@ import { isCloudinaryConfigured, getCloudinaryInstance } from "@/lib/cloudinary"
  * Checks the health of various system components
  */
 export async function GET() {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
-  const health: {
-    status: "healthy" | "unhealthy" | "error";
-    timestamp: string;
-    services: {
-      database: "unknown" | "connected" | "disconnected";
-      email: "unknown" | "configured" | "not_configured" | "error";
-      storage: "unknown" | "available" | "unavailable" | "error";
-      cloudinary: "unknown" | "configured" | "not_configured" | "error";
-    };
-    version: string;
-    environment: string;
-  } = {
-    status: "healthy",
+  const health = {
+    status: "healthy" as const,
     timestamp: new Date().toISOString(),
     services: {
-      database: "unknown",
-      email: "unknown",
-      storage: "unknown",
-      cloudinary: "unknown",
+      database: "unknown" as const,
+      email: "unknown" as const,
+      storage: "unknown" as const,
+      cloudinary: "unknown" as const,
     },
     version: process.env.npm_package_version || "1.0.0",
     environment: process.env.NODE_ENV || "development",
@@ -66,10 +47,22 @@ export async function GET() {
       health.status = "unhealthy";
     }
 
-    // Check Cloudinary configuration first
-    let cloudinaryConfigured = false;
+    // Check storage (uploads directory)
     try {
-      cloudinaryConfigured = isCloudinaryConfigured();
+      const uploadsDir = join(process.cwd(), "public", "uploads");
+      const storageExists = existsSync(uploadsDir);
+      health.services.storage = storageExists ? "available" : "unavailable";
+      if (!storageExists) {
+        health.status = "unhealthy";
+      }
+    } catch (error) {
+      health.services.storage = "error";
+      health.status = "unhealthy";
+    }
+
+    // Check Cloudinary configuration
+    try {
+      const cloudinaryConfigured = isCloudinaryConfigured();
       if (cloudinaryConfigured) {
         // Try to get Cloudinary instance to verify it's working
         const cloudinaryInstance = getCloudinaryInstance();
@@ -80,24 +73,6 @@ export async function GET() {
     } catch (error) {
       health.services.cloudinary = "error";
       // Don't mark as unhealthy if Cloudinary fails - it's optional
-    }
-
-    // Check storage (uploads directory)
-    // Storage is optional if Cloudinary is configured
-    try {
-      const uploadsDir = join(process.cwd(), "public", "uploads");
-      const storageExists = existsSync(uploadsDir);
-      health.services.storage = storageExists ? "available" : "unavailable";
-      // Only mark as unhealthy if storage is unavailable AND Cloudinary is not configured
-      if (!storageExists && !cloudinaryConfigured) {
-        health.status = "unhealthy";
-      }
-    } catch (error) {
-      health.services.storage = "error";
-      // Only mark as unhealthy if Cloudinary is not configured
-      if (!cloudinaryConfigured) {
-        health.status = "unhealthy";
-      }
     }
 
     // Return appropriate status code
@@ -115,3 +90,4 @@ export async function GET() {
     );
   }
 }
+

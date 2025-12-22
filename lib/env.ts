@@ -54,7 +54,7 @@ export type Env = z.infer<typeof envSchema>;
 function validateEnv(): Env {
   try {
     // In development, provide fallback values for NextAuth if missing
-    const envData: Record<string, string | undefined> = { ...process.env };
+    const envData: Record<string, string> = { ...process.env };
     
     // Always provide fallback for NEXTAUTH_SECRET in development if missing or too short
     if (process.env.NODE_ENV === 'development') {

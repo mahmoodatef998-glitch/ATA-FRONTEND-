@@ -3,19 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
-import { UserRole, Prisma, WorkLogStatus } from "@prisma/client";
+import { UserRole, Prisma } from "@prisma/client";
 import { uploadFile, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 // GET - List work logs
 export async function GET(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
     const session = await requireAuth();
     const { userId: authUserId, companyId } = await authorize(PermissionAction.TASK_READ);
@@ -43,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status as WorkLogStatus;
+      where.status = status;
     }
 
     const [workLogs, total] = await Promise.all([
@@ -181,7 +173,7 @@ export async function POST(request: NextRequest) {
         description,
         startTime: new Date(startTime),
         endTime: endTime ? new Date(endTime) : null,
-        photos: photoUrls.length > 0 ? photoUrls : Prisma.JsonNull,
+        photos: photoUrls.length > 0 ? photoUrls : null,
         status: "SUBMITTED",
       },
       include: {

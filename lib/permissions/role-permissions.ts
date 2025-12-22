@@ -509,7 +509,7 @@ export function canAssignRole(
  * Check if role can access Our Team module
  */
 export function canAccessTeamModule(role: UserRole): boolean {
-  const teamRoles: UserRole[] = [
+  const teamRoles = [
     UserRole.ADMIN,
     UserRole.HR,
     UserRole.OPERATIONS_MANAGER,
@@ -526,7 +526,7 @@ export function canAccessTeamModule(role: UserRole): boolean {
  * Supervisor, HR, and Technician can only access Our Team section
  */
 export function canAccessOtherModules(role: UserRole): boolean {
-  const allowedRoles: UserRole[] = [
+  const allowedRoles = [
     UserRole.ADMIN,
     UserRole.OPERATIONS_MANAGER,
     UserRole.ACCOUNTANT,

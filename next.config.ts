@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   }),
   
   // External packages for server components (moved from experimental in Next.js 15)
-  serverExternalPackages: ['@prisma/client', 'winston', 'jsdom', 'readable-stream', 'isomorphic-dompurify'],
+  serverExternalPackages: ['@prisma/client'],
   
   // Production build optimizations
   // Note: SWC minification is enabled by default in Next.js 15+
@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Force Node.js runtime for all API routes to avoid Edge Runtime issues with winston
+  // Bundle size optimization
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -115,13 +115,7 @@ const nextConfig: NextConfig = {
     ];
   },
   // Webpack configuration to exclude Node.js modules from client-side bundle
-  webpack: (config: any, { isServer }: { isServer: boolean }) => {
-    // Exclude backend-api from build
-    config.externals = config.externals || [];
-    config.externals.push({
-      'backend-api': 'commonjs backend-api',
-    });
-    
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       // Exclude Node.js modules from client-side bundle
       config.resolve.fallback = {
@@ -144,13 +138,6 @@ const nextConfig: NextConfig = {
         ...config.resolve.alias,
         '@/lib/logger-winston': false,
       };
-
-      // Exclude winston from API routes bundle
-      if (config.externals) {
-        config.externals.push('winston');
-      } else {
-        config.externals = ['winston'];
-      }
 
       // Code splitting optimization
       config.optimization = {

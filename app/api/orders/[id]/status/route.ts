@@ -49,7 +49,6 @@ export async function PATCH(
         clientId: true,
         status: true,
         stage: true,
-        publicToken: true,
         clients: {
           select: {
             id: true,

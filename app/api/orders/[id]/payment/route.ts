@@ -21,6 +21,7 @@ export async function GET(
       headers: { "content-type": "application/json" },
     });
   }
+
   try {
     // التحقق من صلاحية عرض الدفعات - فقط Admin و Accountant يمكنهم الوصول
     // استخدام PAYMENT_RECORD لأن Operations Manager لا يملكه

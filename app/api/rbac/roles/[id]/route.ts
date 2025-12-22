@@ -30,6 +30,7 @@ export async function GET(
       headers: { "content-type": "application/json" },
     });
   }
+
   try {
     const { userId, companyId } = await authorize(PermissionAction.ROLE_MANAGE);
     const { id } = await params;

@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth-helpers";
+import { UserRole } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
-    // During Next.js production build, Next may probe API routes to "collect page data".
-    // This route is admin-protected; avoid throwing during build probes.
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return NextResponse.json({ success: true, ok: true }, { status: 200 });
-    }
-
-    const [{ requireRole }, { UserRole }, { prisma }] = await Promise.all([
-      import("@/lib/auth-helpers"),
-      import("@prisma/client"),
-      import("@/lib/prisma"),
-    ]);
-
     const session = await requireRole([UserRole.ADMIN]);
+    const companyId = session.user.companyId;
 
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get("status") || "PENDING"; // PENDING, APPROVED, REJECTED

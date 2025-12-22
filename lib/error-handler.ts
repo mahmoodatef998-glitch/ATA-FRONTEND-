@@ -153,7 +153,7 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
       error: "An unexpected error occurred",
       details:
         process.env.NODE_ENV === "development"
-          ? { message: String(error) }
+          ? { error: String(error) }
           : undefined,
     },
     { status: 500 }
@@ -205,7 +205,7 @@ function handlePrismaError(
           error: "Referenced record does not exist",
           details:
             process.env.NODE_ENV === "development"
-              ? { code: error.code, field: error.meta?.field_name as string | undefined }
+              ? { code: error.code, field: error.meta?.field_name }
               : { code: error.code },
         },
         { status: 400 }

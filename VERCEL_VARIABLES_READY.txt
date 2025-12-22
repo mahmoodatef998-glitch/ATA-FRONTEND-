@@ -1,0 +1,137 @@
+========================================
+   Environment Variables للنسخ في Vercel
+========================================
+
+⚠️ مهم: 
+1. انسخ كل متغير (Key + Value)
+2. في Vercel: Settings → Environment Variables → Add New
+3. Environment: اختر Production, Preview, Development للجميع
+
+========================================
+
+1. DATABASE_URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+DATABASE_URL
+
+Value:
+postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2. DIRECT_URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+DIRECT_URL
+
+Value:
+postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3. NEXTAUTH_SECRET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+NEXTAUTH_SECRET
+
+Value:
+00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4. NEXTAUTH_URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+NEXTAUTH_URL
+
+Value (مؤقت - حدثه بعد Deploy الأول):
+https://placeholder.vercel.app
+
+⚠️ بعد Deploy، حدث هذا بـ URL المشروع الفعلي!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5. NODE_ENV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+NODE_ENV
+
+Value:
+production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6. RBAC_ENABLED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+RBAC_ENABLED
+
+Value:
+true
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+7. NEXT_PUBLIC_RBAC_ENABLED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+NEXT_PUBLIC_RBAC_ENABLED
+
+Value:
+true
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+8. NEXT_PUBLIC_API_URL (موجود عندك - تأكد من القيمة)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+NEXT_PUBLIC_API_URL
+
+Value:
+https://ata-backend-production.up.railway.app
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+9. ALLOWED_ORIGINS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Key:
+ALLOWED_ORIGINS
+
+Value (مؤقت - حدثه بعد Deploy):
+https://placeholder.vercel.app,https://ata-backend-production.up.railway.app
+
+⚠️ بعد Deploy، حدث هذا بـ URL المشروع الفعلي!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+========================================
+   ملخص المتغيرات (9 متغيرات)
+========================================
+
+✅ DATABASE_URL                    (Connection Pooling)
+✅ DIRECT_URL                      (Direct Connection)
+✅ NEXTAUTH_SECRET                 (Authentication)
+✅ NEXTAUTH_URL                    (⚠️ حدثه بعد Deploy)
+✅ NODE_ENV                        (production)
+✅ RBAC_ENABLED                    (Permissions System)
+✅ NEXT_PUBLIC_RBAC_ENABLED        (Client-side RBAC)
+✅ NEXT_PUBLIC_API_URL             (Backend URL)
+✅ ALLOWED_ORIGINS                 (⚠️ حدثه بعد Deploy)
+
+========================================
+   خطوات بعد Deploy الأول
+========================================
+
+1. انسخ URL المشروع من Vercel
+   مثال: https://ata-crm-frontend.vercel.app
+
+2. حدث في Vercel:
+   - NEXTAUTH_URL → URL المشروع
+   - ALLOWED_ORIGINS → URL المشروع + Railway URL
+
+3. حدث في Railway Backend:
+   - CORS_ORIGIN → URL المشروع
+
+4. Redeploy كلا المشروعين
+
+========================================
+

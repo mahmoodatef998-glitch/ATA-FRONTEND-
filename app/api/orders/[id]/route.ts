@@ -18,6 +18,7 @@ export async function GET(
       headers: { "content-type": "application/json" },
     });
   }
+
   try {
     // التحقق من صلاحية عرض الطلبات
     const { userId, companyId } = await authorize(PermissionAction.LEAD_READ);

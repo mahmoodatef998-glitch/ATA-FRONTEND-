@@ -7,8 +7,8 @@
  */
 
 // Check if we're in Edge Runtime
-const isEdgeRuntime =
-  typeof globalThis !== 'undefined' && typeof (globalThis as any).EdgeRuntime !== 'undefined' ||
+const isEdgeRuntime = 
+  typeof EdgeRuntime !== 'undefined' || 
   (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') ||
   (typeof process === 'undefined');
 

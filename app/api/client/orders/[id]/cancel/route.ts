@@ -98,6 +98,7 @@ export async function POST(
       where: { id: parseInt(id) },
       data: {
         status: "CANCELLED",
+        // Keep the current stage, status is enough to mark as cancelled
       }
     });
 

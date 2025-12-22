@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { ordersQuerySchema } from "@/lib/validators/order";
-import { UserRole, Prisma, OrderStatus } from "@prisma/client";
+import { UserRole, Prisma } from "@prisma/client";
 import { applyRateLimit, RATE_LIMITS, getRateLimitHeaders } from "@/lib/rate-limit";
 import { handleApiError } from "@/lib/error-handler";
 
@@ -63,14 +63,6 @@ import { handleApiError } from "@/lib/error-handler";
  *         description: Forbidden
  */
 export async function GET(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   // Apply rate limiting
   const { response: rateLimitResponse, rateLimitInfo } = await applyRateLimit(request, RATE_LIMITS.API_GENERAL);
   if (rateLimitResponse) {
@@ -109,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status
     if (status) {
-      where.status = status as OrderStatus;
+      where.status = status;
     }
 
     // Search by client name or phone

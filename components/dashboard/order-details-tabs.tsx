@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ interface OrderDetailsTabsProps {
 }
 
 // Build tabs list - show all tabs, but content will check permissions
-function getAvailableTabs(checkPermission: (p: Permission) => boolean) {
+function getAvailableTabs() {
   const allTabs = [
     { id: "overview", label: "Overview", icon: Package, permission: null },
     { id: "quotations", label: "Quotations", icon: FileText, permission: Permission.VIEW_QUOTATIONS },
@@ -72,38 +72,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   // History - allow with either LEAD_READ or OVERVIEW_VIEW
   const canViewHistory = useCanAny([PermissionAction.LEAD_READ, PermissionAction.OVERVIEW_VIEW]);
 
-  // Helper function for backward compatibility (using useMemo to avoid calling hooks in regular function)
-  const checkPermission = useMemo(() => {
-    const permissionMap = new Map<Permission, boolean>();
-    // Pre-compute permissions for all old permissions used in tabs
-    const tabPermissions = [
-      Permission.VIEW_QUOTATIONS,
-      Permission.VIEW_POS,
-      Permission.VIEW_PAYMENTS,
-      Permission.VIEW_DELIVERY_NOTES,
-      Permission.VIEW_ORDERS,
-    ];
-    tabPermissions.forEach((oldPerm) => {
-      const newPerm = migratePermission(oldPerm);
-      // Use the appropriate pre-computed permission check
-      if (oldPerm === Permission.VIEW_QUOTATIONS) {
-        permissionMap.set(oldPerm, canViewQuotations);
-      } else if (oldPerm === Permission.VIEW_POS) {
-        permissionMap.set(oldPerm, canViewPOs);
-      } else if (oldPerm === Permission.VIEW_PAYMENTS) {
-        permissionMap.set(oldPerm, canViewPayments);
-      } else if (oldPerm === Permission.VIEW_DELIVERY_NOTES) {
-        permissionMap.set(oldPerm, canViewDeliveryNotes);
-      } else if (oldPerm === Permission.VIEW_ORDERS) {
-        permissionMap.set(oldPerm, canViewOrders);
-      }
-    });
-    return (oldPermission: Permission): boolean => {
-      return permissionMap.get(oldPermission) ?? false;
-    };
-  }, [canViewQuotations, canViewPOs, canViewPayments, canViewDeliveryNotes, canViewOrders]);
-
-  const availableTabs = getAvailableTabs(checkPermission);
+  const availableTabs = getAvailableTabs();
   
   return (
     <div className="space-y-6" suppressHydrationWarning>

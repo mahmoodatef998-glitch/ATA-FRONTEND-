@@ -16,7 +16,7 @@ export default function ClientRegisterPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState<{ strength: "weak" | "medium" | "strong"; feedback: string[] } | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<{ strength: "weak" | "medium" | "strong"; feedback: string[]; valid?: boolean } | null>(null);
   const [phoneError, setPhoneError] = useState("");
 
   const [formData, setFormData] = useState({
@@ -75,7 +75,7 @@ export default function ClientRegisterPage() {
     }
 
     const strength = checkPasswordStrength(formData.password);
-    if (strength.strength === "weak") {
+    if (!strength.valid) {
       setError("Password is too weak. " + strength.feedback.join(", "));
       return;
     }
@@ -229,7 +229,7 @@ export default function ClientRegisterPage() {
                   minLength={8}
                   maxLength={128}
                   disabled={loading}
-                  className={passwordStrength?.strength === "weak" ? "border-red-500" : passwordStrength?.strength === "strong" ? "border-green-500" : ""}
+                  className={passwordStrength && !passwordStrength.valid ? "border-red-500" : passwordStrength?.strength === "strong" ? "border-green-500" : ""}
                 />
                 <button
                   type="button"
@@ -268,7 +268,7 @@ export default function ClientRegisterPage() {
                     <ul className="text-xs text-muted-foreground space-y-0.5">
                       {passwordStrength.feedback.map((msg, idx) => (
                         <li key={idx} className="flex items-center gap-1">
-                          {passwordStrength.strength === "strong" ? (
+                          {passwordStrength.valid ? (
                             <CheckCircle2 className="h-3 w-3 text-green-600" />
                           ) : (
                             <XCircle className="h-3 w-3 text-red-600" />

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth-helpers";
+import { UserRole } from "@prisma/client";
 import { z } from "zod";
 
 const updateLocationSchema = z.object({
@@ -11,17 +14,6 @@ const updateLocationSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    // Build-time probe safe response (avoid auth/prisma during Next build probes)
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return NextResponse.json({ success: true, ok: true }, { status: 200 });
-    }
-
-    const [{ prisma }, { requireRole }, { UserRole }] = await Promise.all([
-      import("@/lib/prisma"),
-      import("@/lib/auth-helpers"),
-      import("@prisma/client"),
-    ]);
-
     const session = await requireRole([UserRole.ADMIN]);
     
     const company = await prisma.companies.findUnique({
@@ -62,12 +54,6 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const [{ prisma }, { requireRole }, { UserRole }] = await Promise.all([
-      import("@/lib/prisma"),
-      import("@/lib/auth-helpers"),
-      import("@prisma/client"),
-    ]);
-
     const session = await requireRole([UserRole.ADMIN]);
     
     const body = await request.json();

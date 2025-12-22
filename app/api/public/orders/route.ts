@@ -8,16 +8,14 @@ import { sendEmail, getOrderConfirmationEmail } from "@/lib/email";
 import { sanitizeText } from "@/lib/security";
 import { handleApiError } from "@/lib/error-handler";
 
-export const runtime = 'nodejs';
-
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientIp = getClientIp(request);
     const rateLimit = await rateLimiter.check(
       `public-order:${clientIp}`,
-      RATE_LIMITS.PUBLIC_ORDER_CREATE.limit,
-      RATE_LIMITS.PUBLIC_ORDER_CREATE.windowMs
+      RATE_LIMITS.PUBLIC_ORDER.limit,
+      RATE_LIMITS.PUBLIC_ORDER.windowMs
     );
 
     if (!rateLimit.success) {
@@ -30,7 +28,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
-            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
+            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
             "X-RateLimit-Remaining": rateLimit.remaining.toString(),
             "X-RateLimit-Reset": rateLimit.resetAt.toString(),
           },
@@ -187,8 +185,7 @@ export async function POST(request: NextRequest) {
       return { order, client };
     });
 
-      // Emit Socket.io event for real-time notification
-    const defaultCompanyId = result.order.companyId;
+    // Emit Socket.io event for real-time notification
     if (global.io) {
       global.io.to(`company_${defaultCompanyId}`).emit("new_notification", {
         orderId: result.order.id,
@@ -235,7 +232,7 @@ export async function POST(request: NextRequest) {
       {
         status: 201,
         headers: {
-          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
+          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
           "X-RateLimit-Remaining": rateLimit.remaining.toString(),
           "X-RateLimit-Reset": rateLimit.resetAt.toString(),
         },

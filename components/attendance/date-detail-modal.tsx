@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,13 @@ export function DateDetailModal({ date, isOpen, onClose }: DateDetailModalProps)
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDateData = useCallback(async () => {
+  useEffect(() => {
+    if (isOpen && date) {
+      fetchDateData();
+    }
+  }, [isOpen, date]);
+
+  const fetchDateData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -44,13 +50,7 @@ export function DateDetailModal({ date, isOpen, onClose }: DateDetailModalProps)
     } finally {
       setLoading(false);
     }
-  }, [date]);
-
-  useEffect(() => {
-    if (isOpen && date) {
-      fetchDateData();
-    }
-  }, [isOpen, date, fetchDateData]);
+  };
 
   const getStatusBadge = (attendance: any) => {
     if (attendance.checkOutTime === null) {

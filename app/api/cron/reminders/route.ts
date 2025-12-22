@@ -7,14 +7,6 @@ import { getDubaiDaysFromNow, getDubaiDaysAgo, formatDubaiDate } from "@/lib/cro
 // Recommended: Run once per day at 9:00 AM Dubai time
 
 export async function GET(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
     // Verify cron secret (optional but recommended for security)
     const authHeader = request.headers.get("authorization");
@@ -44,9 +36,6 @@ export async function GET(request: NextRequest) {
         clients: true,
         companies: true,
         purchase_orders: {
-          take: 1,
-        },
-        quotations: {
           where: { depositRequired: true },
           take: 1,
         },
@@ -94,7 +83,7 @@ export async function GET(request: NextRequest) {
     // Deposit reminders
     for (const order of overdueDeposits) {
       if (order.clients?.email) {
-        const quotation = order.quotations[0];
+        const po = order.purchase_orders[0];
         const daysOverdue = Math.floor((now.getTime() - order.createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
         sendEmail({
@@ -104,7 +93,7 @@ export async function GET(request: NextRequest) {
             <h2>Payment Reminder</h2>
             <p>Dear ${order.clients.name},</p>
             <p>This is a friendly reminder that your deposit payment for Order #${order.id} is pending.</p>
-            ${quotation ? `<p><strong>Deposit Amount:</strong> ${quotation.depositPercent || order.depositPercentage || 'N/A'}% = AED ${quotation.depositAmount || order.depositAmount || 'N/A'}</p>` : ''}
+            ${po ? `<p><strong>Deposit Amount:</strong> ${po.depositPercent}% = AED ${po.depositAmount}</p>` : ''}
             <p><strong>Days since order:</strong> ${daysOverdue} days</p>
             <p>Please complete the payment to proceed with manufacturing.</p>
             <p>If you have already made the payment, please contact us.</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/utils";
 import Link from "next/link";
 import { UserRole } from "@prisma/client";
-import { useStableAsyncEffect } from "@/hooks/use-stable-effect";
 
 export default function SupervisorDashboardPage() {
   const router = useRouter();
@@ -23,7 +22,7 @@ export default function SupervisorDashboardPage() {
   const [pendingOvertime, setPendingOvertime] = useState<any[]>([]);
   const [teamKPI, setTeamKPI] = useState<any>(null);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
     // Redirect Admin to /team (they shouldn't access supervisor dashboard)
     if (status === "authenticated" && session?.user) {
       if (session.user.role === UserRole.ADMIN) {
@@ -36,24 +35,33 @@ export default function SupervisorDashboardPage() {
         return;
       }
     }
+    fetchData();
+  }, [status, session, router]);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
 
       // Fetch team status (technicians with current attendance)
       const techniciansResponse = await fetch("/api/users?role=TECHNICIAN");
-      // Note: ...
+      // Note: This endpoint doesn't exist yet, we'll need to create it or use a different approach
+      // For now, we'll fetch tasks and get unique assigned users
+
+      // Fetch pending tasks
       const tasksResponse = await fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&limit=10");
       const tasksResult = await tasksResponse.json();
       if (tasksResult.success) {
         setPendingTasks(tasksResult.data.tasks);
       }
 
+      // Fetch pending overtime
       const overtimeResponse = await fetch("/api/overtime?approved=false&limit=10");
       const overtimeResult = await overtimeResponse.json();
       if (overtimeResult.success) {
         setPendingOvertime(overtimeResult.data.overtime);
       }
 
+      // Fetch team KPI
       const kpiResponse = await fetch("/api/kpi/team");
       const kpiResult = await kpiResponse.json();
       if (kpiResult.success) {
@@ -69,11 +77,7 @@ export default function SupervisorDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, session, status, toast]);
-
-  useStableAsyncEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  };
 
   const handleApproveOvertime = async (overtimeId: number) => {
     try {

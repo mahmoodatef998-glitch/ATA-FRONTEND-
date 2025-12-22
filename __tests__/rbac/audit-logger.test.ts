@@ -30,8 +30,8 @@ describe("Audit Logger", () => {
 
   describe("createAuditLog", () => {
     it("should create audit log entry", async () => {
-      const mockCreate = jest.mocked(prisma.audit_logs.create);
-      mockCreate.mockResolvedValue({ id: 1 } as any);
+      const mockCreate = prisma.audit_logs.create as jest.Mock;
+      mockCreate.mockResolvedValue({ id: 1 });
 
       await createAuditLog({
         companyId: 1,
@@ -61,7 +61,7 @@ describe("Audit Logger", () => {
     });
 
     it("should handle errors gracefully", async () => {
-      const mockCreate = jest.mocked(prisma.audit_logs.create);
+      const mockCreate = prisma.audit_logs.create as jest.Mock;
       mockCreate.mockRejectedValue(new Error("Database error"));
 
       // Should not throw
@@ -80,8 +80,8 @@ describe("Audit Logger", () => {
 
   describe("getAuditLogs", () => {
     it("should fetch audit logs with filters", async () => {
-      const mockFindMany = jest.mocked(prisma.audit_logs.findMany);
-      const mockCount = jest.mocked(prisma.audit_logs.count);
+      const mockFindMany = prisma.audit_logs.findMany as jest.Mock;
+      const mockCount = prisma.audit_logs.count as jest.Mock;
 
       mockFindMany.mockResolvedValue([
         {
@@ -90,7 +90,7 @@ describe("Audit Logger", () => {
           resource: AuditResource.USER,
           createdAt: new Date(),
         },
-      ] as any);
+      ]);
       mockCount.mockResolvedValue(1);
 
       const result = await getAuditLogs({
@@ -107,10 +107,10 @@ describe("Audit Logger", () => {
     });
 
     it("should apply date filters", async () => {
-      const mockFindMany = jest.mocked(prisma.audit_logs.findMany);
-      const mockCount = jest.mocked(prisma.audit_logs.count);
+      const mockFindMany = prisma.audit_logs.findMany as jest.Mock;
+      const mockCount = prisma.audit_logs.count as jest.Mock;
 
-      mockFindMany.mockResolvedValue([] as any);
+      mockFindMany.mockResolvedValue([]);
       mockCount.mockResolvedValue(0);
 
       const startDate = new Date("2024-01-01");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Calendar, View } from "react-big-calendar";
 import { dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -41,7 +41,11 @@ export function CalendarView({ companyId }: CalendarViewProps) {
   const [currentView, setCurrentView] = useState<View>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const fetchCalendarData = useCallback(async () => {
+  useEffect(() => {
+    fetchCalendarData();
+  }, [companyId]);
+
+  const fetchCalendarData = async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/dashboard/calendar?companyId=${companyId}`);
@@ -82,11 +86,7 @@ export function CalendarView({ companyId }: CalendarViewProps) {
     } finally {
       setLoading(false);
     }
-  }, [companyId]);
-
-  useEffect(() => {
-    fetchCalendarData();
-  }, [fetchCalendarData]);
+  };
 
   const eventStyleGetter = (event: OrderEvent) => {
     const backgroundColor = event.type === "order" ? "#3b82f6" : "#10b981";

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
+import { UserRole } from "@prisma/client";
+import { isWithinRadius, getCompanyLocation, calculateDistance } from "@/lib/location-utils";
+import { getUaeTime } from "@/lib/timezone-utils";
+import { normalizeDateToDubai } from "@/lib/attendance-service";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
-
-export async function GET() {
-  // Build-time probe safe response (avoid auth/prisma during Next build probes)
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return NextResponse.json({ success: true, ok: true }, { status: 200 });
-  }
-  return NextResponse.json(
-    { success: true, message: "Endpoint requires POST; probe handled." },
-    { status: 200 }
-  );
-}
+import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
+import { PermissionAction } from "@/lib/permissions/role-permissions";
+import { authorize } from "@/lib/rbac/authorize";
 
 /**
  * @swagger
@@ -56,34 +55,6 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const [
-      { authorize },
-      { PermissionAction },
-      { requireAuth },
-      { prisma },
-      prismaClient,
-      locationUtils,
-      timezoneUtils,
-      attendanceService,
-      loggerModule,
-    ] = await Promise.all([
-      import("@/lib/rbac/authorize"),
-      import("@/lib/permissions/role-permissions"),
-      import("@/lib/auth-helpers"),
-      import("@/lib/prisma"),
-      import("@prisma/client"),
-      import("@/lib/location-utils"),
-      import("@/lib/timezone-utils"),
-      import("@/lib/attendance-service"),
-      import("@/lib/logger"),
-    ]);
-
-    const { UserRole, Prisma } = prismaClient;
-    const { isWithinRadius, getCompanyLocation, calculateDistance } = locationUtils;
-    const { getUaeTime } = timezoneUtils;
-    const { normalizeDateToDubai } = attendanceService;
-    const { logger } = loggerModule;
-
     // Check permission to create attendance (check-in)
     // All employees (except Admin) can check in
     const { userId, companyId } = await authorize(PermissionAction.ATTENDANCE_CLOCK);
@@ -415,12 +386,7 @@ export async function POST(request: NextRequest) {
       locationValidation,
     });
   } catch (error: any) {
-    try {
-      const { logger } = await import("@/lib/logger");
-      logger.error("Check-in API error", error, "attendance");
-    } catch {
-      console.error("Check-in API error:", error);
-    }
+    logger.error("Check-in API error", error, "attendance");
     return handleApiError(error);
   }
 }
