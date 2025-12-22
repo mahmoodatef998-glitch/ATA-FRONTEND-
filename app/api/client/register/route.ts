@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
     // Emit Socket.io event for real-time notification
     if (global.io && admins.length > 0) {
       admins.forEach((admin) => {
-        global.io.to(`company_${admin.companyId}`).emit("new_notification", {
+        global.io?.to(`company_${admin.companyId}`).emit("new_notification", {
           clientId: client.id,
           title: `New Client Registration`,
           body: `${client.name} is waiting for approval`,
