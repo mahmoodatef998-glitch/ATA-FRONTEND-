@@ -12,7 +12,8 @@ pause > nul
 
 echo.
 echo [1/3] Setting DATABASE_URL...
-set DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+set DIRECT_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+set DATABASE_URL=%DIRECT_URL%
 
 echo.
 echo [2/3] Running Prisma Migrations...
