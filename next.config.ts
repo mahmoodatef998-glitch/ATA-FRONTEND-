@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   },
   
   // External packages for server components
-  serverExternalPackages: ['@prisma/client'],
+  serverExternalPackages: ['@prisma/client', 'winston', 'nodemailer'],
   
   // Production build optimizations
   reactStrictMode: true,
@@ -135,6 +135,8 @@ const nextConfig: NextConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '@/lib/logger-winston': false,
+        'winston': false,
+        'nodemailer': false,
       };
 
       config.optimization = {
