@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "ATA CRM - Order Management System",
   description: "Professional CRM with Purchase Order and Quotation Management",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
