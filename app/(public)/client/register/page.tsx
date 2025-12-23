@@ -108,17 +108,47 @@ export default function ClientRegisterPage() {
         }),
       });
 
-      const data = await response.json();
-
+      // Check if response is ok before parsing JSON
       if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
+        // Try to parse error message from response
+        let errorMessage = "Registration failed. Please try again.";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          // If JSON parsing fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Parse successful response
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error("Invalid response from server. Please try again.");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || "Registration failed. Please try again.");
       }
 
       // Show success message and redirect to login
       // Account needs admin approval before login
       router.push("/client/login?registered=true");
     } catch (err: any) {
-      setError(err.message || "An error occurred. Please try again.");
+      // Handle different types of errors
+      let errorMessage = "An error occurred. Please try again.";
+      
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      console.error("Registration error:", err);
     } finally {
       setLoading(false);
     }

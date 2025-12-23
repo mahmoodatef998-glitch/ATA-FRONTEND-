@@ -209,48 +209,71 @@ export async function POST(request: NextRequest) {
 
     // Notify admins about new client registration
     // Use select to only fetch needed fields for better performance
-    const admins = await prisma.users.findMany({
-      where: {
-        role: "ADMIN",
-      },
-      select: {
-        id: true,
-        companyId: true,
-      },
-    });
-
-    // Create notifications for admins
-    await Promise.all(
-      admins.map((admin) =>
-        prisma.notifications.create({
-          data: {
-            companyId: admin.companyId,
-            userId: admin.id,
-            title: `🔔 New Client Registration - ${client.name}`,
-            body: `Client ${client.name} has registered and is waiting for approval.`,
-            meta: {
-              clientId: client.id,
-              clientName: client.name,
-              actionRequired: true,
-              actionType: "approve_client",
-              waitingFor: "admin_approval",
-            },
-            read: false,
-          },
-        })
-      )
-    );
-
-    // Emit Socket.io event for real-time notification
-    if (global.io && admins.length > 0) {
-      admins.forEach((admin) => {
-        global.io?.to(`company_${admin.companyId}`).emit("new_notification", {
-          clientId: client.id,
-          title: `New Client Registration`,
-          body: `${client.name} is waiting for approval`,
-          type: "client_registration",
-        });
+    try {
+      const admins = await prisma.users.findMany({
+        where: {
+          role: "ADMIN",
+        },
+        select: {
+          id: true,
+          companyId: true,
+        },
       });
+
+      // Create notifications for admins (don't fail registration if this fails)
+      if (admins.length > 0) {
+        try {
+          await Promise.all(
+            admins.map((admin) =>
+              prisma.notifications.create({
+                data: {
+                  companyId: admin.companyId,
+                  userId: admin.id,
+                  title: `🔔 New Client Registration - ${client.name}`,
+                  body: `Client ${client.name} has registered and is waiting for approval.`,
+                  meta: {
+                    clientId: client.id,
+                    clientName: client.name,
+                    actionRequired: true,
+                    actionType: "approve_client",
+                    waitingFor: "admin_approval",
+                  },
+                  read: false,
+                },
+              })
+            )
+          );
+
+          // Emit Socket.io event for real-time notification
+          if (global.io) {
+            admins.forEach((admin) => {
+              try {
+                global.io?.to(`company_${admin.companyId}`).emit("new_notification", {
+                  clientId: client.id,
+                  title: `New Client Registration`,
+                  body: `${client.name} is waiting for approval`,
+                  type: "client_registration",
+                });
+              } catch (socketError) {
+                // Don't fail if Socket.io fails
+                if (isDev) {
+                  console.error("❌ [Register] Socket.io error:", socketError);
+                }
+              }
+            });
+          }
+        } catch (notificationError) {
+          // Log but don't fail registration if notifications fail
+          if (isDev) {
+            console.error("❌ [Register] Error creating notifications:", notificationError);
+          }
+        }
+      }
+    } catch (adminError) {
+      // Log but don't fail registration if admin fetch fails
+      if (isDev) {
+        console.error("❌ [Register] Error fetching admins:", adminError);
+      }
     }
 
     // Get rate limit headers (from the check we already did)
@@ -288,14 +311,33 @@ export async function POST(request: NextRequest) {
     console.error("❌ [Register] Error stack:", error?.stack);
     console.error("❌ [Register] Error name:", error?.name);
     
+    // Determine user-friendly error message
+    let errorMessage = "An error occurred while creating account. Please try again.";
+    
+    // Handle specific error types
+    if (error?.code === "P2002") {
+      // Prisma unique constraint violation
+      if (error?.meta?.target?.includes("phone")) {
+        errorMessage = "This phone number is already registered. Please login instead.";
+      } else if (error?.meta?.target?.includes("email")) {
+        errorMessage = "This email is already registered. Please use a different email.";
+      } else {
+        errorMessage = "This account already exists. Please login instead.";
+      }
+    } else if (error?.message) {
+      // Use error message if available
+      errorMessage = error.message;
+    }
+    
     // Return JSON response (not HTML error page)
     return NextResponse.json(
       { 
         success: false, 
-        error: error?.message || "An error occurred while creating account",
+        error: errorMessage,
         ...(process.env.NODE_ENV === "development" && {
           details: error?.stack,
           errorName: error?.name,
+          errorCode: error?.code,
         })
       },
       { status: 500 }
