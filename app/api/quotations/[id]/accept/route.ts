@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { sendEmail, getQuotationResponseEmail } from "@/lib/email";
 import { sendQuotationAcceptedEmail, sendQuotationRejectedEmail } from "@/lib/email-templates";
+import { revalidateOrders } from "@/lib/revalidate";
 
 export async function PATCH(
   request: NextRequest,
@@ -202,6 +203,9 @@ export async function PATCH(
         });
       }
     }
+
+    // Revalidate pages that display orders
+    await revalidateOrders();
 
     return NextResponse.json({
       success: true,

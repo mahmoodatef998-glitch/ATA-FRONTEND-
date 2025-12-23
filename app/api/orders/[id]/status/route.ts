@@ -203,6 +203,9 @@ export async function PATCH(
       });
     }
 
+    // Revalidate pages that display orders
+    await revalidateOrders();
+
     return NextResponse.json({
       success: true,
       data: result,

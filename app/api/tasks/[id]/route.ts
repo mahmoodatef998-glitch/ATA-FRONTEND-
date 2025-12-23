@@ -6,6 +6,7 @@ import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
 import { handleApiError } from "@/lib/error-handler";
 import { validateId } from "@/lib/utils/validation-helpers";
+import { revalidateTasks } from "@/lib/revalidate";
 
 // GET - Get single task
 export async function GET(
@@ -364,6 +365,9 @@ export async function PATCH(
       }
     }
 
+    // Revalidate pages that display tasks
+    await revalidateTasks();
+
     return NextResponse.json({
       success: true,
       data: task,
@@ -415,6 +419,9 @@ export async function DELETE(
     await prisma.tasks.delete({
       where: { id: taskId },
     });
+
+    // Revalidate pages that display tasks
+    await revalidateTasks();
 
     return NextResponse.json({
       success: true,

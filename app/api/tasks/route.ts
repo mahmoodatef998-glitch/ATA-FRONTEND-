@@ -6,6 +6,7 @@ import { authorize, authorizeAny } from "@/lib/rbac/authorize";
 import { UserRole, Prisma, TaskStatus } from "@prisma/client";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
+import { revalidateTasks } from "@/lib/revalidate";
 
 /**
  * @swagger
@@ -339,6 +340,9 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    // Revalidate pages that display tasks
+    await revalidateTasks();
 
     return NextResponse.json({
       success: true,
