@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   },
   
   // External packages for server components
-  serverExternalPackages: ['@prisma/client', 'winston', 'nodemailer', 'swagger-jsdoc', 'swagger-ui-react'],
+  serverExternalPackages: ['@prisma/client', 'winston', 'nodemailer', 'swagger-jsdoc', 'swagger-ui-react', '@logtail/node'],
   
   // Production build optimizations
   reactStrictMode: true,
