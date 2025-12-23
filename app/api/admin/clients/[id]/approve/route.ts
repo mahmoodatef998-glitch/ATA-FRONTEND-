@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-helpers";
 import { UserRole } from "@prisma/client";
+import { revalidateClients } from "@/lib/revalidate";
 
 export async function PATCH(
   request: NextRequest,
@@ -60,6 +61,9 @@ export async function PATCH(
         console.log(`Client ${updatedClient.name} account approved`);
       }
 
+      // Revalidate pages that display clients
+      await revalidateClients();
+
       return NextResponse.json({
         success: true,
         data: updatedClient,
@@ -76,6 +80,9 @@ export async function PATCH(
           rejectionReason: rejectionReason || "Account rejected by admin",
         },
       });
+
+      // Revalidate pages that display clients
+      await revalidateClients();
 
       return NextResponse.json({
         success: true,

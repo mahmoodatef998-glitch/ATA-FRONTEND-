@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { authorizeAny } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole, OrderStage } from "@prisma/client";
+import { revalidateOrders } from "@/lib/revalidate";
 
 export async function PATCH(
   request: NextRequest,
@@ -171,6 +172,9 @@ export async function PATCH(
       // For now, we'll just log it
       console.log(`📧 Stage update email should be sent to ${order.clients.email} for Order #${orderId}`);
     }
+
+    // Revalidate pages that display orders
+    await revalidateOrders();
 
     return NextResponse.json({
       success: true,
