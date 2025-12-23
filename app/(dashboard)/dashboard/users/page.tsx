@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,7 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 export default function UsersPage() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const isAdmin = session?.user?.role === UserRole.ADMIN;
   
@@ -181,6 +183,7 @@ export default function UsersPage() {
           role: "ACCOUNTANT",
         });
         fetchUsers();
+        router.refresh(); // Refresh page data
       } else {
         toast({
           title: "Error",
