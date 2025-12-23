@@ -4,6 +4,7 @@ import { OrderStatus } from "@prisma/client";
 import { sendEmail, getQuotationResponseEmail } from "@/lib/email";
 import { sendQuotationAcceptedEmail, sendQuotationRejectedEmail } from "@/lib/email-templates";
 import { revalidateOrders } from "@/lib/revalidate";
+import { logger } from "@/lib/logger";
 
 export async function PATCH(
   request: NextRequest,
@@ -176,7 +177,7 @@ export async function PATCH(
             companyName: quotation.orders.companies?.name || "ATA CRM",
           }),
         }).catch((error) => {
-          console.error(`Failed to send response email to ${admin.email}:`, error);
+          logger.error(`Failed to send response email to ${admin.email}`, error, "quotations");
         });
       }
     });
@@ -195,11 +196,11 @@ export async function PATCH(
       
       if (accepted !== false) {
         sendQuotationAcceptedEmail(emailData).catch(err => {
-          console.error('Failed to send quotation accepted email to client:', err);
+          logger.error('Failed to send quotation accepted email to client', err, "quotations");
         });
       } else {
         sendQuotationRejectedEmail(emailData).catch(err => {
-          console.error('Failed to send quotation rejected email to client:', err);
+          logger.error('Failed to send quotation rejected email to client', err, "quotations");
         });
       }
     }
@@ -213,7 +214,7 @@ export async function PATCH(
       message: accepted !== false ? "Quotation accepted successfully" : "Quotation rejected",
     });
   } catch (error) {
-    console.error("Error updating quotation:", error);
+    logger.error("Error updating quotation", error, "quotations");
 
     return NextResponse.json(
       { success: false, error: "An error occurred while updating quotation" },
