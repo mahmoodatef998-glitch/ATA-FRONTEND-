@@ -19,7 +19,7 @@ echo.
 echo ⚠️  IMPORTANT: Run the SQL in Supabase SQL Editor first!
 echo.
 echo Step 1: Go to Supabase Dashboard → SQL Editor
-echo Step 2: Copy SQL from: FIX_DATABASE_CONSTRAINTS.sql
+echo Step 2: Copy SQL from: FIX_RLS_POLICIES.sql
 echo Step 3: Run the SQL
 echo Step 4: Press any key here to continue with schema sync...
 echo.
@@ -37,7 +37,7 @@ if errorlevel 1 (
     echo ❌ Schema sync failed!
     echo.
     echo Please check the error messages above.
-    echo Make sure you ran the SQL from FIX_DATABASE_CONSTRAINTS.sql first.
+    echo Make sure you ran the SQL from FIX_RLS_POLICIES.sql first.
     pause
     exit /b 1
 )
