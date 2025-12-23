@@ -134,11 +134,22 @@ BEGIN
         EXECUTE format('CREATE INDEX IF NOT EXISTS idx_users_company_role ON users(%I, role)', company_col);
     END IF;
     
-    CREATE INDEX IF NOT EXISTS idx_users_account_status ON users("accountStatus");
+    -- Users accountStatus (check both naming conventions)
+    BEGIN
+        CREATE INDEX IF NOT EXISTS idx_users_account_status ON users("accountStatus");
+    EXCEPTION WHEN OTHERS THEN
+        CREATE INDEX IF NOT EXISTS idx_users_account_status ON users(account_status);
+    END;
+    
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     
-    -- Clients indexes (no detection needed - these are simple)
-    CREATE INDEX IF NOT EXISTS idx_clients_account_status ON clients("accountStatus");
+    -- Clients indexes (check both naming conventions)
+    BEGIN
+        CREATE INDEX IF NOT EXISTS idx_clients_account_status ON clients("accountStatus");
+    EXCEPTION WHEN OTHERS THEN
+        CREATE INDEX IF NOT EXISTS idx_clients_account_status ON clients(account_status);
+    END;
+    
     CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
     
     -- Quotations indexes
