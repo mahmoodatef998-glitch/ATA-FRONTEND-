@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   },
   
   // External packages for server components
-  serverExternalPackages: ['@prisma/client', 'winston', 'nodemailer'],
+  serverExternalPackages: ['@prisma/client', 'winston', 'nodemailer', 'swagger-jsdoc', 'swagger-ui-react'],
   
   // Production build optimizations
   reactStrictMode: true,
@@ -46,7 +46,6 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'recharts',
     ],
-    serverComponentsExternalPackages: ['@prisma/client', 'swagger-jsdoc', 'swagger-ui-react'],
   },
   
   // Security Headers & CORS Configuration
