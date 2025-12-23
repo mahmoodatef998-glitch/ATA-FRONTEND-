@@ -88,7 +88,7 @@ const roleDefinitions = [
     displayName: "Admin",
     description: "Full system access with all permissions",
     isSystem: true,
-    permissions: permissions.filter(p => p.name !== "attendance.clock").map(p => p.name), // All permissions except attendance.clock
+    permissions: permissions.map(p => p.name), // All permissions including attendance.clock
   },
   {
     name: "operation_manager",

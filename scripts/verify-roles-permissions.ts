@@ -13,12 +13,12 @@ const prisma = new PrismaClient();
 // Expected permissions for each role (from seed-rbac.ts)
 const expectedPermissions: Record<string, string[]> = {
   admin: [
-    // All permissions except attendance.clock
+    // All permissions including attendance.clock
     "user.create", "user.read", "user.update", "user.delete", "role.manage",
     "client.create", "client.read", "client.update", "client.delete",
     "lead.create", "lead.read", "lead.update", "lead.delete", "lead.move_stage",
     "task.create", "task.read", "task.update", "task.delete", "task.assign", "task.complete", "task.comment", "task.change_priority",
-    "attendance.read", "attendance.manage",
+    "attendance.clock", "attendance.read", "attendance.manage",
     "invoice.create", "invoice.read", "invoice.update", "invoice.delete", "payment.record", "finance.reports",
     "hr.view", "hr.manage", "payroll.manage",
     "report.view", "report.generate",
