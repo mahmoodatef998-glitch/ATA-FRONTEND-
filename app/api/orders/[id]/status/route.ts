@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth-helpers";
 import { updateOrderStatusSchema } from "@/lib/validators/order";
 import { UserRole } from "@prisma/client";
 import { sendEmail, getOrderStatusUpdateEmail } from "@/lib/email";
+import { revalidateOrders } from "@/lib/revalidate";
 
 export async function PATCH(
   request: NextRequest,
