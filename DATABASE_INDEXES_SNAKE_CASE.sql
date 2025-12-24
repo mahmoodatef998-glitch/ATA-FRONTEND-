@@ -95,3 +95,4 @@ WHERE schemaname = 'public'
     AND tablename IN ('orders', 'tasks', 'notifications', 'users', 'clients', 'quotations', 'order_histories', 'purchase_orders', 'delivery_notes', 'work_logs')
 ORDER BY tablename, indexname;
 
+

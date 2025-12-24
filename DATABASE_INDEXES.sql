@@ -101,3 +101,4 @@ WHERE schemaname = 'public'
     AND tablename IN ('orders', 'tasks', 'notifications', 'users', 'clients', 'quotations', 'order_histories')
 ORDER BY tablename, indexname;
 
+

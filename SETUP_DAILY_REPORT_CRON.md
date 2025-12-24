@@ -157,3 +157,4 @@ URL: https://ata-frontend-pied.vercel.app/api/cron/daily-report?token=YOUR_SECRE
 **آخر تحديث:** 22 ديسمبر 2025  
 **الحالة:** ✅ جاهز للإعداد
 
+

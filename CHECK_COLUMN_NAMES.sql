@@ -29,3 +29,4 @@ WHERE table_schema = 'public'
   AND table_name = 'users'
 ORDER BY ordinal_position;
 
+
