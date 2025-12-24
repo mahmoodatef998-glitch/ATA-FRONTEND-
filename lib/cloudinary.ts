@@ -356,10 +356,13 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
     // But if URL was modified (image -> raw), we need to detect the actual resource type
     let resourceType = uploadIndex > 0 ? pathParts[uploadIndex - 1] : 'image';
     
-    // If resource type is 'raw' but URL contains '.pdf', it might have been modified
-    // Try to detect actual resource type from the file extension or use 'raw' for PDFs
-    if (url.toLowerCase().endsWith('.pdf')) {
+    // Detect resource type from file extension if needed
+    if (url.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('.pdf')) {
       resourceType = 'raw';
+    } else if (url.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|webm)$/i)) {
+      resourceType = 'video';
+    } else if (url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+      resourceType = 'image';
     }
     
     // Everything after 'upload' is version and public_id
@@ -371,10 +374,13 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
       startIndex = 1;
     }
     
-    // Skip version (usually a number like 'v1234567890')
-    // Version is usually the first element after upload (or after signature)
-    if (afterUpload[startIndex] && /^v\d+$/.test(afterUpload[startIndex])) {
-      startIndex += 1;
+    // Skip version (usually a number like 'v1234567890' or just a number)
+    // Version can be 'v1234567890' or just a number
+    if (afterUpload[startIndex]) {
+      const versionPart = afterUpload[startIndex];
+      if (/^v\d+$/.test(versionPart) || /^\d+$/.test(versionPart)) {
+        startIndex += 1;
+      }
     }
     
     // Get public_id (everything after version, including folder path)
@@ -391,7 +397,7 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
       resourceType: resourceType === 'raw' ? 'raw' : resourceType === 'video' ? 'video' : 'image',
     };
   } catch (error) {
-    console.error('Error extracting public_id:', error);
+    console.error('❌ Error extracting public_id:', error);
     return null;
   }
 }
