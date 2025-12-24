@@ -135,7 +135,28 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
         for (const order of orders) {
           const quote = order.quotations?.find((q: any) => q.id === parseInt(quotationId));
           if (quote) {
-            setQuotation({ ...quote, order });
+            // If file exists and is a Cloudinary URL, try to get signed URL
+            let fileUrl = quote.file;
+            if (quote.file && quote.file.includes('cloudinary.com')) {
+              try {
+                const signedResponse = await fetch("/api/files/signed-url", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ url: quote.file }),
+                });
+                if (signedResponse.ok) {
+                  const signedData = await signedResponse.json();
+                  if (signedData.success && signedData.signedUrl) {
+                    fileUrl = signedData.signedUrl;
+                  }
+                }
+              } catch (signedError) {
+                console.warn("Failed to get signed URL, using original:", signedError);
+                // Continue with original URL
+              }
+            }
+            
+            setQuotation({ ...quote, file: fileUrl, order });
             return;
           }
         }
@@ -205,19 +226,52 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
               <CardContent className="space-y-6">
                 {/* Quotation Details */}
                 <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-sm font-medium text-muted-foreground">Total Amount:</span>
-                    <span className="text-2xl font-bold text-primary">
-                      {formatCurrency(quotation.total, quotation.currency)}
-                    </span>
-                  </div>
-                  
-                  {quotation.notes && (
-                    <div className="pt-3 border-t">
-                      <p className="text-sm font-medium mb-1">Notes:</p>
-                      <p className="text-sm text-muted-foreground">{quotation.notes}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-muted-foreground">Total Amount:</span>
+                      <span className="text-2xl font-bold text-primary">
+                        {formatCurrency(quotation.total, quotation.currency)}
+                      </span>
                     </div>
-                  )}
+                    
+                    {quotation.items && Array.isArray(quotation.items) && quotation.items.length > 0 && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium mb-2">Items:</p>
+                        <div className="space-y-2">
+                          {quotation.items.map((item: any, index: number) => (
+                            <div key={index} className="text-sm bg-white dark:bg-gray-700 p-2 rounded">
+                              <p className="font-medium">{item.name || `Item ${index + 1}`}</p>
+                              {item.quantity && (
+                                <p className="text-muted-foreground">Quantity: {item.quantity}</p>
+                              )}
+                              {item.price && (
+                                <p className="text-muted-foreground">Price: {formatCurrency(item.price, quotation.currency)}</p>
+                              )}
+                              {item.specs && (
+                                <p className="text-muted-foreground text-xs mt-1">{item.specs}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {quotation.notes && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium mb-1">Notes:</p>
+                        <p className="text-sm text-muted-foreground">{quotation.notes}</p>
+                      </div>
+                    )}
+                    
+                    {quotation.depositRequired && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm font-medium mb-1">Deposit Information:</p>
+                        <p className="text-sm text-muted-foreground">
+                          Deposit Required: {quotation.depositPercent}% ({formatCurrency(quotation.depositAmount || 0, quotation.currency)})
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Download File */}
@@ -228,12 +282,48 @@ export default function ReviewQuotationPage({ params }: { params: Promise<{ id: 
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block"
+                      onClick={(e) => {
+                        // If it's a Cloudinary URL and fails, try to get signed URL
+                        if (quotation.file?.includes('cloudinary.com')) {
+                          e.preventDefault();
+                          fetch("/api/files/signed-url", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ url: quotation.file }),
+                          })
+                            .then((res) => res.json())
+                            .then((data) => {
+                              if (data.success && data.signedUrl) {
+                                window.open(data.signedUrl, '_blank');
+                              } else {
+                                window.open(quotation.file, '_blank');
+                              }
+                            })
+                            .catch(() => {
+                              window.open(quotation.file, '_blank');
+                            });
+                        }
+                      }}
                     >
                       <Button variant="outline" className="w-full" size="lg">
                         <Download className="h-4 w-4 mr-2" />
                         Download Quotation File
                       </Button>
                     </a>
+                    {quotation.fileName && (
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {quotation.fileName}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Show message if no file */}
+                {!quotation.file && (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      ⚠️ Quotation file is not available yet. Please contact support.
+                    </p>
                   </div>
                 )}
 
