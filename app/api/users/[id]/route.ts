@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-helpers";
 import { UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { revalidateUsers } from "@/lib/revalidate";
 
 // PATCH: Update user (Admin only)
 export async function PATCH(
@@ -95,6 +96,9 @@ export async function PATCH(
       },
     });
 
+    // Revalidate pages that display users
+    await revalidateUsers();
+
     return NextResponse.json({
       success: true,
       data: updatedUser,
@@ -157,6 +161,9 @@ export async function DELETE(
     await prisma.users.delete({
       where: { id: userId },
     });
+
+    // Revalidate pages that display users
+    await revalidateUsers();
 
     return NextResponse.json({
       success: true,

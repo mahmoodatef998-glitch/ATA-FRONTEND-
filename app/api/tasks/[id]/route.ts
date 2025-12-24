@@ -6,6 +6,8 @@ import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
 import { handleApiError } from "@/lib/error-handler";
 import { validateId } from "@/lib/utils/validation-helpers";
+import { revalidateTasks } from "@/lib/revalidate";
+import { logger } from "@/lib/logger";
 
 // GET - Get single task
 export async function GET(
@@ -26,9 +28,7 @@ export async function GET(
     const { id } = await params;
     const taskId = validateId(id, "task");
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("[Tasks API] Getting task:", { taskId, companyId: session.user.companyId, userId: session.user.id, role: session.user.role });
-    }
+    logger.debug("[Tasks API] Getting task", { taskId, companyId: session.user.companyId, userId: session.user.id, role: session.user.role }, "tasks");
 
     const task = await prisma.tasks.findFirst({
       where: {
@@ -111,9 +111,7 @@ export async function GET(
       const userId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
       const isAssigned = task.assignedToId === userId || (task.assignees && task.assignees.some((a) => a.userId === userId));
       if (!isAssigned) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[Tasks API] Access denied for technician:", { userId, taskAssignedToId: task.assignedToId, taskAssignees: task.assignees });
-        }
+      logger.warn("[Tasks API] Access denied for technician", { userId, taskAssignedToId: task.assignedToId, taskAssignees: task.assignees }, "tasks");
         return NextResponse.json(
           { success: false, error: "Access denied" },
           { status: 403 }
@@ -126,9 +124,7 @@ export async function GET(
       data: task,
     });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[Tasks API] Get task error:", error);
-    }
+    logger.error("[Tasks API] Get task error", error, "tasks");
     return handleApiError(error);
   }
 }
@@ -364,15 +360,16 @@ export async function PATCH(
       }
     }
 
+    // Revalidate pages that display tasks
+    await revalidateTasks();
+
     return NextResponse.json({
       success: true,
       data: task,
       message: "Task updated successfully",
     });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[Tasks API] Update task error:", error);
-    }
+    logger.error("[Tasks API] Update task error", error, "tasks");
     return handleApiError(error);
   }
 }
@@ -416,14 +413,15 @@ export async function DELETE(
       where: { id: taskId },
     });
 
+    // Revalidate pages that display tasks
+    await revalidateTasks();
+
     return NextResponse.json({
       success: true,
       message: "Task deleted successfully",
     });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[Tasks API] Delete task error:", error);
-    }
+    logger.error("[Tasks API] Delete task error", error, "tasks");
     return handleApiError(error);
   }
 }

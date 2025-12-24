@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { applyRateLimit, RATE_LIMITS, getRateLimitHeaders } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // Simple phone normalization function (inline to avoid import issues)
 function normalizePhoneNumber(phone: string): string {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
     rateLimitInfo = rateLimitResult.rateLimitInfo;
   } catch (rateLimitError: any) {
-    console.error("❌ [Register] Rate limit error:", rateLimitError);
+    logger.error("[Register] Rate limit error", rateLimitError, "client-register");
     return NextResponse.json(
       { success: false, error: "Rate limit check failed" },
       { status: 500 }
@@ -55,9 +56,7 @@ export async function POST(request: NextRequest) {
     const validation = registerSchema.safeParse(body);
 
     if (!validation.success) {
-      if (isDev) {
-        console.error("❌ [Register] Validation failed:", validation.error.errors);
-      }
+      logger.warn("[Register] Validation failed", { errors: validation.error.errors }, "client-register");
       return NextResponse.json(
         {
           success: false,
@@ -72,9 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Honeypot check - if website field is filled, it's a bot
     if (website && typeof website === "string" && website.length > 0) {
-      if (isDev) {
-        console.warn("🚫 Bot detected in registration");
-      }
+      logger.warn("[Register] Bot detected in registration", { website }, "client-register");
       return NextResponse.json(
         { success: false, error: "Registration failed. Please try again." },
         { status: 400 }
@@ -91,7 +88,7 @@ export async function POST(request: NextRequest) {
       }
       phone = normalizePhoneNumber(phone);
     } catch (sanitizeError: any) {
-      console.error("❌ [Register] Error sanitizing inputs:", sanitizeError);
+      logger.error("[Register] Error sanitizing inputs", sanitizeError, "client-register");
       return NextResponse.json(
         { success: false, error: "Invalid input data" },
         { status: 400 }
@@ -109,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
       phone = cleanedPhone; // Use cleaned phone
     } catch (phoneError: any) {
-      console.error("❌ [Register] Error validating phone:", phoneError);
+      logger.error("[Register] Error validating phone", phoneError, "client-register");
       return NextResponse.json(
         { success: false, error: "Invalid phone number format" },
         { status: 400 }
@@ -128,7 +125,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (passwordError: any) {
-      console.error("❌ [Register] Error checking password strength:", passwordError);
+      logger.error("[Register] Error checking password strength", passwordError, "client-register");
       return NextResponse.json(
         { success: false, error: "Error validating password" },
         { status: 400 }
@@ -209,48 +206,65 @@ export async function POST(request: NextRequest) {
 
     // Notify admins about new client registration
     // Use select to only fetch needed fields for better performance
-    const admins = await prisma.users.findMany({
-      where: {
-        role: "ADMIN",
-      },
-      select: {
-        id: true,
-        companyId: true,
-      },
-    });
-
-    // Create notifications for admins
-    await Promise.all(
-      admins.map((admin) =>
-        prisma.notifications.create({
-          data: {
-            companyId: admin.companyId,
-            userId: admin.id,
-            title: `🔔 New Client Registration - ${client.name}`,
-            body: `Client ${client.name} has registered and is waiting for approval.`,
-            meta: {
-              clientId: client.id,
-              clientName: client.name,
-              actionRequired: true,
-              actionType: "approve_client",
-              waitingFor: "admin_approval",
-            },
-            read: false,
-          },
-        })
-      )
-    );
-
-    // Emit Socket.io event for real-time notification
-    if (global.io && admins.length > 0) {
-      admins.forEach((admin) => {
-        global.io?.to(`company_${admin.companyId}`).emit("new_notification", {
-          clientId: client.id,
-          title: `New Client Registration`,
-          body: `${client.name} is waiting for approval`,
-          type: "client_registration",
-        });
+    try {
+      const admins = await prisma.users.findMany({
+        where: {
+          role: "ADMIN",
+        },
+        select: {
+          id: true,
+          companyId: true,
+        },
       });
+
+      // Create notifications for admins (don't fail registration if this fails)
+      if (admins.length > 0) {
+        try {
+          await Promise.all(
+            admins.map((admin) =>
+              prisma.notifications.create({
+                data: {
+                  companyId: admin.companyId,
+                  userId: admin.id,
+                  title: `🔔 New Client Registration - ${client.name}`,
+                  body: `Client ${client.name} has registered and is waiting for approval.`,
+                  meta: {
+                    clientId: client.id,
+                    clientName: client.name,
+                    actionRequired: true,
+                    actionType: "approve_client",
+                    waitingFor: "admin_approval",
+                  },
+                  read: false,
+                },
+              })
+            )
+          );
+
+          // Emit Socket.io event for real-time notification
+          if (global.io) {
+            admins.forEach((admin) => {
+              try {
+                global.io?.to(`company_${admin.companyId}`).emit("new_notification", {
+                  clientId: client.id,
+                  title: `New Client Registration`,
+                  body: `${client.name} is waiting for approval`,
+                  type: "client_registration",
+                });
+              } catch (socketError) {
+                // Don't fail if Socket.io fails
+                logger.error("[Register] Socket.io error", socketError, "client-register");
+              }
+            });
+          }
+        } catch (notificationError) {
+          // Log but don't fail registration if notifications fail
+          logger.error("[Register] Error creating notifications", notificationError, "client-register");
+        }
+      }
+    } catch (adminError) {
+      // Log but don't fail registration if admin fetch fails
+      logger.error("[Register] Error fetching admins", adminError, "client-register");
     }
 
     // Get rate limit headers (from the check we already did)
@@ -259,7 +273,7 @@ export async function POST(request: NextRequest) {
       try {
         rateLimitHeaders = getRateLimitHeaders(rateLimitInfo.remaining, rateLimitInfo.resetAt, rateLimitInfo.limit);
       } catch (headerError: any) {
-        console.error("❌ [Register] Error getting rate limit headers:", headerError);
+        logger.error("[Register] Error getting rate limit headers", headerError, "client-register");
         // Continue without headers if there's an error
       }
     }
@@ -283,19 +297,40 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error: any) {
-    console.error("❌ [Register] Error creating client account:");
-    console.error("❌ [Register] Error message:", error?.message);
-    console.error("❌ [Register] Error stack:", error?.stack);
-    console.error("❌ [Register] Error name:", error?.name);
+    logger.error("[Register] Error creating client account", {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      code: error?.code,
+    }, "client-register");
+    
+    // Determine user-friendly error message
+    let errorMessage = "An error occurred while creating account. Please try again.";
+    
+    // Handle specific error types
+    if (error?.code === "P2002") {
+      // Prisma unique constraint violation
+      if (error?.meta?.target?.includes("phone")) {
+        errorMessage = "This phone number is already registered. Please login instead.";
+      } else if (error?.meta?.target?.includes("email")) {
+        errorMessage = "This email is already registered. Please use a different email.";
+      } else {
+        errorMessage = "This account already exists. Please login instead.";
+      }
+    } else if (error?.message) {
+      // Use error message if available
+      errorMessage = error.message;
+    }
     
     // Return JSON response (not HTML error page)
     return NextResponse.json(
       { 
         success: false, 
-        error: error?.message || "An error occurred while creating account",
+        error: errorMessage,
         ...(process.env.NODE_ENV === "development" && {
           details: error?.stack,
           errorName: error?.name,
+          errorCode: error?.code,
         })
       },
       { status: 500 }

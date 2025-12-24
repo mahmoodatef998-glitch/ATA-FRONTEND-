@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth-helpers";
 import { updateOrderStatusSchema } from "@/lib/validators/order";
 import { UserRole } from "@prisma/client";
 import { sendEmail, getOrderStatusUpdateEmail } from "@/lib/email";
+import { revalidateOrders } from "@/lib/revalidate";
+import { logger } from "@/lib/logger";
 
 export async function PATCH(
   request: NextRequest,
@@ -176,7 +178,7 @@ export async function PATCH(
         body: `Order #${orderId} status changed to ${status}`,
         type: "status_updated",
       });
-      console.log(`🔌 Emitted status update to company_${order.companyId}`);
+      logger.info(`Emitted status update to company_${order.companyId}`, { orderId, companyId: order.companyId }, "orders");
     }
 
     // Send email notification to client
@@ -198,10 +200,13 @@ export async function PATCH(
           companyName: company?.name || "ATA CRM",
         }),
       }).catch((error) => {
-        console.error("Failed to send status update email:", error);
+        logger.error("Failed to send status update email", error, "orders");
         // Don't fail the request if email fails
       });
     }
+
+    // Revalidate pages that display orders
+    await revalidateOrders();
 
     return NextResponse.json({
       success: true,
@@ -209,7 +214,7 @@ export async function PATCH(
       message: "Order status updated successfully",
     });
   } catch (error) {
-    console.error("Error updating order status:", error);
+    logger.error("Error updating order status", error, "orders");
     
     if ((error as Error).message === "Unauthorized: Insufficient permissions") {
       return NextResponse.json(
@@ -220,7 +225,7 @@ export async function PATCH(
 
     // Better error message in development
     const errorMessage = error instanceof Error ? error.message : "An error occurred while updating order status";
-    console.error("Full error details:", error);
+    logger.error("Full error details", error, "orders");
     
     return NextResponse.json(
       { 

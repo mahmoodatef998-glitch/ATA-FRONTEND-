@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/auth-helpers";
+import { revalidateNotifications } from "@/lib/revalidate";
+import { logger } from "@/lib/logger";
 
 export async function PATCH(
   request: NextRequest,
@@ -55,12 +57,15 @@ export async function PATCH(
       data: { read: true },
     });
 
+    // Revalidate pages that display notifications
+    await revalidateNotifications();
+
     return NextResponse.json({
       success: true,
       data: updated,
     });
   } catch (error) {
-    console.error("Error marking notification as read:", error);
+    logger.error("Error marking notification as read", error, "notifications");
     return NextResponse.json(
       { success: false, error: "An error occurred" },
       { status: 500 }
