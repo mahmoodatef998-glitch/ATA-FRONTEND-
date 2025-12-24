@@ -26,7 +26,7 @@ const registerSchema = z.object({
   phone: z.string().min(8).max(20),
   password: z.string().min(8).max(128),
   name: z.string().min(2).max(100).optional(),
-  email: z.string().email().max(255).optional().or(z.literal("")),
+  email: z.string().email("Please enter a valid email address").max(255, "Email is too long"),
   // Honeypot field - if filled, it's a bot (accept empty string or undefined)
   website: z.string().optional().default(""),
 });
@@ -78,14 +78,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate email is provided (required)
+    if (!email || email.trim() === "") {
+      return NextResponse.json(
+        { success: false, error: "Email is required" },
+        { status: 400 }
+      );
+    }
+
     // Sanitize inputs
     try {
       if (name) {
         name = sanitizeText(name);
       }
-      if (email) {
-        email = sanitizeText(email);
-      }
+      // Email is required, so it should always be present
+      email = sanitizeText(email);
       phone = normalizePhoneNumber(phone);
     } catch (sanitizeError: any) {
       logger.error("[Register] Error sanitizing inputs", sanitizeError, "client-register");
@@ -190,7 +197,7 @@ export async function POST(request: NextRequest) {
           hasAccount: true,
           accountStatus: "PENDING", // Requires admin approval
           name: name || "Client",
-          email,
+          email: email, // Email is required
           updatedAt: new Date(),
         },
         select: {
