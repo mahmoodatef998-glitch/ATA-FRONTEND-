@@ -43,7 +43,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           if (!credentials?.email || !credentials?.password) {
             logger.warn("Authentication attempt with missing credentials", { context: "auth" });
-            throw new Error("Email and password required");
+            if (!credentials?.email) {
+              throw new Error("MISSING_EMAIL: Email address is required. Please enter your email address.");
+            }
+            if (!credentials?.password) {
+              throw new Error("MISSING_PASSWORD: Password is required. Please enter your password.");
+            }
+            throw new Error("MISSING_CREDENTIALS: Email and password are required. Please fill in all fields.");
           }
 
           const user = await prisma.users.findUnique({
@@ -56,7 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: credentials.email,
               context: "auth" 
             });
-            throw new Error("Username or password incorrect");
+            throw new Error("INVALID_EMAIL: The email address you entered does not exist in our system. Please check your email and try again.");
           }
 
           // Check account status - only APPROVED users can login
@@ -81,7 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: credentials.email,
               context: "auth" 
             });
-            throw new Error("Username or password incorrect");
+            throw new Error("INVALID_PASSWORD: The password you entered is incorrect. Please check your password and try again.");
           }
 
           const isPasswordValid = await bcrypt.compare(
@@ -94,7 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: credentials.email,
               context: "auth" 
             });
-            throw new Error("Username or password incorrect");
+            throw new Error("INVALID_PASSWORD: The password you entered is incorrect. Please check your password and try again.");
           }
 
           logger.info("Successful authentication", { 

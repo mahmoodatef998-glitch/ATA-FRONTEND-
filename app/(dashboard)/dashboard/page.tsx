@@ -18,7 +18,7 @@ async function getDashboardStats() {
 
     const companyId = session.user.companyId;
 
-    // Cache key for dashboard stats (cache for 30 seconds)
+    // Cache key for dashboard stats (cache for 2 minutes to improve performance)
     const cacheKey = `dashboard:stats:${companyId}`;
 
     // Get orders statistics with caching
@@ -27,7 +27,7 @@ async function getDashboardStats() {
       async () => {
         return await fetchDashboardStats(companyId);
       },
-      30 // 30 seconds cache
+      120 // 2 minutes cache - reduces database load significantly
     );
   } catch (error) {
     const logger = await import("@/lib/logger").then(m => m.logger);
@@ -140,19 +140,27 @@ async function fetchDashboardStats(companyId: number) {
       }),
     ]);
 
-    // Get client names for top clients
-    const topClientsWithNames = await Promise.all(
-      topClients.map(async (client) => {
-        const clientData = await prisma.clients.findUnique({
-          where: { id: client.clientId! },
-          select: { name: true, phone: true },
-        });
-        return {
-          ...clientData,
-          orderCount: client._count.id,
-        };
-      })
-    );
+    // Get client names for top clients - optimized: fetch all at once instead of N queries
+    const clientIds = topClients.map(c => c.clientId!).filter(Boolean);
+    const clientsData = clientIds.length > 0 
+      ? await prisma.clients.findMany({
+          where: { id: { in: clientIds } },
+          select: { id: true, name: true, phone: true },
+        })
+      : [];
+    
+    // Create a map for quick lookup
+    const clientsMap = new Map(clientsData.map(c => [c.id, c]));
+    
+    // Combine with order counts
+    const topClientsWithNames = topClients.map(client => {
+      const clientData = clientsMap.get(client.clientId!);
+      return {
+        name: clientData?.name || 'Unknown',
+        phone: clientData?.phone || '',
+        orderCount: client._count.id,
+      };
+    });
 
     // This month's revenue
     const startOfMonth = new Date();

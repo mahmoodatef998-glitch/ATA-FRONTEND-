@@ -31,7 +31,11 @@ export const prisma =
     },
     // Connection pool configuration
     // Note: Prisma uses connection pooling by default, but we can optimize it
-    // by setting connection_limit in DATABASE_URL: postgresql://user:pass@host:port/db?connection_limit=10
+    // by setting connection_limit in DATABASE_URL: postgresql://user:pass@host:port/db?connection_limit=20&pool_timeout=10
+    // Recommended settings for Supabase:
+    // - connection_limit=20 (Supabase free tier allows up to 60 connections)
+    // - pool_timeout=10 (wait 10 seconds for available connection)
+    // - sslmode=require (required for Supabase)
   });
 
 // Prevent multiple instances in development (Hot Reload)

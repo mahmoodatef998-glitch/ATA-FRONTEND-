@@ -205,49 +205,25 @@ export function getSignedUrl(url: string): string {
   }
 
   try {
-    // Parse Cloudinary URL
-    // Format: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{signature}/{version}/{public_id}
-    // or: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{version}/{public_id}
-    const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split('/').filter(p => p);
-    
-    // Find 'upload' index
-    const uploadIndex = pathParts.findIndex(part => part === 'upload');
-    if (uploadIndex === -1) {
-      return url; // Invalid Cloudinary URL
+    // Extract public_id and resource_type from URL
+    const extracted = extractPublicIdFromUrl(url);
+    if (!extracted) {
+      console.warn('⚠️ Could not extract public_id from URL, returning original URL');
+      return url;
     }
-    
-    // Get resource type (before 'upload')
-    const resourceType = uploadIndex > 0 ? pathParts[uploadIndex - 1] : 'image';
-    
-    // Get parts after 'upload'
-    const afterUpload = pathParts.slice(uploadIndex + 1);
-    
-    // Check if first part is a signature (starts with 's--')
-    let versionIndex = 0;
-    if (afterUpload[0] && afterUpload[0].startsWith('s--')) {
-      versionIndex = 1; // Skip signature
-    }
-    
-    // Get version (starts with 'v' or 'vv')
-    const version = afterUpload[versionIndex]?.replace(/^vv?/, '') || null;
-    
-    // Get public_id (everything after version)
-    const publicIdParts = afterUpload.slice(versionIndex + 1);
-    let publicId = publicIdParts.join('/');
-    
-    // Remove file extension for public_id
-    publicId = publicId.replace(/\.[^/.]+$/, '');
+
+    const { publicId, resourceType } = extracted;
     
     // Generate signed URL using Cloudinary SDK
+    // Note: If file is already public, signed URL is not needed but won't hurt
     const signedUrl = cloudinaryInstance.url(publicId, {
-      resource_type: resourceType === 'raw' ? 'raw' : resourceType === 'video' ? 'video' : 'image',
-      version: version,
-      sign_url: true,
-      secure: true,
+      resource_type: resourceType,
+      sign_url: true, // Generate signed URL
+      secure: true, // Use HTTPS
       type: 'upload',
     });
     
+    console.log(`✅ Generated signed URL for: ${publicId} (${resourceType})`);
     return signedUrl;
   } catch (error) {
     console.error('❌ Failed to generate signed URL:', error);
@@ -380,10 +356,13 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
     // But if URL was modified (image -> raw), we need to detect the actual resource type
     let resourceType = uploadIndex > 0 ? pathParts[uploadIndex - 1] : 'image';
     
-    // If resource type is 'raw' but URL contains '.pdf', it might have been modified
-    // Try to detect actual resource type from the file extension or use 'raw' for PDFs
-    if (url.toLowerCase().endsWith('.pdf')) {
+    // Detect resource type from file extension if needed
+    if (url.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('.pdf')) {
       resourceType = 'raw';
+    } else if (url.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|webm)$/i)) {
+      resourceType = 'video';
+    } else if (url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+      resourceType = 'image';
     }
     
     // Everything after 'upload' is version and public_id
@@ -395,10 +374,13 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
       startIndex = 1;
     }
     
-    // Skip version (usually a number like 'v1234567890')
-    // Version is usually the first element after upload (or after signature)
-    if (afterUpload[startIndex] && /^v\d+$/.test(afterUpload[startIndex])) {
-      startIndex += 1;
+    // Skip version (usually a number like 'v1234567890' or just a number)
+    // Version can be 'v1234567890' or just a number
+    if (afterUpload[startIndex]) {
+      const versionPart = afterUpload[startIndex];
+      if (/^v\d+$/.test(versionPart) || /^\d+$/.test(versionPart)) {
+        startIndex += 1;
+      }
     }
     
     // Get public_id (everything after version, including folder path)
@@ -415,7 +397,7 @@ export function extractPublicIdFromUrl(url: string): { publicId: string; resourc
       resourceType: resourceType === 'raw' ? 'raw' : resourceType === 'video' ? 'video' : 'image',
     };
   } catch (error) {
-    console.error('Error extracting public_id:', error);
+    console.error('❌ Error extracting public_id:', error);
     return null;
   }
 }

@@ -380,52 +380,52 @@ export default function TeamMemberDetailsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="name" className="sm:text-right">Name</Label>
                     <Input
                       id="name"
                       value={profileForm.name}
                       onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      className="col-span-3"
+                      className="sm:col-span-3"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">Email</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="email" className="sm:text-right">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={profileForm.email}
                       onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className="col-span-3"
+                      className="sm:col-span-3"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="department" className="text-right">Department</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="department" className="sm:text-right">Department</Label>
                     <Input
                       id="department"
                       value={profileForm.department}
                       onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
-                      className="col-span-3"
+                      className="sm:col-span-3"
                       placeholder="e.g., IT, Operations, Sales"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="specialization" className="text-right">Specialization</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="specialization" className="sm:text-right">Specialization</Label>
                     <Input
                       id="specialization"
                       value={profileForm.specialization}
                       onChange={(e) => setProfileForm({ ...profileForm, specialization: e.target.value })}
-                      className="col-span-3"
+                      className="sm:col-span-3"
                       placeholder="e.g., Senior Technician, Field Engineer"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">Role</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                    <Label htmlFor="role" className="sm:text-right">Role</Label>
                     <Select
                       value={profileForm.role}
                       onValueChange={(value) => setProfileForm({ ...profileForm, role: value as UserRole })}
                     >
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger className="sm:col-span-3">
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -799,43 +799,43 @@ export default function TeamMemberDetailsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkInTime" className="text-right">Check-in Time</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                <Label htmlFor="checkInTime" className="sm:text-right">Check-in Time</Label>
                 <Input
                   id="checkInTime"
                   type="datetime-local"
                   value={attendanceForm.checkInTime}
                   onChange={(e) => setAttendanceForm({ ...attendanceForm, checkInTime: e.target.value })}
-                  className="col-span-3"
+                  className="sm:col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkOutTime" className="text-right">Check-out Time</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                <Label htmlFor="checkOutTime" className="sm:text-right">Check-out Time</Label>
                 <Input
                   id="checkOutTime"
                   type="datetime-local"
                   value={attendanceForm.checkOutTime}
                   onChange={(e) => setAttendanceForm({ ...attendanceForm, checkOutTime: e.target.value })}
-                  className="col-span-3"
+                  className="sm:col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkInLocation" className="text-right">Check-in Location</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                <Label htmlFor="checkInLocation" className="sm:text-right">Check-in Location</Label>
                 <Input
                   id="checkInLocation"
                   value={attendanceForm.checkInLocation}
                   onChange={(e) => setAttendanceForm({ ...attendanceForm, checkInLocation: e.target.value })}
-                  className="col-span-3"
+                  className="sm:col-span-3"
                   placeholder="e.g., Office, Client Site"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkOutLocation" className="text-right">Check-out Location</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                <Label htmlFor="checkOutLocation" className="sm:text-right">Check-out Location</Label>
                 <Input
                   id="checkOutLocation"
                   value={attendanceForm.checkOutLocation}
                   onChange={(e) => setAttendanceForm({ ...attendanceForm, checkOutLocation: e.target.value })}
-                  className="col-span-3"
+                  className="sm:col-span-3"
                   placeholder="e.g., Office, Client Site"
                 />
               </div>

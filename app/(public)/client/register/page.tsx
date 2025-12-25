@@ -69,6 +69,19 @@ export default function ClientRegisterPage() {
       return;
     }
 
+    // Validate email (required)
+    if (!formData.email || formData.email.trim() === "") {
+      setError("Email is required");
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     if (!formData.password || formData.password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -102,7 +115,7 @@ export default function ClientRegisterPage() {
         body: JSON.stringify({
           name: formData.name,
           phone: normalizedPhone,
-          email: formData.email || undefined,
+          email: formData.email, // Required now
           password: formData.password,
           website: formData.website, // Honeypot
         }),
@@ -229,7 +242,9 @@ export default function ClientRegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email (Optional)</Label>
+              <Label htmlFor="email">
+                Email <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -238,6 +253,7 @@ export default function ClientRegisterPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
+                required
                 disabled={loading}
               />
             </div>
