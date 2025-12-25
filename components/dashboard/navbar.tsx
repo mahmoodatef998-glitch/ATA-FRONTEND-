@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle } from "lucide-react";
+import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -158,13 +158,13 @@ export function Navbar({ user }: NavbarProps) {
 
   return (
     <nav className="border-b bg-background" suppressHydrationWarning>
-      <div className="w-full px-4 h-16 flex items-center justify-between overflow-hidden" suppressHydrationWarning>
-        <div className="flex items-center gap-6 min-w-0 flex-1" suppressHydrationWarning>
-          <Link href="/dashboard/orders" className="text-xl font-bold text-primary whitespace-nowrap flex-shrink-0">
+      <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between gap-2" suppressHydrationWarning>
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1" suppressHydrationWarning>
+          <Link href="/dashboard/orders" className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0">
             ATA CRM
           </Link>
 
-          <div className="hidden lg:flex items-center gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
             <Link href="/dashboard">
               <Button
                 variant={pathname === "/dashboard" ? "default" : "ghost"}
@@ -245,40 +245,42 @@ export function Navbar({ user }: NavbarProps) {
             )}
           </div>
 
-          {/* Mobile/Tablet Menu */}
-          <div className="lg:hidden flex items-center gap-1" suppressHydrationWarning>
+          {/* Mobile/Tablet Menu Button */}
+          <div className="lg:hidden flex items-center" suppressHydrationWarning>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <LayoutDashboard className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Navigation</DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
+                  <Link href="/dashboard" className="flex items-center">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/orders">
+                  <Link href="/dashboard/orders" className="flex items-center">
                     <Package className="mr-2 h-4 w-4" />
                     Orders
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/notifications">
+                  <Link href="/dashboard/notifications" className="flex items-center">
                     <Bell className="mr-2 h-4 w-4" />
                     Notifications
                     {unreadCount > 0 && (
                       <Badge variant="destructive" className="ml-auto">
-                        {unreadCount}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </Badge>
                     )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/calendar">
+                  <Link href="/dashboard/calendar" className="flex items-center">
                     <Calendar className="mr-2 h-4 w-4" />
                     Calendar
                   </Link>
@@ -286,7 +288,7 @@ export function Navbar({ user }: NavbarProps) {
                 {/* Clients - Admin Only */}
                 {user.role === "ADMIN" && (
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients">
+                    <Link href="/dashboard/clients" className="flex items-center">
                       <User className="mr-2 h-4 w-4" />
                       Clients
                     </Link>
@@ -294,7 +296,7 @@ export function Navbar({ user }: NavbarProps) {
                 )}
                 {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
                   <DropdownMenuItem asChild>
-                    <Link href="/team">
+                    <Link href="/team" className="flex items-center">
                       <Users className="mr-2 h-4 w-4" />
                       Our Team
                     </Link>
@@ -305,37 +307,55 @@ export function Navbar({ user }: NavbarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0" suppressHydrationWarning>
-          {/* Module Switcher - Only for Admin, Operations Manager, Accountant, Supervisor */}
-          <ModuleSwitcher currentModule="crm" />
-          {/* Language Toggle */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0" suppressHydrationWarning>
+          {/* Module Switcher - Hidden on mobile, visible on xl+ */}
+          <div className="hidden xl:block">
+            <ModuleSwitcher currentModule="crm" />
+          </div>
+          
+          {/* Language Toggle - Always visible but smaller on mobile */}
           <LanguageToggle />
           
-          {/* Theme Toggle */}
+          {/* Theme Toggle - Always visible */}
           <ThemeToggle />
           
-          {/* Backup Button */}
+          {/* Backup Button - Icon only on mobile */}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleBackup}
             disabled={isBackingUp}
             title="Database Backup"
-            className="relative"
+            className="relative h-9 w-9"
           >
-            <Database className={`h-5 w-5 ${isBackingUp ? 'animate-pulse' : ''}`} />
+            <Database className={`h-4 w-4 sm:h-5 sm:w-5 ${isBackingUp ? 'animate-pulse' : ''}`} />
           </Button>
+          
+          {/* Notifications Bell - Mobile only (visible in desktop nav) */}
+          <Link href="/dashboard/notifications" className="lg:hidden">
+            <Button variant="ghost" size="icon" className="relative h-9 w-9">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+              {unreadCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
           
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2" suppressHydrationWarning>
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground" suppressHydrationWarning>
-                  <User className="h-4 w-4" />
+              <Button variant="ghost" className="flex items-center gap-1.5 sm:gap-2 h-9 px-1.5 sm:px-2" suppressHydrationWarning>
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0" suppressHydrationWarning>
+                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
-                <div className="hidden md:flex flex-col items-start" suppressHydrationWarning>
-                  <span className="text-sm font-medium">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">{user.role}</span>
+                <div className="hidden sm:flex flex-col items-start min-w-0" suppressHydrationWarning>
+                  <span className="text-xs sm:text-sm font-medium truncate max-w-[80px] md:max-w-none">{user.name}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px] md:max-w-none">{user.role}</span>
                 </div>
               </Button>
             </DropdownMenuTrigger>

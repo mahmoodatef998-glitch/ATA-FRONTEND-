@@ -177,7 +177,7 @@ export function TeamNavbar() {
             {/* Register Button - Only show if not logged in or for new registrations */}
             {!session && (
               <Link href="/team/register">
-                <Button variant="outline" size="sm" className="whitespace-nowrap text-xs px-2">
+                <Button variant="outline" size="sm" className="whitespace-nowrap text-xs px-2 h-8">
                   <Users className="mr-1.5 h-3.5 w-3.5" />
                   <span className="hidden lg:inline">Register</span>
                   <span className="lg:hidden">Reg</span>
@@ -193,7 +193,7 @@ export function TeamNavbar() {
             
             {/* Home Button */}
             <Link href="/">
-              <Button variant="ghost" size="sm" className="flex-shrink-0 h-8 w-8 p-0">
+              <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8">
                 <Home className="h-3.5 w-3.5" />
               </Button>
             </Link>
@@ -202,13 +202,13 @@ export function TeamNavbar() {
             {session?.user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-1.5 flex-shrink-0 px-1.5">
+                  <Button variant="ghost" className="flex items-center gap-1.5 flex-shrink-0 px-1.5 h-9">
                     <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
                       <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </div>
-                    <div className="hidden lg:flex flex-col items-start min-w-0">
-                      <span className="text-xs font-medium truncate max-w-[100px]">{session.user.name}</span>
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
+                    <div className="hidden sm:flex flex-col items-start min-w-0">
+                      <span className="text-xs font-medium truncate max-w-[80px] lg:max-w-[100px]">{session.user.name}</span>
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[80px] lg:max-w-[100px]">
                         {session.user.role?.replace('_', ' ') || 'User'}
                       </span>
                     </div>
