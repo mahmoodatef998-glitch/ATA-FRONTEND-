@@ -3,20 +3,14 @@ import { rateLimiter, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/security";
 import { handleApiError } from "@/lib/error-handler";
 
-// Load dotenv only in development
-if (process.env.NODE_ENV === "development") {
-  try {
-    const dotenv = require("dotenv");
-    dotenv.config();
-  } catch (error) {
-    // Silently ignore in production
-  }
-}
-
 /**
  * Chatbot API Route using Groq
  * Handles chat messages and returns AI responses
  */
+
+// Configure runtime for Vercel
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // GET method for health check
 export async function GET() {
@@ -25,6 +19,7 @@ export async function GET() {
       success: true,
       message: "Chatbot API is running",
       model: "llama-3.3-70b-versatile",
+      groqConfigured: !!process.env.GROQ_API_KEY,
     },
     { status: 200 }
   );
@@ -42,10 +37,6 @@ export async function OPTIONS() {
   });
 }
 
-// Configure runtime for Vercel Edge/Node
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // POST method for chat
 export async function POST(request: NextRequest) {
   // Build-time probe safe response
@@ -54,15 +45,6 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: { "content-type": "application/json" },
     });
-  }
-
-  // Debug logging only in development
-  if (process.env.NODE_ENV === "development") {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("🔍 [CHAT API] Environment Check:");
-    console.log("NODE_ENV:", process.env.NODE_ENV);
-    console.log("process.env.GROQ_API_KEY:", process.env.GROQ_API_KEY ? "✅ Found" : "❌ Not found");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 
   try {
