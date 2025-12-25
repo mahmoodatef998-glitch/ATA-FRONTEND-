@@ -28,13 +28,29 @@ export function Chatbot({ className }: ChatbotProps) {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [clientId, setClientId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Mount check
   useEffect(() => {
     setMounted(true);
+    // Try to get client ID if user is a client
+    fetchClientId();
   }, []);
+
+  // Fetch client ID from session
+  const fetchClientId = async () => {
+    try {
+      const response = await fetch("/api/chat/client-id");
+      const data = await response.json();
+      if (data.success && data.data.clientId) {
+        setClientId(data.data.clientId);
+      }
+    } catch (error) {
+      // Ignore errors - client ID is optional
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -78,6 +94,7 @@ export function Chatbot({ className }: ChatbotProps) {
         body: JSON.stringify({
           message: userMessage,
           conversationHistory,
+          clientId: clientId, // Include client ID if available
         }),
       });
 

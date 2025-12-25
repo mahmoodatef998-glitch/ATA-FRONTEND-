@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
+import {
+  getCompanyKnowledge,
+  getClientOrderHistory,
+  formatCompanyKnowledge,
+  formatClientOrderHistory,
+} from "@/lib/chatbot/company-knowledge";
 
 /**
  * Chatbot API Route using Groq
+ * Enhanced with company knowledge and client order history
  */
 
 // Configure runtime for Vercel
@@ -51,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { message, conversationHistory = [] } = body;
+    const { message, conversationHistory = [], clientId } = body;
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return NextResponse.json(
@@ -74,16 +83,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // System prompt
-    const systemPrompt = `You are a helpful AI assistant for ATA CRM, a company specializing in generators, ATS (Automatic Transfer Switches), switchgear, and power solutions.
+    // Try to get session (optional - chatbot can work without auth)
+    let companyId: number | null = null;
+    let clientOrderHistory: any = null;
+
+    try {
+      const session = await requireAuth();
+      companyId = typeof session.user.companyId === "string" 
+        ? parseInt(session.user.companyId) 
+        : session.user.companyId;
+    } catch (error) {
+      // No session - chatbot can still work with default company knowledge
+      // Try to get companyId from first company in database
+      const firstCompany = await prisma.companies.findFirst({
+        select: { id: true },
+      });
+      companyId = firstCompany?.id || null;
+    }
+
+    // Get company knowledge
+    let companyKnowledge = null;
+    if (companyId) {
+      companyKnowledge = await getCompanyKnowledge(companyId);
+    }
+
+    // Get client order history if clientId is provided
+    if (clientId && typeof clientId === "number") {
+      clientOrderHistory = await getClientOrderHistory(clientId);
+    }
+
+    // Build enhanced system prompt with company knowledge
+    let systemPrompt = `You are a helpful AI assistant for ATA CRM, a company specializing in generators, ATS (Automatic Transfer Switches), switchgear, and power solutions.
 
 Your role is to:
 1. Answer questions about products (generators, ATS, switchgear, spare parts)
 2. Help clients track their orders
 3. Provide information about pricing and specifications
 4. Guide clients on how to use the portal
+5. Provide accurate information about the company based on the knowledge base
 
 Be friendly, professional, and concise. Always respond in the same language the user is using (Arabic or English).`;
+
+    // Add company knowledge to system prompt
+    if (companyKnowledge) {
+      systemPrompt += formatCompanyKnowledge(companyKnowledge);
+    }
+
+    // Add client order history to system prompt
+    if (clientOrderHistory) {
+      systemPrompt += formatClientOrderHistory(clientOrderHistory);
+    }
 
     // Prepare messages for Groq API
     const messages = [
