@@ -191,15 +191,15 @@ export function Chatbot({ className }: ChatbotProps) {
           }}
         >
           {/* Header */}
-          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-3">
+          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white px-3 py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/30">
-                  <Bot className="h-4 w-4 text-white" strokeWidth={2.5} />
+                <div className="h-7 w-7 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                  <Bot className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                 </div>
-                <div>
-                  <CardTitle className="text-base font-bold">AI Assistant</CardTitle>
-                  <p className="text-xs text-white/80">Powered by Groq</p>
+                <div className="leading-tight">
+                  <CardTitle className="text-sm font-bold">AI Assistant</CardTitle>
+                  <p className="text-[10px] text-white/70">Powered by Groq</p>
                 </div>
               </div>
               
@@ -208,10 +208,10 @@ export function Chatbot({ className }: ChatbotProps) {
                   variant="ghost"
                   size="sm"
                   onClick={resetChat}
-                  className="h-8 px-2 text-xs text-white hover:bg-white/20 backdrop-blur-sm"
+                  className="h-7 w-7 p-0 text-white hover:bg-white/20 backdrop-blur-sm"
                   title="Start New Chat"
                 >
-                  🔄
+                  <span className="text-base">🔄</span>
                 </Button>
                 
                 {/* Close Button - Very Visible */}
@@ -220,14 +220,14 @@ export function Chatbot({ className }: ChatbotProps) {
                     console.log("❌ Close button clicked!");
                     setIsOpen(false);
                   }}
-                  className="h-12 w-12 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-2xl ml-1"
+                  className="h-10 w-10 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-2xl"
                   title="✕ إغلاق"
                   style={{
-                    border: "3px solid white",
+                    border: "2px solid white",
                     boxShadow: "0 4px 15px rgba(220, 38, 38, 0.5)",
                   }}
                 >
-                  <X className="h-7 w-7 text-white" strokeWidth={3} />
+                  <X className="h-6 w-6 text-white" strokeWidth={3} />
                 </button>
               </div>
             </div>
