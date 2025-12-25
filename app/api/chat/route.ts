@@ -42,6 +42,10 @@ export async function OPTIONS() {
   });
 }
 
+// Configure runtime for Vercel Edge/Node
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // POST method for chat
 export async function POST(request: NextRequest) {
   // Build-time probe safe response
