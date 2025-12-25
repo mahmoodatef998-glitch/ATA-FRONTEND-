@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { Loader2, MessageCircle, X, Send, Bot, User, Minimize2 } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -64,7 +64,7 @@ export function Chatbot({ className }: ChatbotProps) {
     setMessages((prev) => [...prev, newUserMessage]);
 
     try {
-      // Prepare conversation history (excluding system message)
+      // Prepare conversation history
       const conversationHistory = messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
@@ -144,7 +144,6 @@ export function Chatbot({ className }: ChatbotProps) {
       {!isOpen && (
         <button
           onClick={() => {
-            console.log("Chat button clicked!");
             setIsOpen(true);
           }}
           style={{
@@ -152,159 +151,176 @@ export function Chatbot({ className }: ChatbotProps) {
             bottom: "24px",
             right: "24px",
             zIndex: 99999,
-            height: "64px",
-            width: "64px",
+            height: "70px",
+            width: "70px",
             borderRadius: "50%",
-            background: "linear-gradient(to right, #2563eb, #9333ea)",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             border: "none",
             cursor: "pointer",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+            boxShadow: "0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0,0,0,0.2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             color: "white",
-            transition: "all 0.3s",
+            transition: "all 0.4s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.1)";
+            e.currentTarget.style.transform = "scale(1.15) rotate(10deg)";
+            e.currentTarget.style.boxShadow = "0 20px 40px rgba(102, 126, 234, 0.6), 0 10px 20px rgba(0,0,0,0.3)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+            e.currentTarget.style.boxShadow = "0 15px 35px rgba(102, 126, 234, 0.4), 0 5px 15px rgba(0,0,0,0.2)";
           }}
         >
-          <MessageCircle className="h-7 w-7 text-white" />
+          <MessageCircle className="h-8 w-8 text-white" strokeWidth={2.5} />
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
         <Card
-          className="w-[400px] h-[600px] flex flex-col shadow-2xl border-2"
+          className="w-[420px] h-[650px] flex flex-col shadow-2xl border-0 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
           style={{
             position: "fixed",
             bottom: "24px",
             right: "24px",
             zIndex: 99999,
+            borderRadius: "24px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
           }}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <Bot className="h-4 w-4 text-white" />
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/30">
+                  <Bot className="h-5 w-5 text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold">AI Assistant</CardTitle>
+                  <p className="text-xs text-white/80">Powered by Groq</p>
+                </div>
               </div>
-              <CardTitle className="text-lg font-bold">AI Assistant</CardTitle>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetChat}
+                  className="h-9 px-3 text-xs text-white hover:bg-white/20 backdrop-blur-sm"
+                  title="Start New Chat"
+                >
+                  🔄 New
+                </Button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
+                  title="Close Chat"
+                  style={{
+                    border: "2px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <X className="h-6 w-6 text-white" strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetChat}
-                className="h-8 px-3 text-xs hover:bg-blue-100 dark:hover:bg-blue-900"
-                title="New Chat"
-              >
-                🔄 New
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => {
-                  console.log("Close button clicked!");
-                  setIsOpen(false);
-                }}
-                className="h-10 w-10 bg-red-500 hover:bg-red-600 text-white shadow-lg"
-                title="Close"
-              >
-                <X className="h-6 w-6 font-bold" />
-              </Button>
-            </div>
-          </CardHeader>
+          </div>
 
-            <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message, index) => (
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex gap-3 animate-in fade-in-50 slide-in-from-bottom-3 duration-300 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                  }}
+                >
+                  {message.role === "assistant" && (
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-blue-100 dark:ring-blue-900">
+                      <Bot className="h-5 w-5 text-white" strokeWidth={2.5} />
+                    </div>
+                  )}
                   <div
-                    key={index}
-                    className={`flex gap-3 ${
-                      message.role === "user" ? "justify-end" : "justify-start"
+                    className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-md ${
+                      message.role === "user"
+                        ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white"
+                        : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
                     }`}
                   >
-                    {message.role === "assistant" && (
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
-                        <Bot className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                        message.role === "user"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {message.content}
-                      </p>
-                      <span className="text-xs opacity-70 mt-1 block">
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    {message.role === "user" && (
-                      <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                        <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                      </div>
-                    )}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      {message.content}
+                    </p>
+                    <span className={`text-xs mt-2 block ${
+                      message.role === "user" ? "text-white/70" : "text-gray-500 dark:text-gray-400"
+                    }`}>
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
-                ))}
-
-                {isLoading && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
-                      <Bot className="h-4 w-4 text-white" />
+                  {message.role === "user" && (
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-gray-200 dark:ring-gray-600">
+                      <User className="h-5 w-5 text-gray-700 dark:text-gray-200" strokeWidth={2.5} />
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-600 dark:text-gray-400" />
-                    </div>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="border-t p-4">
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
-                    disabled={isLoading}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || isLoading}
-                    size="icon"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  AI responses may take a few seconds
-                </p>
+              ))}
+
+              {isLoading && (
+                <div className="flex gap-3 justify-start animate-in fade-in-50 slide-in-from-bottom-3 duration-300">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-blue-100 dark:ring-blue-900">
+                    <Bot className="h-5 w-5 text-white" strokeWidth={2.5} />
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-3 shadow-md">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  disabled={isLoading}
+                  className="flex-1 rounded-xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 h-12 px-4 text-sm"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                Powered by Groq • Llama 3.3 70B
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
