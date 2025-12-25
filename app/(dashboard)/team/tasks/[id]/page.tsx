@@ -348,7 +348,7 @@ export default function TaskDetailPage() {
                     </div>
                     <p className="text-sm mb-3">{log.description}</p>
                     {log.photos && Array.isArray(log.photos) && log.photos.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2 mt-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-3">
                         {log.photos.map((photo: string, idx: number) => (
                           <a
                             key={idx}
@@ -360,7 +360,7 @@ export default function TaskDetailPage() {
                             <img
                               src={photo}
                               alt={`Photo ${idx + 1}`}
-                              className="w-full h-24 object-cover rounded border hover:opacity-80 transition-opacity"
+                              className="w-full h-20 sm:h-24 object-cover rounded border hover:opacity-80 transition-opacity"
                             />
                           </a>
                         ))}

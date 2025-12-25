@@ -57,24 +57,26 @@ export function OrderTabs({ order, isLoggedIn, isPublic, token }: OrderTabsProps
       {/* Tabs Navigation */}
       <Card className="border-2">
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                suppressHydrationWarning
-                className={`
-                  flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
-                  ${activeTab === tab.id
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }
-                `}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
+          <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+            <div className="flex gap-2 min-w-max">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  suppressHydrationWarning
+                  className={`
+                    flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-xs sm:text-sm flex-shrink-0
+                    ${activeTab === tab.id
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }
+                  `}
+                >
+                  <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
