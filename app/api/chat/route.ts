@@ -17,6 +17,32 @@ if (process.env.NODE_ENV === "development") {
  * Chatbot API Route using Groq
  * Handles chat messages and returns AI responses
  */
+
+// GET method for health check
+export async function GET() {
+  return NextResponse.json(
+    {
+      success: true,
+      message: "Chatbot API is running",
+      model: "llama-3.3-70b-versatile",
+    },
+    { status: 200 }
+  );
+}
+
+// OPTIONS method for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
+
+// POST method for chat
 export async function POST(request: NextRequest) {
   // Build-time probe safe response
   if (process.env.NEXT_PHASE === "phase-production-build") {
