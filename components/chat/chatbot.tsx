@@ -180,13 +180,13 @@ export function Chatbot({ className }: ChatbotProps) {
       {/* Chat Window */}
       {isOpen && (
         <Card
-          className="w-[380px] h-[550px] flex flex-col shadow-2xl border-0 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
+          className="w-[350px] h-[480px] flex flex-col shadow-2xl border-0 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
           style={{
             position: "fixed",
-            bottom: "20px",
+            bottom: "90px",
             right: "20px",
             zIndex: 99999,
-            borderRadius: "20px",
+            borderRadius: "16px",
             boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
           }}
         >
@@ -235,7 +235,7 @@ export function Chatbot({ className }: ChatbotProps) {
 
           <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
               {messages.map((message, index) => (
                 <div
                   key={index}
@@ -296,7 +296,7 @@ export function Chatbot({ className }: ChatbotProps) {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+            <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-900">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
@@ -305,22 +305,22 @@ export function Chatbot({ className }: ChatbotProps) {
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
                   disabled={isLoading}
-                  className="flex-1 rounded-xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 h-12 px-4 text-sm"
+                  className="flex-1 rounded-xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 h-10 px-3 text-sm"
                 />
                 <Button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
                   size="icon"
-                  className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  className="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Send className="h-5 w-5" />
+                    <Send className="h-4 w-4" />
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5 text-center">
                 Powered by Groq • Llama 3.3 70B
               </p>
             </div>
