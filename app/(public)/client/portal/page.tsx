@@ -172,7 +172,8 @@ export default function ClientPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+    <div className="min-h-screen bg-gray-50 relative">
       {/* Navbar */}
       <ClientNavbar clientName={clientName || "Client"} clientEmail={clientEmail} />
       
@@ -531,6 +532,7 @@ export default function ClientPortalPage() {
         )}
       </main>
     </div>
+    </>
   );
 }
 

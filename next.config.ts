@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    // Add image quality configurations
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp'],
+    // Add custom quality configurations
+    qualities: [75, 90, 95],
   },
   
   // Bundle size optimization
@@ -78,6 +84,10 @@ const nextConfig: NextConfig = {
       {
         key: 'Permissions-Policy',
         value: 'geolocation=(self), camera=(), microphone=()'
+      },
+      {
+        key: 'Content-Security-Policy',
+        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.groq.com https://*.supabase.com wss://*.vercel.app ws://localhost:* http://localhost:*; frame-src 'self';"
       },
     ];
 

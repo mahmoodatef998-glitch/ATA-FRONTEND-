@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { RemoveBrowserExtensionAttrs } from "@/components/remove-browser-extension-attrs";
 import { Providers } from "@/components/providers";
+import { Chatbot } from "@/components/chat/chatbot";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -110,6 +111,8 @@ export default function RootLayout({
           >
             <ErrorBoundary>
               {children}
+              {/* Global Chatbot - Available on all pages */}
+              <Chatbot />
             </ErrorBoundary>
           </ThemeProvider>
         </Providers>
