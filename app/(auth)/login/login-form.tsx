@@ -43,30 +43,38 @@ export function LoginForm() {
           errorMessage = "Username or password incorrect";
         } else if (result.error === "Configuration") {
           // Configuration error - this usually means NEXTAUTH_SECRET is missing or invalid
-          // In development, try to continue with a user-friendly message
           errorMessage = "Authentication service is temporarily unavailable. Please try again in a moment.";
           console.error("NextAuth Configuration Error:", {
             message: "NEXTAUTH_SECRET may be missing or invalid",
             solution: "1. Check if .env file exists in project root\n2. Verify NEXTAUTH_SECRET is at least 32 characters\n3. Restart the development server\n4. Check server console for detailed error messages",
             note: "In development mode, a fallback secret should be used automatically. If this error persists, check server-side logs."
           });
-          // Don't show the error to user, just log it
           setError(errorMessage);
           setLoading(false);
           return;
         } else if (result.error && typeof result.error === "string") {
-          // Use the error message directly if it's a string
-          errorMessage = result.error;
-
-          // Check if error is about account status
-          if (result.error.toLowerCase().includes("pending")) {
+          // Parse specific error messages from auth.ts
+          if (result.error.startsWith("INVALID_EMAIL:")) {
+            errorMessage = result.error.replace("INVALID_EMAIL:", "").trim();
+          } else if (result.error.startsWith("INVALID_PASSWORD:")) {
+            errorMessage = result.error.replace("INVALID_PASSWORD:", "").trim();
+          } else if (result.error.startsWith("MISSING_EMAIL:")) {
+            errorMessage = result.error.replace("MISSING_EMAIL:", "").trim();
+          } else if (result.error.startsWith("MISSING_PASSWORD:")) {
+            errorMessage = result.error.replace("MISSING_PASSWORD:", "").trim();
+          } else if (result.error.startsWith("MISSING_CREDENTIALS:")) {
+            errorMessage = result.error.replace("MISSING_CREDENTIALS:", "").trim();
+          } else if (result.error.toLowerCase().includes("pending")) {
             errorMessage = "Your account is pending admin approval. Please wait for approval before logging in.";
           } else if (result.error.toLowerCase().includes("rejected")) {
             errorMessage = "Your account has been rejected. Please contact admin for more information.";
-          } else if (result.error.toLowerCase().includes("invalid email") || result.error.toLowerCase().includes("invalid password") || result.error.toLowerCase().includes("username or password incorrect")) {
-            errorMessage = "Username or password incorrect";
+          } else if (result.error.toLowerCase().includes("not approved")) {
+            errorMessage = "Your account is not approved. Please contact admin.";
           } else if (result.error.toLowerCase().includes("configuration")) {
             errorMessage = "Authentication service is not properly configured. Please contact administrator.";
+          } else {
+            // Use the error message directly if it's a string
+            errorMessage = result.error;
           }
         }
 
@@ -108,7 +116,25 @@ export function LoginForm() {
       }
     } catch (err) {
       console.error("Login exception:", err);
-      const errorMessage = err instanceof Error ? err.message : "An error occurred during login";
+      let errorMessage = "An unexpected error occurred during login. Please try again.";
+      
+      if (err instanceof Error) {
+        // Parse specific error messages
+        if (err.message.includes("INVALID_EMAIL")) {
+          errorMessage = err.message.replace("INVALID_EMAIL:", "").trim();
+        } else if (err.message.includes("INVALID_PASSWORD")) {
+          errorMessage = err.message.replace("INVALID_PASSWORD:", "").trim();
+        } else if (err.message.includes("MISSING_EMAIL")) {
+          errorMessage = err.message.replace("MISSING_EMAIL:", "").trim();
+        } else if (err.message.includes("MISSING_PASSWORD")) {
+          errorMessage = err.message.replace("MISSING_PASSWORD:", "").trim();
+        } else if (err.message.includes("MISSING_CREDENTIALS")) {
+          errorMessage = err.message.replace("MISSING_CREDENTIALS:", "").trim();
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -140,11 +166,15 @@ export function LoginForm() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@demo.co"
+                placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(""); // Clear error when user types
+                }}
                 required
                 disabled={loading}
+                className={error && error.includes("EMAIL") ? "border-red-500" : ""}
               />
             </div>
 
@@ -153,17 +183,27 @@ export function LoginForm() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(""); // Clear error when user types
+                }}
                 required
                 disabled={loading}
+                className={error && error.includes("PASSWORD") ? "border-red-500" : ""}
               />
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-md">
+                <div className="flex items-start gap-2">
+                  <span className="text-red-500 mt-0.5">⚠️</span>
+                  <div className="flex-1">
+                    <p className="font-medium">Error</p>
+                    <p className="mt-1">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -171,17 +211,6 @@ export function LoginForm() {
               {loading ? "Signing in..." : "Sign In"}
             </Button>
 
-            <div className="text-sm text-center text-gray-600 mt-4">
-              <p className="font-semibold mb-2">Demo Credentials:</p>
-              <div className="bg-blue-50 p-3 rounded-md space-y-1">
-                <p className="font-mono text-sm">
-                  📧 admin@demo.co
-                </p>
-                <p className="font-mono text-sm">
-                  🔑 00243540000
-                </p>
-              </div>
-            </div>
 
             <div className="text-center mt-4">
               <Link href="/" className="text-sm text-blue-600 hover:underline">
