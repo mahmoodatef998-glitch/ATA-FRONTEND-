@@ -194,24 +194,27 @@ export function Chatbot({ className }: ChatbotProps) {
               </div>
               <CardTitle className="text-lg font-bold">AI Assistant</CardTitle>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={resetChat}
-                className="h-8 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900"
+                className="h-8 px-3 text-xs hover:bg-blue-100 dark:hover:bg-blue-900"
                 title="New Chat"
               >
-                New
+                🔄 New
               </Button>
               <Button
-                variant="ghost"
+                variant="destructive"
                 size="icon"
-                onClick={() => setIsOpen(false)}
-                className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600"
-                title="Close chat"
+                onClick={() => {
+                  console.log("Close button clicked!");
+                  setIsOpen(false);
+                }}
+                className="h-10 w-10 bg-red-500 hover:bg-red-600 text-white shadow-lg"
+                title="Close"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6 font-bold" />
               </Button>
             </div>
           </CardHeader>
