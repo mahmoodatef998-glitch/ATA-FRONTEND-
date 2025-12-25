@@ -187,33 +187,34 @@ export function Chatbot({ className }: ChatbotProps) {
             zIndex: 99999,
           }}
         >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <CardTitle className="text-lg">AI Assistant</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+                <Bot className="h-4 w-4 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={resetChat}
-                  className="h-8 w-8"
-                  title="Reset chat"
-                >
-                  <span className="text-xs">Reset</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
+              <CardTitle className="text-lg font-bold">AI Assistant</CardTitle>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetChat}
+                className="h-8 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900"
+                title="New Chat"
+              >
+                New
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+                className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600"
+                title="Close chat"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </CardHeader>
 
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
               {/* Messages */}
