@@ -180,48 +180,54 @@ export function Chatbot({ className }: ChatbotProps) {
       {/* Chat Window */}
       {isOpen && (
         <Card
-          className="w-[420px] h-[650px] flex flex-col shadow-2xl border-0 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
+          className="w-[380px] h-[550px] flex flex-col shadow-2xl border-0 overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
           style={{
             position: "fixed",
-            bottom: "24px",
-            right: "24px",
+            bottom: "20px",
+            right: "20px",
             zIndex: 99999,
-            borderRadius: "24px",
+            borderRadius: "20px",
             boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
           }}
         >
           {/* Header */}
-          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-4">
+          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/30">
-                  <Bot className="h-5 w-5 text-white" strokeWidth={2.5} />
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/30">
+                  <Bot className="h-4 w-4 text-white" strokeWidth={2.5} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold">AI Assistant</CardTitle>
+                  <CardTitle className="text-base font-bold">AI Assistant</CardTitle>
                   <p className="text-xs text-white/80">Powered by Groq</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={resetChat}
-                  className="h-9 px-3 text-xs text-white hover:bg-white/20 backdrop-blur-sm"
+                  className="h-8 px-2 text-xs text-white hover:bg-white/20 backdrop-blur-sm"
                   title="Start New Chat"
                 >
-                  🔄 New
+                  🔄
                 </Button>
+                
+                {/* Close Button - Very Visible */}
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="h-10 w-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
-                  title="Close Chat"
+                  onClick={() => {
+                    console.log("❌ Close button clicked!");
+                    setIsOpen(false);
+                  }}
+                  className="h-12 w-12 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-2xl ml-1"
+                  title="✕ إغلاق"
                   style={{
-                    border: "2px solid rgba(255,255,255,0.3)",
+                    border: "3px solid white",
+                    boxShadow: "0 4px 15px rgba(220, 38, 38, 0.5)",
                   }}
                 >
-                  <X className="h-6 w-6 text-white" strokeWidth={2.5} />
+                  <X className="h-7 w-7 text-white" strokeWidth={3} />
                 </button>
               </div>
             </div>
