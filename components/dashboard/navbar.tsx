@@ -37,11 +37,12 @@ export function Navbar({ user }: NavbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection - non-blocking, will fail gracefully on Vercel
+  // Socket.io is optional and should not delay page load
   const { socket, isConnected } = useSocket({
     companyId: user.companyId,
     userId: user.id,
-    autoConnect: true,
+    autoConnect: true, // Will auto-detect Vercel and skip connection
   });
 
   // Real-time notification handler
