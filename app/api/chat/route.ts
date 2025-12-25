@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimiter, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
-import { sanitizeText } from "@/lib/security";
-import { handleApiError } from "@/lib/error-handler";
 
 /**
  * Chatbot API Route using Groq
- * Handles chat messages and returns AI responses
  */
 
 // Configure runtime for Vercel
@@ -39,61 +35,21 @@ export async function OPTIONS() {
 
 // POST method for chat
 export async function POST(request: NextRequest) {
-  // Build-time probe safe response
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
   try {
-    // Rate limiting
-    const clientIp = getClientIp(request);
-    const rateLimit = await rateLimiter.check(
-      `chat:${clientIp}`,
-      RATE_LIMITS.API_GENERAL.limit,
-      RATE_LIMITS.API_GENERAL.windowMs
-    );
-
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Too many requests. Please try again later.",
-          retryAfter: new Date(rateLimit.resetAt).toISOString(),
-        },
-        {
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": RATE_LIMITS.API_GENERAL.limit.toString(),
-            "X-RateLimit-Remaining": rateLimit.remaining.toString(),
-            "X-RateLimit-Reset": rateLimit.resetAt.toString(),
-          },
-        }
-      );
-    }
-
     // Check if Groq API key is configured
     const groqApiKey = process.env.GROQ_API_KEY;
     
-    // Debug logging only in development
-    if (process.env.NODE_ENV === "development" && groqApiKey) {
-      console.log("✅ GROQ_API_KEY found, length:", groqApiKey.length);
-    }
-    
     if (!groqApiKey || groqApiKey.trim() === "") {
-      console.error("❌ GROQ_API_KEY is not configured");
       return NextResponse.json(
         {
           success: false,
-          error: "Chatbot service is not configured. Please contact support.",
+          error: "Chatbot service is not configured.",
         },
         { status: 503 }
       );
     }
 
-    // Parse and validate request body
+    // Parse request body
     const body = await request.json();
     const { message, conversationHistory = [] } = body;
 
@@ -101,17 +57,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Message is required and must be a non-empty string",
+          error: "Message is required",
         },
         { status: 400 }
       );
     }
 
-    // Sanitize user message
-    const sanitizedMessage = sanitizeText(message.trim());
-
     // Limit message length
-    if (sanitizedMessage.length > 1000) {
+    if (message.trim().length > 1000) {
       return NextResponse.json(
         {
           success: false,
@@ -121,7 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // System prompt for ATA CRM chatbot
+    // System prompt
     const systemPrompt = `You are a helpful AI assistant for ATA CRM, a company specializing in generators, ATS (Automatic Transfer Switches), switchgear, and power solutions.
 
 Your role is to:
@@ -129,15 +82,8 @@ Your role is to:
 2. Help clients track their orders
 3. Provide information about pricing and specifications
 4. Guide clients on how to use the portal
-5. Answer general questions about the company
 
-Be friendly, professional, and concise. If you don't know something, politely direct them to contact support.
-Always respond in the same language the user is using (Arabic or English).
-
-Company Information:
-- Company: ATA CRM
-- Products: Diesel Generators, ATS Systems, Switchgear, Spare Parts
-- Services: Quotations, Order Management, Technical Support`;
+Be friendly, professional, and concise. Always respond in the same language the user is using (Arabic or English).`;
 
     // Prepare messages for Groq API
     const messages = [
@@ -145,21 +91,18 @@ Company Information:
         role: "system",
         content: systemPrompt,
       },
-      // Add conversation history (last 10 messages to keep context manageable)
+      // Add conversation history (last 10 messages)
       ...conversationHistory.slice(-10).map((msg: { role: string; content: string }) => ({
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content,
       })),
       {
         role: "user",
-        content: sanitizedMessage,
+        content: message.trim(),
       },
     ];
 
     // Call Groq API
-    if (process.env.NODE_ENV === "development") {
-      console.log("🚀 [GROQ] Calling Groq API with", messages.length, "messages");
-    }
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -167,22 +110,22 @@ Company Information:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // Latest Llama model (updated Dec 2024)
+        model: "llama-3.3-70b-versatile",
         messages: messages,
         temperature: 0.7,
-        max_tokens: 500, // Limit response length
+        max_tokens: 500,
         stream: false,
       }),
     });
 
     if (!groqResponse.ok) {
       const errorData = await groqResponse.text();
-      console.error("❌ [GROQ] API Error:", groqResponse.status, errorData);
+      console.error("Groq API error:", groqResponse.status, errorData);
       
       return NextResponse.json(
         {
           success: false,
-          error: "Chatbot service is temporarily unavailable. Please try again later.",
+          error: "Chatbot service is temporarily unavailable.",
         },
         { status: 503 }
       );
@@ -191,7 +134,6 @@ Company Information:
     const groqData = await groqResponse.json();
 
     if (!groqData.choices || !groqData.choices[0] || !groqData.choices[0].message) {
-      console.error("❌ [GROQ] Invalid response:", groqData);
       return NextResponse.json(
         {
           success: false,
@@ -202,10 +144,6 @@ Company Information:
     }
 
     const aiReply = groqData.choices[0].message.content;
-    
-    if (process.env.NODE_ENV === "development") {
-      console.log("✅ [GROQ] Reply received, length:", aiReply?.length || 0);
-    }
 
     return NextResponse.json(
       {
@@ -216,17 +154,17 @@ Company Information:
           usage: groqData.usage,
         },
       },
-      {
-        status: 200,
-        headers: {
-          "X-RateLimit-Remaining": rateLimit.remaining.toString(),
-          "X-RateLimit-Reset": rateLimit.resetAt.toString(),
-        },
-      }
+      { status: 200 }
     );
   } catch (error) {
     console.error("Chat API error:", error);
-    return handleApiError(error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: "An error occurred. Please try again.",
+      },
+      { status: 500 }
+    );
   }
 }
-
