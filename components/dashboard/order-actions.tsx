@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ interface OrderActionsProps {
 
 export function OrderActions({ orderId, currentStatus, publicToken }: OrderActionsProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
@@ -54,7 +55,10 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
       setOpen(false);
       setNote("");
       setSelectedAction(null);
-      router.refresh();
+      // Use startTransition for non-blocking UI updates
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error: any) {
       alert(error.message || "An error occurred");
     } finally {

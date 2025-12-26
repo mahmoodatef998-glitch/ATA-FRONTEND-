@@ -7,6 +7,7 @@ import { UserRole, Prisma, TaskStatus } from "@prisma/client";
 import { handleApiError, ValidationError, ForbiddenError } from "@/lib/error-handler";
 import { logger } from "@/lib/logger";
 import { revalidateTasks } from "@/lib/revalidate";
+import { getCached } from "@/lib/cache";
 
 /**
  * @swagger
@@ -130,7 +131,21 @@ export async function GET(request: NextRequest) {
       logger.debug("Tasks API where clause", { where, context: "tasks" });
     }
 
-    const [tasks, total] = await Promise.all([
+    // Create cache key based on user, company, and filters
+    // Include all relevant filters to ensure cache accuracy
+    const cacheKey = `tasks:${userId}:${companyId}:${JSON.stringify({
+      status: statusParams,
+      assignedToId,
+      page,
+      limit,
+      canReadAll,
+    })}`;
+
+    // Use cached data if available (1 minute cache for task lists)
+    const result = await getCached(
+      cacheKey,
+      async () => {
+        const [tasks, total] = await Promise.all([
       prisma.tasks.findMany({
         where,
         include: {
@@ -202,28 +217,33 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Build stats object
-    const stats = {
-      total,
-      pending: totalStats.find((s) => s.status === "PENDING")?._count.status || 0,
-      inProgress: totalStats.find((s) => s.status === "IN_PROGRESS")?._count.status || 0,
-      completed: totalStats.find((s) => s.status === "COMPLETED")?._count.status || 0,
-      cancelled: totalStats.find((s) => s.status === "CANCELLED")?._count.status || 0,
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        tasks,
-        stats,
-        pagination: {
-          page,
-          limit,
+        // Build stats object
+        const stats = {
           total,
-          totalPages: Math.ceil(total / limit),
-        },
+          pending: totalStats.find((s) => s.status === "PENDING")?._count.status || 0,
+          inProgress: totalStats.find((s) => s.status === "IN_PROGRESS")?._count.status || 0,
+          completed: totalStats.find((s) => s.status === "COMPLETED")?._count.status || 0,
+          cancelled: totalStats.find((s) => s.status === "CANCELLED")?._count.status || 0,
+        };
+
+        return {
+          success: true,
+          data: {
+            tasks,
+            stats,
+            pagination: {
+              page,
+              limit,
+              total,
+              totalPages: Math.ceil(total / limit),
+            },
+          },
+        };
       },
-    });
+      60 // 1 minute cache TTL for task lists
+    );
+
+    return NextResponse.json(result);
   } catch (error) {
     return handleApiError(error);
   }

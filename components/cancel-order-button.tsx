@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { XCircle, Loader2 } from "lucide-react";
@@ -32,6 +32,7 @@ export function CancelOrderButton({
 }: CancelOrderButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -64,9 +65,11 @@ export function CancelOrderButton({
         className: "bg-green-50 border-green-200",
       });
 
-      // Refresh page
+      // Use startTransition for non-blocking UI updates
       setTimeout(() => {
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       }, 1000);
 
     } catch (error: any) {

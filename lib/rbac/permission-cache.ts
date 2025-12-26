@@ -11,7 +11,7 @@ interface CachedPermissions {
   expiresAt: number;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes in milliseconds (increased for better performance)
 const cache = new Map<string, CachedPermissions>();
 
 /**

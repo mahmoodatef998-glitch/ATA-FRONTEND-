@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ interface ClientApprovalListProps {
 export function ClientApprovalList({ initialClients, pagination }: ClientApprovalListProps) {
   const [clients, setClients] = useState(initialClients);
   const [processing, setProcessing] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -62,7 +63,10 @@ export function ClientApprovalList({ initialClients, pagination }: ClientApprova
         });
         // Remove from list
         setClients((prev) => prev.filter((c) => c.id !== clientId));
-        router.refresh();
+        // Use startTransition for non-blocking UI updates
+        startTransition(() => {
+          router.refresh();
+        });
       } else {
         toast({
           title: "Error",
@@ -107,7 +111,10 @@ export function ClientApprovalList({ initialClients, pagination }: ClientApprova
         });
         // Remove from list
         setClients((prev) => prev.filter((c) => c.id !== clientId));
-        router.refresh();
+        // Use startTransition for non-blocking UI updates
+        startTransition(() => {
+          router.refresh();
+        });
       } else {
         toast({
           title: "Error",

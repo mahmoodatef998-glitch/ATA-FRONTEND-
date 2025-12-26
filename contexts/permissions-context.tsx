@@ -29,7 +29,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
 
   // Cache key based on user ID
   const getCacheKey = (userId: number | string) => `permissions:${userId}`;
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  const CACHE_TTL = 10 * 60 * 1000; // 10 minutes (increased for better performance)
 
   // Load from localStorage cache
   const loadFromCache = useCallback((userId: number | string) => {

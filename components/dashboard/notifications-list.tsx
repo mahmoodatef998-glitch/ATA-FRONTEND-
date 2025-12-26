@@ -5,7 +5,7 @@ import { Bell, CheckCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 interface Notification {
@@ -29,6 +29,7 @@ interface NotificationsListProps {
 
 export function NotificationsList({ initialNotifications, pagination }: NotificationsListProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [notifications, setNotifications] = useState(initialNotifications);
   const [markingRead, setMarkingRead] = useState<number | null>(null);
 
@@ -76,7 +77,10 @@ export function NotificationsList({ initialNotifications, pagination }: Notifica
 
       // Update local state
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      router.refresh(); // Refresh to update unread count in navbar
+      // Use startTransition for non-blocking UI updates
+      startTransition(() => {
+        router.refresh(); // Refresh to update unread count in navbar
+      });
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
