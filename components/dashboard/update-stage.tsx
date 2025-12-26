@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { OrderStage } from "@prisma/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface UpdateStageProps {
   orderId: number;
@@ -39,11 +40,22 @@ const stageLabels: Record<OrderStage, string> = {
 
 export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [stage, setStage] = useState<OrderStage>(currentStage);
   const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleUpdate = async () => {
-    if (stage === currentStage) {
+  // Memoize stage options to prevent re-renders
+  const stageOptions = useMemo(() => {
+    return Object.entries(stageLabels).map(([key, label]) => ({
+      value: key as OrderStage,
+      label,
+    }));
+  }, []);
+
+  // Optimize handleUpdate with useCallback
+  const handleUpdate = useCallback(async () => {
+    if (stage === currentStage || loading) {
       return;
     }
 
@@ -59,17 +71,35 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update stage");
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to update stage");
       }
 
-      router.refresh();
-    } catch (error) {
+      // Use startTransition to make refresh non-blocking
+      startTransition(() => {
+        router.refresh();
+      });
+
+      toast({
+        title: "✅ Stage Updated",
+        description: `Order stage has been updated successfully.`,
+      });
+    } catch (error: any) {
       console.error("Error updating stage:", error);
-      alert("Failed to update stage. Please try again.");
+      toast({
+        title: "❌ Update Failed",
+        description: error.message || "Failed to update stage. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [stage, currentStage, loading, orderId, router, toast, startTransition]);
+
+  // Optimize stage change handler
+  const handleStageChange = useCallback((value: string) => {
+    setStage(value as OrderStage);
+  }, []);
 
   return (
     <Card>
@@ -79,14 +109,14 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Select value={stage} onValueChange={(value) => setStage(value as OrderStage)}>
-            <SelectTrigger>
-              <SelectValue />
+          <Select value={stage} onValueChange={handleStageChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select stage..." />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(stageLabels).map(([key, label]) => (
-                <SelectItem key={key} value={key}>
-                  {label}
+              {stageOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -95,10 +125,11 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
 
         <Button
           onClick={handleUpdate}
-          disabled={loading || stage === currentStage}
+          disabled={loading || isPending || stage === currentStage}
           className="w-full"
+          type="button"
         >
-          {loading ? (
+          {loading || isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Updating...
