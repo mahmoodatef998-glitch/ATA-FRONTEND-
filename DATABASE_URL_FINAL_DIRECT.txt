@@ -1,0 +1,35 @@
+========================================
+✅ DATABASE_URL - Direct Connection الأصلي (البسيط)
+========================================
+
+Copy this to Vercel Environment Variables:
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+========================================
+Configuration:
+========================================
+✅ Method: Direct Connection (original simple)
+✅ Port: 5432 (Direct connection port)
+✅ Host: db.xvpjqmftyqipyqomnkgm.supabase.co
+✅ Username: postgres
+✅ Password: M00243540000m
+✅ No parameters (simple and stable)
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Find DATABASE_URL
+3. Edit
+4. Paste the value above
+5. Save
+6. Redeploy
+
+========================================
+✅ This is the original simple Direct Connection
+✅ Was working before Transaction Pooler change
+✅ Simple, stable, no complications
+
+========================================
+
