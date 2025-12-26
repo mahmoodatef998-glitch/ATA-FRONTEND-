@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 
 // Dynamic import for heavy calendar component (react-big-calendar is ~200KB)
+// Note: CalendarView is already a client component, so it will work correctly
 const CalendarView = dynamic(
   () => import("@/components/dashboard/calendar-view").then(mod => ({ default: mod.CalendarView })),
   {
@@ -12,7 +13,8 @@ const CalendarView = dynamic(
         <div className="animate-pulse text-muted-foreground">Loading calendar...</div>
       </div>
     ),
-    ssr: false, // Calendar is client-side only
+    // Removed ssr: false - not allowed in Server Components
+    // CalendarView is already a client component ("use client"), so it will work correctly
   }
 );
 
