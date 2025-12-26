@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users, ArrowRight, UserPlus } from "lucide-react";
+import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users, ArrowRight, UserPlus, Building2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
@@ -599,7 +599,7 @@ export default async function DashboardPage() {
           <CardDescription>Frequently used features</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
             <Link href="/dashboard/orders">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Package className="h-6 w-6" />
@@ -618,6 +618,14 @@ export default async function DashboardPage() {
                 Processing Orders
               </Button>
             </Link>
+            {session?.user?.role === "ADMIN" && (
+              <Link href="/dashboard/company-knowledge">
+                <Button variant="outline" className="w-full h-20 flex-col gap-2">
+                  <Building2 className="h-6 w-6" />
+                  Company Knowledge
+                </Button>
+              </Link>
+            )}
           </div>
         </CardContent>
       </Card>
