@@ -141,6 +141,7 @@ async function getOrder(id: string) {
         },
         order_histories: {
           orderBy: { createdAt: "desc" },
+          take: 10, // Limit to 10 most recent for performance
           select: {
             id: true,
             actorId: true,

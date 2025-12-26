@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { OrderStage } from "@prisma/client";
 import { Check, Clock, ChevronRight } from "lucide-react";
 
@@ -26,7 +27,7 @@ const stages = [
   { key: "COMPLETED_DELIVERED", label: "Completed", shortLabel: "Done", icon: "🎉" },
 ];
 
-export function OrderProgressTrackerCompact({ currentStage, className }: OrderProgressTrackerCompactProps) {
+export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCompact({ currentStage, className }: OrderProgressTrackerCompactProps) {
   const currentIndex = stages.findIndex((s) => s.key === currentStage);
   const progressPercentage = ((currentIndex + 1) / stages.length) * 100;
 
