@@ -1,7 +1,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { CalendarView } from "@/components/dashboard/calendar-view";
+import dynamic from "next/dynamic";
+
+// Dynamic import for heavy calendar component (react-big-calendar is ~200KB)
+const CalendarView = dynamic(
+  () => import("@/components/dashboard/calendar-view").then(mod => ({ default: mod.CalendarView })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-pulse text-muted-foreground">Loading calendar...</div>
+      </div>
+    ),
+    ssr: false, // Calendar is client-side only
+  }
+);
 
 export default async function CalendarPage() {
   const session = await auth();

@@ -91,10 +91,31 @@ const nextConfig: NextConfig = {
       },
     ];
 
+    // Cache headers for static assets
+    const cacheHeaders = [
+      {
+        key: 'Cache-Control',
+        value: 'public, max-age=31536000, immutable'
+      },
+    ];
+
     return [
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: cacheHeaders,
+      },
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800'
+          },
+        ],
       },
       {
         source: '/api/:path*',

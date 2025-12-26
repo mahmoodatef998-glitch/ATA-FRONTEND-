@@ -54,15 +54,30 @@ async function getOrders(searchParams: Promise<any>) {
       ];
     }
     
+    // Optimized: Only fetch required fields to reduce data transfer
     const [orders, total] = await Promise.all([
       prisma.orders.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          status: true,
+          stage: true,
+          totalAmount: true,
+          currency: true,
+          createdAt: true,
+          updatedAt: true,
           clients: {
             select: {
               name: true,
               phone: true,
               email: true,
+            },
+          },
+          _count: {
+            select: {
+              quotations: true,
+              purchase_orders: true,
+              delivery_notes: true,
             },
           },
         },
