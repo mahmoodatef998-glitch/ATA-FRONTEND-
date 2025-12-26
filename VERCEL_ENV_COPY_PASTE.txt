@@ -2,10 +2,39 @@
 📋 DATABASE_URL - Copy & Paste for Vercel
 ========================================
 
-Name: DATABASE_URL
-Value: postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?connection_limit=20&pool_timeout=10&connect_timeout=10&sslmode=require
+# 1. DATABASE_URL (Transaction Pooler - للـ Frontend Production)
+# استخدام Transaction Pooler للـ connection pooling في Production
+# ✅ Optimized with connection pooling parameters
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?connection_limit=20&pool_timeout=10&connect_timeout=10&sslmode=require
 
-Environment: Production (و Preview و Development إذا أردت)
+# 2. DIRECT_URL (Direct Connection - للـ Migrations)
+# استخدام الاتصال المباشر للـ migrations (أفضل للـ schema changes)
+DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+# 3. NEXTAUTH_SECRET (مطلوب للـ Authentication)
+# ⚠️ أنشئ secret عشوائي قوي (32+ حرف)
+NEXTAUTH_SECRET=your-secret-key-here-min-32-chars
+
+# 4. NEXTAUTH_URL (URL الـ Frontend على Vercel)
+# ⚠️ URL الفعلي للموقع
+NEXTAUTH_URL=https://ata-frontend-pied.vercel.app
+
+# 5. NODE_ENV
+NODE_ENV=production
+
+# 6. RBAC_ENABLED
+RBAC_ENABLED=true
+
+# 7. NEXT_PUBLIC_RBAC_ENABLED (للـ Client Side)
+NEXT_PUBLIC_RBAC_ENABLED=true
+
+# 8. BACKEND_URL (اختياري - إذا كان Frontend يتصل بـ Backend API منفصل)
+# ⚠️ أضف هذا إذا كان عندك API routes في Backend على Railway
+NEXT_PUBLIC_BACKEND_URL=https://ata-backend-production.up.railway.app
+
+# 9. ALLOWED_ORIGINS (للـ CORS)
+# السماح للـ Backend بالاتصال من Frontend
+ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-production.up.railway.app
 
 ========================================
 📝 خطوات سريعة:
@@ -13,9 +42,48 @@ Environment: Production (و Preview و Development إذا أردت)
 1. Vercel Dashboard → مشروعك → Settings → Environment Variables
 2. ابحث عن DATABASE_URL
 3. اضغط Edit أو Update
-4. الصق القيمة أعلاه
+4. الصق القيمة أعلاه (مع connection pooling parameters)
 5. Save
 6. Redeploy المشروع
 
 ========================================
-
+# كيفية الإضافة في Vercel:
+========================================
+# 
+# 1. Vercel Dashboard → Project → Settings → Environment Variables
+# 2. Add New
+# 3. Key: (اسم المتغير)
+# 4. Value: (القيمة)
+# 5. Environment: اختر Production, Preview, Development
+# 6. Save
+# 
+========================================
+# 
+# ✅ DATABASE_URL جاهز مع Connection Pooling!
+# ⚠️ تذكير مهم:
+# - بعد Deploy الأول، حدث NEXTAUTH_URL بالـ URL الفعلي
+# - حدث ALLOWED_ORIGINS بنفس الـ URL
+# - حدث CORS_ORIGIN في Railway Backend
+# 
+========================================
+# 
+# 🚀 خطوات ما بعد Deploy الأول:
+========================================
+# 
+# 1. بعد Deploy على Vercel:
+#    - انسخ URL Frontend (مثل: https://ata-frontend.vercel.app)
+#    - حدث NEXTAUTH_URL في Vercel
+#    - حدث ALLOWED_ORIGINS في Vercel
+#    - حدث CORS_ORIGIN في Railway Backend
+#    - Redeploy كليهما
+# 
+# 2. Database Migrations (إذا لم تكن مُنفذة):
+#    شغل من PowerShell على جهازك:
+# 
+# $env:DIRECT_URL="postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres"
+# npx prisma migrate deploy
+# npx prisma db seed
+# 
+# 3. جاهز للاستخدام! 🎉
+# 
+========================================
