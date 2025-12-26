@@ -44,6 +44,8 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
   const [stage, setStage] = useState<OrderStage>(currentStage);
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  // Optimistic UI: Track optimistic stage for immediate feedback
+  const [optimisticStage, setOptimisticStage] = useState<OrderStage | null>(null);
 
   // Memoize stage options to prevent re-renders
   const stageOptions = useMemo(() => {
@@ -53,12 +55,14 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
     }));
   }, []);
 
-  // Optimize handleUpdate with useCallback
+  // Optimize handleUpdate with useCallback and Optimistic UI
   const handleUpdate = useCallback(async () => {
     if (stage === currentStage || loading) {
       return;
     }
 
+    // OPTIMISTIC UI: Update UI immediately before API call
+    setOptimisticStage(stage);
     setLoading(true);
 
     try {
@@ -71,9 +75,14 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
       });
 
       if (!response.ok) {
+        // Revert optimistic update on error
+        setOptimisticStage(null);
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || "Failed to update stage");
       }
+
+      // Clear optimistic stage after success
+      setOptimisticStage(null);
 
       // Use startTransition to make refresh non-blocking
       startTransition(() => {
@@ -85,6 +94,8 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
         description: `Order stage has been updated successfully.`,
       });
     } catch (error: any) {
+      // Revert optimistic update on error
+      setOptimisticStage(null);
       console.error("Error updating stage:", error);
       toast({
         title: "❌ Update Failed",
@@ -109,7 +120,11 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Select value={stage} onValueChange={handleStageChange}>
+          <Select 
+            value={optimisticStage || stage} 
+            onValueChange={handleStageChange}
+            disabled={loading || isPending}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select stage..." />
             </SelectTrigger>
