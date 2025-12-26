@@ -1,0 +1,21 @@
+========================================
+📋 DATABASE_URL - Copy & Paste for Vercel
+========================================
+
+Name: DATABASE_URL
+Value: postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?connection_limit=20&pool_timeout=10&connect_timeout=10&sslmode=require
+
+Environment: Production (و Preview و Development إذا أردت)
+
+========================================
+📝 خطوات سريعة:
+========================================
+1. Vercel Dashboard → مشروعك → Settings → Environment Variables
+2. ابحث عن DATABASE_URL
+3. اضغط Edit أو Update
+4. الصق القيمة أعلاه
+5. Save
+6. Redeploy المشروع
+
+========================================
+
