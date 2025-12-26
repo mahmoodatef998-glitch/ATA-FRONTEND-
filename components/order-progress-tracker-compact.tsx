@@ -27,14 +27,16 @@ const stages = [
   { key: "COMPLETED_DELIVERED", label: "Completed", shortLabel: "Done", icon: "🎉" },
 ];
 
-export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCompact({ currentStage, className }: OrderProgressTrackerCompactProps) {
+function OrderProgressTrackerCompactComponent({ currentStage, className }: OrderProgressTrackerCompactProps) {
   const currentIndex = stages.findIndex((s) => s.key === currentStage);
-  const progressPercentage = ((currentIndex + 1) / stages.length) * 100;
+  // Handle case where stage is not found
+  const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+  const progressPercentage = ((safeIndex + 1) / stages.length) * 100;
 
   // Show only: current stage + 2 before + 2 after
   const visibleRange = 2;
-  const startIndex = Math.max(0, currentIndex - visibleRange);
-  const endIndex = Math.min(stages.length - 1, currentIndex + visibleRange);
+  const startIndex = Math.max(0, safeIndex - visibleRange);
+  const endIndex = Math.min(stages.length - 1, safeIndex + visibleRange);
   const visibleStages = stages.slice(startIndex, endIndex + 1);
 
   return (
@@ -67,9 +69,9 @@ export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCom
         <div className="flex items-center justify-between">
           {visibleStages.map((stage, idx) => {
             const actualIndex = startIndex + idx;
-            const isCompleted = actualIndex < currentIndex;
-            const isCurrent = actualIndex === currentIndex;
-            const isPending = actualIndex > currentIndex;
+            const isCompleted = actualIndex < safeIndex;
+            const isCurrent = actualIndex === safeIndex;
+            const isPending = actualIndex > safeIndex;
             const isLast = idx === visibleStages.length - 1;
 
             return (
@@ -125,7 +127,7 @@ export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCom
                     <div
                       className={`
                         h-full rounded transition-all duration-500
-                        ${actualIndex < currentIndex
+                        ${actualIndex < safeIndex
                           ? "bg-gradient-to-r from-green-500 to-green-600"
                           : "bg-gray-300 dark:bg-gray-600"
                         }
@@ -159,7 +161,7 @@ export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCom
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Stage {currentIndex + 1}/{stages.length}: <span className="text-blue-600 dark:text-blue-400 font-bold">{stages[currentIndex]?.label}</span>
+              Stage {safeIndex + 1}/{stages.length}: <span className="text-blue-600 dark:text-blue-400 font-bold">{stages[safeIndex]?.label || currentStage}</span>
             </span>
           </div>
         </div>
@@ -176,7 +178,7 @@ export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCom
               key={stage.key}
               className={`
                 p-2 rounded border text-center
-                ${index <= currentIndex
+                ${index <= safeIndex
                   ? "bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800 text-green-700 dark:text-green-300"
                   : "bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500"
                 }
@@ -190,6 +192,12 @@ export const OrderProgressTrackerCompact = memo(function OrderProgressTrackerCom
     </div>
   );
 }
+
+// Add displayName for better debugging
+OrderProgressTrackerCompactComponent.displayName = 'OrderProgressTrackerCompact';
+
+// Export memoized component
+export const OrderProgressTrackerCompact = memo(OrderProgressTrackerCompactComponent);
 
 
 
