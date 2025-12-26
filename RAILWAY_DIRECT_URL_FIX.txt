@@ -1,0 +1,42 @@
+========================================
+🔧 إصلاح DIRECT_URL في Railway
+========================================
+
+المشكلة:
+DIRECT_URL في Railway يستخدم Username خطأ
+
+========================================
+القيمة الحالية (خطأ):
+========================================
+
+postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+المشكلة: Username = postgres.xvpjqmftyqipyqomnkgm (خطأ للـ Direct Connection)
+
+========================================
+القيمة الصحيحة:
+========================================
+
+postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+الفرق: Username = postgres فقط (ليس postgres.xvpjqmftyqipyqomnkgm)
+
+========================================
+Steps:
+========================================
+1. Railway Dashboard → مشروع Backend
+2. Variables / Environment Variables
+3. Find DIRECT_URL
+4. Edit
+5. Paste the correct value above
+6. Save
+7. Redeploy (if needed)
+
+========================================
+ملاحظة:
+========================================
+- DATABASE_URL في Railway صحيح (Transaction Pooler)
+- DIRECT_URL فقط يحتاج إصلاح
+
+========================================
+
