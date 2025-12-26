@@ -1,0 +1,28 @@
+========================================
+✅ DATABASE_URL - Direct Connection (للرجوع)
+========================================
+
+Copy this to Vercel Environment Variables:
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+========================================
+Configuration:
+========================================
+✅ Method: Direct Connection
+✅ Port: 5432 (Direct connection port)
+✅ Host: db.xvpjqmftyqipyqomnkgm.supabase.co
+✅ No parameters needed
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Find DATABASE_URL
+3. Edit
+4. Paste the value above
+5. Save
+6. Redeploy
+
+========================================
+
