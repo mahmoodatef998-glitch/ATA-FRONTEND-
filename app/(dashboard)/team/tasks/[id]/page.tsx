@@ -12,6 +12,7 @@ import Link from "next/link";
 import { WorkLogForm } from "@/components/technician/work-log-form";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
+import { logger } from "@/lib/logger-client";
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {

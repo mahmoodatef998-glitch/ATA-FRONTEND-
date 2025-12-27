@@ -28,6 +28,7 @@ import { Users, Edit, Trash2, Loader2, CheckCircle, XCircle, Clock, UserPlus } f
 import { toast } from "@/hooks/use-toast";
 import { UserRole, UserAccountStatus } from "@prisma/client";
 import { useSession } from "next-auth/react";
+import { logger } from "@/lib/logger-client";
 import {
   AlertDialog,
   AlertDialogAction,
