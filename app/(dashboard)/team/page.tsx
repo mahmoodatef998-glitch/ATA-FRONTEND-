@@ -154,7 +154,7 @@ export default function TeamDashboardPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      logger.error("Error fetching stats", error, "team-dashboard");
     } finally {
       setLoading(false);
     }
