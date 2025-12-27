@@ -32,6 +32,7 @@ import Image from "next/image";
 import { usePermission } from "@/lib/permissions/hooks";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { RoleAssignmentGuard } from "@/lib/permissions/components";
+import { logger } from "@/lib/logger-client";
 
 interface AttendanceRecord {
   id: number;
@@ -167,7 +168,7 @@ export default function TeamMemberDetailsPage() {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("[Frontend] API Error:", response.status, errorText);
+        logger.error("[Frontend] API Error", { status: response.status, errorText }, "team-members");
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
@@ -184,7 +185,7 @@ export default function TeamMemberDetailsPage() {
           role: result.data.user.role,
         });
       } else {
-        console.error("[Frontend] API returned error:", result.error);
+        logger.error("[Frontend] API returned error", { error: result.error }, "team-members");
         toast({
           title: "Error",
           description: result.error || "Failed to load member details",
@@ -192,7 +193,7 @@ export default function TeamMemberDetailsPage() {
         });
       }
     } catch (error: any) {
-      console.error("[Frontend] Error fetching member details:", error);
+      logger.error("[Frontend] Error fetching member details", error, "team-members");
       toast({
         title: "Error",
         description: error.message || "An error occurred while loading member details",
@@ -231,7 +232,7 @@ export default function TeamMemberDetailsPage() {
         });
       }
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile", error, "team-members");
       toast({
         title: "Error",
         description: error.message || "Failed to update profile",
@@ -292,7 +293,7 @@ export default function TeamMemberDetailsPage() {
         });
       }
     } catch (error: any) {
-      console.error("Error updating attendance:", error);
+      logger.error("Error updating attendance", error, "team-members");
       toast({
         title: "Error",
         description: error.message || "Failed to update attendance",

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   // Build-time probe safe response
@@ -19,12 +20,12 @@ export async function GET(request: NextRequest) {
     const { userId: authUserId, companyId } = await authorize(PermissionAction.REPORT_VIEW);
 
     // Debug logging
-    console.log("[KPI API] Session user:", {
+    logger.debug("[KPI API] Session user", {
       id: session.user.id,
       role: session.user.role,
       companyId: session.user.companyId,
       idType: typeof session.user.id,
-    });
+    }, "kpi");
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest) {
     if (session.user.role === UserRole.TECHNICIAN) {
       // For technicians, use their own ID
       const sessionUserId = session.user.id;
-      console.log("[KPI API] Technician session userId:", sessionUserId, "type:", typeof sessionUserId);
+      logger.debug("[KPI API] Technician session userId", { sessionUserId, type: typeof sessionUserId }, "kpi");
       
       if (sessionUserId === undefined || sessionUserId === null) {
-        console.error("[KPI API] User ID is undefined or null in session");
+        logger.error("[KPI API] User ID is undefined or null in session", undefined, "kpi");
         return NextResponse.json(
           { success: false, error: "User ID not found in session" },
           { status: 400 }
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       if (typeof sessionUserId === "string") {
         const parsed = parseInt(sessionUserId, 10);
         if (isNaN(parsed)) {
-          console.error("[KPI API] Failed to parse user ID:", sessionUserId);
+          logger.error("[KPI API] Failed to parse user ID", { sessionUserId }, "kpi");
           return NextResponse.json(
             { success: false, error: "Invalid user ID format" },
             { status: 400 }
@@ -70,14 +71,14 @@ export async function GET(request: NextRequest) {
       } else if (typeof sessionUserId === "number") {
         targetUserId = sessionUserId;
       } else {
-        console.error("[KPI API] Unexpected user ID type:", typeof sessionUserId, sessionUserId);
+        logger.error("[KPI API] Unexpected user ID type", { type: typeof sessionUserId, sessionUserId }, "kpi");
         return NextResponse.json(
           { success: false, error: "User ID not found in session" },
           { status: 400 }
         );
       }
       
-      console.log("[KPI API] Resolved targetUserId:", targetUserId);
+      logger.debug("[KPI API] Resolved targetUserId", { targetUserId }, "kpi");
     } else if (userId) {
       // For supervisors/admins, they can specify userId
       const parsedUserId = parseInt(userId);
@@ -212,7 +213,7 @@ export async function GET(request: NextRequest) {
         },
       });
     } catch (error: any) {
-      console.error("[KPI API] Error fetching reviews:", error);
+      logger.error("[KPI API] Error fetching reviews", error, "kpi");
       // If reviews table doesn't exist or has issues, continue with empty array
       reviews = [];
     }
@@ -267,7 +268,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("[KPI API] Error details:", {
+    logger.error("[KPI API] Error details", {
       message: error.message,
       stack: error.stack,
       name: error.name,

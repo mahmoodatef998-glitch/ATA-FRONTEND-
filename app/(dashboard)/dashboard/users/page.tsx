@@ -132,7 +132,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      logger.error("Error fetching users", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while loading users",
@@ -192,7 +192,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error saving user:", error);
+      logger.error("Error saving user", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while saving user",
@@ -243,7 +243,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error(`Error ${action}ing user:`, error);
+      logger.error(`Error ${action}ing user`, error, "users");
       toast({
         title: "Error",
         description: `An error occurred while ${action === "approve" ? "approving" : "rejecting"} user`,
@@ -279,7 +279,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logger.error("Error deleting user", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while deleting user",

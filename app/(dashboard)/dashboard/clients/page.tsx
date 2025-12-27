@@ -5,6 +5,7 @@ import { ClientApprovalList } from "@/components/dashboard/client-approval-list"
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { getTranslation } from "@/lib/i18n/server";
+import { logger } from "@/lib/logger";
 
 async function getPendingClients() {
   try {
@@ -54,7 +55,7 @@ async function getPendingClients() {
       },
     };
   } catch (error) {
-    console.error("Error fetching pending clients:", error);
+    logger.error("Error fetching pending clients", error, "clients");
     return {
       clients: [],
       pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },

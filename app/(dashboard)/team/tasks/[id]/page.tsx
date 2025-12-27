@@ -86,7 +86,7 @@ export default function TaskDetailPage() {
         router.push("/team/tasks");
       }
     } catch (error) {
-      console.error("Error fetching task:", error);
+      logger.error("Error fetching task", error, "team-tasks");
       toast({
         title: "Error",
         description: "Failed to load task",
@@ -125,7 +125,7 @@ export default function TaskDetailPage() {
         });
       }
     } catch (error) {
-      console.error("Error updating status:", error);
+      logger.error("Error updating status", error, "team-tasks");
       toast({
         title: "❌ Error",
         description: "Failed to update status",

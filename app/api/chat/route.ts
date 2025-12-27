@@ -266,7 +266,7 @@ IMPORTANT:
 
     if (!groqResponse.ok) {
       const errorData = await groqResponse.text();
-      console.error("Groq API error:", groqResponse.status, errorData);
+      logger.error("Groq API error", { status: groqResponse.status, errorData }, "chat");
       
       return NextResponse.json(
         {
@@ -306,7 +306,7 @@ IMPORTANT:
       const encoded = encoder.encode(aiReply);
       aiReply = decoder.decode(encoded);
     } catch (error) {
-      console.error("Encoding error:", error);
+      logger.error("Encoding error", error, "chat");
       // If encoding fails, try to recover
       aiReply = aiReply.replace(/[^\x20-\x7E\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
     }
@@ -328,7 +328,7 @@ IMPORTANT:
       }
     );
   } catch (error) {
-    console.error("Chat API error:", error);
+    logger.error("Chat API error", error, "chat");
     
     return NextResponse.json(
       {

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { useI18n } from "@/lib/i18n/context";
+import { logger } from "@/lib/logger-client";
 
 export default function TeamDashboardPage() {
   const router = useRouter();
@@ -92,7 +93,7 @@ export default function TeamDashboardPage() {
         setKpi(kpiResult.data.kpi);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      logger.error("Error fetching data", error, "team-dashboard");
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
