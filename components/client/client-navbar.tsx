@@ -22,6 +22,7 @@ interface ClientNavbarProps {
 
 export function ClientNavbar({ clientName, clientEmail }: ClientNavbarProps) {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   const handleLogout = async () => {
     await fetch("/api/client/logout", { method: "POST" });
