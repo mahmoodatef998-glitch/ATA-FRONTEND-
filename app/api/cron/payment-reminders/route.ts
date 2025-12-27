@@ -70,10 +70,16 @@ export async function GET(request: Request) {
 
     // Send reminders
     for (const order of overdueOrders) {
+      const quotation = order.quotations[0];
       const po = order.purchase_orders[0];
       
       if (!order.clients?.email) {
         console.log(`⚠️ Order #${order.id}: No email available`);
+        continue;
+      }
+      
+      if (!quotation) {
+        console.log(`⚠️ Order #${order.id}: No accepted quotation with deposit required`);
         continue;
       }
 
@@ -123,20 +129,20 @@ export async function GET(request: Request) {
                   <div class="info-row">
                     <strong>Order Details:</strong><br>
                     Order Number: #${order.id}<br>
-                    Purchase Order: ${po.poNumber}<br>
+                    ${po ? `Purchase Order: ${po.poNumber}<br>` : ''}
                     Created: ${new Date(order.createdAt).toLocaleDateString('en-GB')}
                   </div>
                   
                   <div class="info-row">
                     <strong>Payment Required:</strong><br>
-                    Deposit Percentage: ${po.depositPercent}%<br>
-                    Deposit Amount: <span class="amount">${po.depositAmount?.toLocaleString()} AED</span>
+                    Deposit Percentage: ${quotation.depositPercent || order.depositPercentage || 0}%<br>
+                    Deposit Amount: <span class="amount">${(quotation.depositAmount || order.depositAmount || 0).toLocaleString()} ${order.currency || 'AED'}</span>
                   </div>
                   
-                  ${po.notes ? `
+                  ${quotation.notes ? `
                     <div class="info-row">
                       <strong>Notes:</strong><br>
-                      ${po.notes}
+                      ${quotation.notes}
                     </div>
                   ` : ''}
                   
@@ -170,7 +176,7 @@ export async function GET(request: Request) {
           orderId: order.id,
           client: order.clients.name,
           email: order.clients.email,
-          amount: po.depositAmount,
+          amount: quotation.depositAmount || order.depositAmount || 0,
           daysOverdue: daysOverdue,
           status: 'sent'
         });
