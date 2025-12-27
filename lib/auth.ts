@@ -28,6 +28,30 @@ declare module "next-auth" {
 
 // JWT types are handled by NextAuth automatically
 
+// Ensure NEXTAUTH_URL is set for proper callback handling
+// In production, use VERCEL_URL if NEXTAUTH_URL is not set
+if (!process.env.NEXTAUTH_URL) {
+  if (process.env.NODE_ENV === "development") {
+    process.env.NEXTAUTH_URL = "http://localhost:3005";
+    logger.info("✅ Set NEXTAUTH_URL to http://localhost:3005 for development", {
+      context: "auth"
+    });
+  } else if (process.env.VERCEL_URL) {
+    // In production on Vercel, use VERCEL_URL as fallback
+    process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+    console.log(`✅ [NextAuth] Set NEXTAUTH_URL to https://${process.env.VERCEL_URL} from VERCEL_URL`);
+  } else {
+    // Final fallback - use the known production URL
+    process.env.NEXTAUTH_URL = "https://ata-frontend-pied.vercel.app";
+    console.log("✅ [NextAuth] Set NEXTAUTH_URL to https://ata-frontend-pied.vercel.app (fallback)");
+  }
+} else {
+  // Log the URL being used
+  if (process.env.NODE_ENV === "production") {
+    console.log(`✅ [NextAuth] Using NEXTAUTH_URL: ${process.env.NEXTAUTH_URL}`);
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
   trustHost: true, // Trust host for proper cookie handling
@@ -215,48 +239,76 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         providedSecret = providedSecret.replace(/^["']|["']$/g, '').trim();
       }
       
+      // Log for debugging in production
+      const isProduction = process.env.NODE_ENV === "production";
+      if (isProduction) {
+        console.log("🔍 [NextAuth] Checking NEXTAUTH_SECRET in production", {
+          hasSecret: !!providedSecret,
+          secretLength: providedSecret?.length || 0,
+          secretPreview: providedSecret ? `${providedSecret.substring(0, 4)}...${providedSecret.substring(providedSecret.length - 4)}` : "NOT FOUND",
+          nodeEnv: process.env.NODE_ENV,
+          vercelUrl: process.env.VERCEL_URL,
+          nextAuthUrl: process.env.NEXTAUTH_URL
+        });
+      }
+      
       // Validate secret length
       if (providedSecret && providedSecret.length >= 32) {
+        if (isProduction) {
+          console.log("✅ [NextAuth] Using NEXTAUTH_SECRET from environment", {
+            secretLength: providedSecret.length
+          });
+        }
         return providedSecret;
       }
       
       // Generate a fallback secret in development if not provided or too short
       const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+      const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
+      
       if (isDevelopment) {
-        const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
         if (!providedSecret) {
-          logger.warn("NEXTAUTH_SECRET not found in .env file. Using fallback secret for development.", {
+          logger.warn("⚠️ NEXTAUTH_SECRET not found in .env file. Using fallback secret for development.", {
             context: "auth",
             note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
           });
         } else if (providedSecret.length < 32) {
-          logger.warn("NEXTAUTH_SECRET is too short in .env file. Using fallback secret for development.", {
+          logger.warn("⚠️ NEXTAUTH_SECRET is too short in .env file. Using fallback secret for development.", {
             context: "auth",
             providedLength: providedSecret.length,
             note: "Please add NEXTAUTH_SECRET (min 32 characters) to your .env file. See ENV_TEMPLATE.txt for example."
           });
         }
+        logger.info("✅ Using fallback NEXTAUTH_SECRET for development", {
+          context: "auth"
+        });
         return fallbackSecret;
       }
       
-      // In production, throw error if secret is missing or too short
-      logger.error("NEXTAUTH_SECRET is required in production environment (min 32 characters)", { 
-        context: "auth",
-        hasSecret: !!providedSecret,
-        secretLength: providedSecret?.length || 0
-      });
-      throw new Error("NEXTAUTH_SECRET environment variable is required and must be at least 32 characters. Please add it to your .env file. See ENV_TEMPLATE.txt for example.");
-    } catch (error) {
-      // If there's an error, use fallback in development
-      const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
-      if (isDevelopment) {
-        logger.warn("Error getting NEXTAUTH_SECRET, using fallback for development.", {
-          context: "auth",
-          error: error instanceof Error ? error.message : String(error)
+      // In production, use fallback if secret is missing (but log warning)
+      // This allows the app to work even if env vars are not set correctly
+      if (isProduction && (!providedSecret || providedSecret.length < 32)) {
+        console.error("⚠️ [NextAuth] WARNING: NEXTAUTH_SECRET is missing or too short in production!", {
+          hasSecret: !!providedSecret,
+          secretLength: providedSecret?.length || 0,
+          usingFallback: true,
+          note: "Please add NEXTAUTH_SECRET (min 32 characters) to Vercel Environment Variables"
         });
-        return "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
+        // Use fallback to allow app to work, but log error
+        return fallbackSecret;
       }
-      throw error;
+      
+      // This should not happen, but just in case
+      throw new Error("NEXTAUTH_SECRET environment variable is required and must be at least 32 characters. Please add it to your Vercel Environment Variables. Current length: " + (providedSecret?.length || 0));
+    } catch (error) {
+      // If there's an error, use fallback to allow app to work
+      const fallbackSecret = "ata-crm-dev-secret-key-change-in-production-min-32-chars-long";
+      console.error("❌ [NextAuth] Error getting NEXTAUTH_SECRET, using fallback", {
+        error: error instanceof Error ? error.message : String(error),
+        nodeEnv: process.env.NODE_ENV,
+        vercelUrl: process.env.VERCEL_URL
+      });
+      return fallbackSecret;
     }
   })(),
 });

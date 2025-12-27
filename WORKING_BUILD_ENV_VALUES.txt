@@ -1,0 +1,39 @@
+========================================
+✅ Environment Variables - Build الناجح الأصلي
+========================================
+
+للـ Vercel (Frontend):
+========================================
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+NEXTAUTH_URL=https://ata-frontend-pied.vercel.app
+
+NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
+
+========================================
+للـ Railway (Backend - إذا كان موجود):
+========================================
+
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+========================================
+ملاحظات:
+========================================
+- Vercel يستخدم Direct Connection (بسيط ومستقر)
+- Railway يستخدم Transaction Pooler (للـ Backend)
+- هذه الإعدادات كانت تعمل قبل المشاكل
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. استبدل كل القيم بالقيم أعلاه
+3. Save
+4. Redeploy
+5. اختبر Build
+
+========================================
+

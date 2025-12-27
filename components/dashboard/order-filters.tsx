@@ -11,12 +11,13 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function OrderFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get("search") || "");
   const [processing, setProcessing] = useState(
     searchParams.get("processing") === "true" ? "true" : 
     searchParams.get("status") === "COMPLETED" ? "false" : 
@@ -28,11 +29,21 @@ export function OrderFilters() {
       : "all"
   );
 
-  const handleFilter = () => {
+  // Debounce search input (500ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleFilter = useCallback(() => {
     const params = new URLSearchParams();
     
-    if (search) {
-      params.set("search", search);
+    // Use debounced search value
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
     }
     
     if (processing && processing !== "all") {
@@ -47,7 +58,7 @@ export function OrderFilters() {
     }
     
     router.push(`/dashboard/orders?${params.toString()}`);
-  };
+  }, [debouncedSearch, processing, status, router]);
 
   const handleReset = () => {
     setSearch("");
@@ -100,7 +111,7 @@ export function OrderFilters() {
       </Select>
 
       <Button onClick={handleFilter}>Filter</Button>
-      {(search || (processing && processing !== "all") || (status && status !== "all")) && (
+      {(debouncedSearch || (processing && processing !== "all") || (status && status !== "all")) && (
         <Button variant="outline" onClick={handleReset}>
           Reset
         </Button>

@@ -361,6 +361,8 @@ export default function TaskDetailPage() {
                               src={photo}
                               alt={`Photo ${idx + 1}`}
                               className="w-full h-20 sm:h-24 object-cover rounded border hover:opacity-80 transition-opacity"
+                              loading="lazy"
+                              decoding="async"
                             />
                           </a>
                         ))}

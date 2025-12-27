@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 ATA CRM - Generators & Power Solutions Management
 
 A complete, production-ready CRM system for managing generators, ATS, switchgear quotations and orders. 100% free and open source.
@@ -7,18 +6,26 @@ A complete, production-ready CRM system for managing generators, ATS, switchgear
 
 ## ⚡ Quick Start
 
-### **One Command to Start:**
+### **Installation:**
 
 ```bash
-QUICK_START.bat
+npm install
 ```
 
-**That's it!** The system will:
-- ✅ Start PostgreSQL
-- ✅ Setup Database
-- ✅ Launch Prisma Studio (port 5556)
-- ✅ Launch Next.js (port 3005)
-- ✅ Open browser automatically
+### **Development:**
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### **Build:**
+
+```bash
+npm run build
+npm start
+```
 
 ---
 
@@ -51,61 +58,19 @@ QUICK_START.bat
 
 ### **Public:**
 ```
-Homepage:        http://localhost:3005
-Client Portal:   http://localhost:3005/client/login
+Homepage:        http://localhost:3000
+Client Portal:   http://localhost:3000/client/login
 ```
 
 ### **Admin:**
 ```
-Admin Login:     http://localhost:3005/login
-Dashboard:       http://localhost:3005/dashboard/orders
-
-Credentials:
-  📧 admin@demo.co
-  🔑 00243540000
+Admin Login:     http://localhost:3000/login
+Dashboard:       http://localhost:3000/dashboard/orders
 ```
 
 ### **Database:**
 ```
-Prisma Studio:   http://localhost:5556
-```
-
----
-
-## 📧 Email Setup (Optional)
-
-### **Gmail (Easiest):**
-
-1. Enable 2-Step Verification
-2. Generate App Password: https://myaccount.google.com/apppasswords
-3. Add to `.env`:
-
-```env
-EMAIL_HOST="smtp.gmail.com"
-EMAIL_PORT="587"
-EMAIL_SECURE="false"
-EMAIL_USER="your-email@gmail.com"
-EMAIL_PASSWORD="your-16-char-app-password"
-EMAIL_FROM_NAME="ATA CRM"
-```
-
-4. Restart: `npm run dev`
-
-**📚 Detailed Guide:** `📧_دليل_إعداد_Email.md`
-
----
-
-## 🎯 Complete Workflow
-
-```
-1. Client → Register → Login → Portal
-2. Client → Create Order (from portal)
-3. Admin → Dashboard → View Order
-4. Admin → Upload Quotation (Drag & Drop) → Send
-5. Client → Receives Email → Reviews Quotation
-6. Client → Accepts/Rejects (with comments)
-7. Admin → Receives Notification → Approves
-8. Client → Receives Completion Email
+Prisma Studio:   npx prisma studio
 ```
 
 ---
@@ -114,11 +79,12 @@ EMAIL_FROM_NAME="ATA CRM"
 
 - **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend:** Next.js API Routes, Prisma ORM
-- **Database:** PostgreSQL
+- **Database:** PostgreSQL (Supabase)
 - **Auth:** NextAuth.js v5, JWT (jose), bcryptjs
 - **Email:** Nodemailer (free SMTP)
 - **UI:** shadcn/ui, next-themes
-- **File Upload:** react-dropzone
+- **File Upload:** Cloudinary, react-dropzone
+- **Real-time:** Socket.io (optional)
 
 ---
 
@@ -133,13 +99,14 @@ app/
 
 components/
   ├── dashboard/            # Admin components
-  ├── theme/                # Dark mode
+  ├── client/               # Client components
+  ├── team/                 # Team management
   └── ui/                   # shadcn components
 
 lib/
   ├── auth.ts              # Authentication
-  ├── email.ts             # Email service
   ├── prisma.ts            # Database client
+  ├── cloudinary.ts        # File upload
   └── validators/          # Zod schemas
 
 prisma/
@@ -152,43 +119,44 @@ prisma/
 ## 🔧 Scripts
 
 ```bash
-# Quick start (recommended)
-QUICK_START.bat
-
-# Full repair (if issues)
-اصلاح_كامل.bat
-
-# Check servers
-فحص_السيرفر.bat
-
 # Development
 npm run dev
+
+# Build
+npm run build
 
 # Database
 npx prisma studio
 npx prisma migrate dev
+npx prisma db push
 npm run prisma:seed
+
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
 ```
 
 ---
 
 ## 📚 Documentation
 
-- **🚀 START HERE:** `🚀_ابدأ_من_هنا.txt`
-- **📖 Complete Guide:** `📖_الدليل_الشامل_للمشروع.md`
-- **📧 Email Setup:** `📧_دليل_إعداد_Email.md`
-- **🎉 Features Summary:** `🎉_ملخص_الإنجازات_اليوم.md`
-- **💎 Future Ideas:** `💎_أفكار_ميزات_قوية_للمشروع.md`
+- **Performance Optimizations:** `PERFORMANCE_OPTIMIZATIONS.md`
+- **Cloudinary Setup:** `CLOUDINARY_SETUP_INSTRUCTIONS.md`
+- **Database Indexes:** `DATABASE_INDEXES_INSTRUCTIONS.md`
+- **Daily Report Cron:** `SETUP_DAILY_REPORT_CRON.md`
+- **RBAC System:** `docs/RBAC_SYSTEM.md`
 
 ---
 
 ## 🌟 Key Features
 
 ### **🎨 Modern UI/UX:**
-- Responsive design
+- Responsive design (mobile-first)
 - Dark mode support
 - Professional gradients
-- Mobile-friendly
+- Mobile-friendly navigation
 
 ### **📧 Email Notifications:**
 - Order confirmation
@@ -199,35 +167,34 @@ npm run prisma:seed
 ### **🔐 Security:**
 - JWT authentication
 - Password hashing (bcrypt)
-- Role-based access
+- Role-based access control (RBAC)
 - HTTP-only cookies
+- Rate limiting
 
 ### **📎 File Management:**
+- Cloudinary integration
 - Drag & drop upload
 - PDF & Excel support
-- 10MB file size limit
-- Local storage (free!)
+- Signed URLs for private files
 
----
-
-## 💰 Cost
-
-**100% FREE!**
-- No subscriptions
-- No hidden fees
-- All libraries are open source
-- Free email (Gmail SMTP)
-- Free database (PostgreSQL)
+### **⚡ Performance:**
+- Client-side caching
+- Database query optimization
+- Reduced N+1 queries
+- Optimized dashboard loading
 
 ---
 
 ## 🎯 User Roles
 
 ```
-SUPERADMIN  - Full access
-ADMIN       - Company management
-BROKER      - Order handling
-CLIENT      - Order submission & tracking
+ADMIN              - Full access
+OPERATIONS_MANAGER - Operations management
+ACCOUNTANT         - Financial management
+HR                 - Human resources
+SUPERVISOR         - Team supervision
+TECHNICIAN         - Field operations
+CLIENT             - Order submission & tracking
 ```
 
 ---
@@ -236,12 +203,17 @@ CLIENT      - Order submission & tracking
 
 ```
 companies       - Companies
-users           - Admin/Broker users
+users           - Admin/Staff users
 clients         - Clients (with accounts)
 orders          - Purchase orders
 quotations      - Price quotes (with files)
+purchase_orders - Purchase orders
+delivery_notes  - Delivery documentation
 order_histories - Activity log
 notifications   - In-app notifications
+tasks           - Task management
+work_logs       - Work tracking
+attendance      - Attendance tracking
 ```
 
 ---
@@ -259,84 +231,35 @@ notifications   - In-app notifications
 ✅ Input validation
 ✅ Rate limiting
 ✅ Security best practices
+✅ Performance optimizations
+✅ Real-time updates (optional)
 ```
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Deployment
 
-1. Run `QUICK_START.bat`
-2. Read `🚀_ابدأ_من_هنا.txt`
-3. Setup emails (optional): `📧_دليل_إعداد_Email.md`
-4. Start using the system!
+### **Vercel (Frontend):**
+1. Connect GitHub repository
+2. Add environment variables
+3. Deploy automatically
 
----
+### **Supabase (Database):**
+1. Create project
+2. Run migrations
+3. Set up connection string
 
-## 📞 Support
-
-For detailed guides and documentation, see:
-- `📖_الدليل_الشامل_للمشروع.md` (Arabic)
-- `INSTALLATION_COMPLETE.txt` (English)
-
----
-
-## 🎉 Credits
-
-Built with ❤️ using modern web technologies.
-100% Free & Open Source.
+### **Cloudinary (File Storage):**
+1. Create account
+2. Get credentials
+3. Add to environment variables
 
 ---
-
-**Ready to start? Run `QUICK_START.bat`!** 🚀
-=======
-# ATA CRM - Frontend
-
-Frontend application for ATA CRM system built with Next.js 15.
-
-## 🚀 Getting Started
-
-### Installation
-
-```bash
-npm install
-```
-
-### Development
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Build
-
-```bash
-npm run build
-npm start
-```
-
-## 🔗 Backend API
-
-This frontend connects to the backend API. Make sure to set the following environment variables:
-
-```env
-NEXT_PUBLIC_API_URL=https://your-backend-url.com
-NEXT_PUBLIC_WS_URL=wss://your-backend-url.com
-NEXTAUTH_URL=https://your-frontend-url.com
-NEXTAUTH_SECRET=your-secret-key
-```
-
-## 📦 Tech Stack
-
-- **Next.js 15** - React Framework
-- **React 19** - UI Library
-- **TypeScript** - Type Safety
-- **Tailwind CSS** - Styling
-- **Socket.io Client** - Real-time Communication
 
 ## 📝 License
 
 Private
 
->>>>>>> d9990d0 (Initial commit: Frontend only)
+---
+
+**Built with ❤️ using modern web technologies.**

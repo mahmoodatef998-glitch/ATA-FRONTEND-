@@ -1,0 +1,35 @@
+========================================
+✅ DATABASE_URL - Transaction Pooler الأصلي (كان يعمل)
+========================================
+
+Copy this to Vercel Environment Variables:
+
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+========================================
+Configuration:
+========================================
+✅ Method: Transaction Pooler (original working config)
+✅ Port: 6543 (Transaction Pooler port)
+✅ Host: aws-1-ap-southeast-1.pooler.supabase.com
+✅ Username: postgres.xvpjqmftyqipyqomnkgm
+✅ Password: M00243540000m
+✅ Parameter: ?pgbouncer=true
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Find DATABASE_URL
+3. Edit
+4. Paste the value above
+5. Save
+6. Redeploy
+
+========================================
+✅ This is the original configuration that was working
+✅ Transaction Pooler is better for Vercel serverless
+✅ Was working before Direct Connection change
+
+========================================
+

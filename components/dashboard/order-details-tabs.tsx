@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,26 +53,63 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [processingPayment, setProcessingPayment] = useState(false);
   
-  // Permission checks using new RBAC system
-  // Payments - only Admin and Accountant can view/record payments
-  const canViewPayments = useCan(PermissionAction.PAYMENT_RECORD);
-  const canCreatePayments = useCan(PermissionAction.PAYMENT_RECORD);
-  const canUpdateManufacturing = useCan(PermissionAction.LEAD_MOVE_STAGE);
-  const canViewManufacturing = useCan(PermissionAction.LEAD_READ);
-  const canCreateQuotations = useCan(PermissionAction.INVOICE_CREATE);
-  // Purchase Orders - use PO permissions
-  const canCreatePOs = useCan(PermissionAction.PO_CREATE);
-  const canViewPOs = useCan(PermissionAction.PO_READ);
-  const canUpdatePOs = useCan(PermissionAction.PO_UPDATE);
-  const canDeletePOs = useCan(PermissionAction.PO_DELETE);
-  const canCreateDeliveryNotes = useCan(PermissionAction.LEAD_CREATE);
-  const canViewOrders = useCan(PermissionAction.LEAD_READ);
-  const canViewQuotations = useCan(PermissionAction.INVOICE_READ);
-  const canViewDeliveryNotes = useCan(PermissionAction.LEAD_READ);
-  // History - allow with either LEAD_READ or OVERVIEW_VIEW
-  const canViewHistory = useCanAny([PermissionAction.LEAD_READ, PermissionAction.OVERVIEW_VIEW]);
+  // Get permissions once from context
+  const { permissions } = usePermissions();
+  
+  // Memoize all permission checks to prevent re-computation on every render
+  const permissionsMemo = useMemo(() => {
+    const hasPermission = (action: PermissionAction) => permissions.includes(String(action));
+    const hasAnyPermission = (actions: PermissionAction[]) => 
+      actions.some(action => permissions.includes(String(action)));
+    
+    return {
+      canViewPayments: hasPermission(PermissionAction.PAYMENT_RECORD),
+      canCreatePayments: hasPermission(PermissionAction.PAYMENT_RECORD),
+      canUpdateManufacturing: hasPermission(PermissionAction.LEAD_MOVE_STAGE),
+      canViewManufacturing: hasPermission(PermissionAction.LEAD_READ),
+      canCreateQuotations: hasPermission(PermissionAction.INVOICE_CREATE),
+      canCreatePOs: hasPermission(PermissionAction.PO_CREATE),
+      canViewPOs: hasPermission(PermissionAction.PO_READ),
+      canUpdatePOs: hasPermission(PermissionAction.PO_UPDATE),
+      canDeletePOs: hasPermission(PermissionAction.PO_DELETE),
+      canCreateDeliveryNotes: hasPermission(PermissionAction.LEAD_CREATE),
+      canViewOrders: hasPermission(PermissionAction.LEAD_READ),
+      canViewQuotations: hasPermission(PermissionAction.INVOICE_READ),
+      canViewDeliveryNotes: hasPermission(PermissionAction.LEAD_READ),
+      canViewHistory: hasAnyPermission([PermissionAction.LEAD_READ, PermissionAction.OVERVIEW_VIEW]),
+    };
+  }, [permissions]);
 
-  const availableTabs = getAvailableTabs();
+  // Destructure for easier access
+  const {
+    canViewPayments,
+    canCreatePayments,
+    canUpdateManufacturing,
+    canViewManufacturing,
+    canCreateQuotations,
+    canCreatePOs,
+    canViewPOs,
+    canUpdatePOs,
+    canDeletePOs,
+    canCreateDeliveryNotes,
+    canViewOrders,
+    canViewQuotations,
+    canViewDeliveryNotes,
+    canViewHistory,
+  } = permissionsMemo;
+
+  // Memoize available tabs
+  const availableTabs = useMemo(() => getAvailableTabs(), []);
+  
+  // Memoize recent histories (limit to 5 for performance)
+  const recentHistories = useMemo(() => {
+    return order.order_histories?.slice(0, 5) || [];
+  }, [order.order_histories]);
+  
+  // Optimize tab change handler
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+  }, []);
   
   return (
     <div className="space-y-6" suppressHydrationWarning>
@@ -84,7 +121,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
               {availableTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   suppressHydrationWarning
                   className={`
                     flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all text-xs sm:text-sm flex-shrink-0
@@ -220,9 +257,9 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                   <CardDescription>Latest actions performed on this order</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  {order.order_histories && order.order_histories.length > 0 ? (
+                  {recentHistories.length > 0 ? (
                     <div className="space-y-3">
-                      {order.order_histories.slice(0, 5).map((history: any) => (
+                      {recentHistories.map((history: any) => (
                         <div
                           key={history.id}
                           className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800"
@@ -245,7 +282,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                           </div>
                         </div>
                       ))}
-                      {order.order_histories.length > 5 && (
+                      {order.order_histories && order.order_histories.length > 5 && (
                         <p className="text-xs text-muted-foreground">
                           View full history in the <span className="font-semibold">History</span> tab
                         </p>

@@ -1,0 +1,53 @@
+========================================
+🔧 إصلاحات Environment Variables في Vercel
+========================================
+
+المشاكل الموجودة:
+1. DIRECT_URL - Username خطأ
+2. NEXT_PUBLIC_API_URL - مكرر مرتين
+
+========================================
+1. إصلاح DIRECT_URL
+========================================
+
+Key: DIRECT_URL
+Old Value: postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+New Value: postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+الفرق: Username يجب أن يكون "postgres" فقط (ليس postgres.xvpjqmftyqipyqomnkgm)
+
+========================================
+2. إصلاح NEXT_PUBLIC_API_URL
+========================================
+
+Key: NEXT_PUBLIC_API_URL
+Old Value: https://ata-backend-production.up.railway.app https://ata-backend-production.up.railway.app
+New Value: https://ata-backend-production.up.railway.app
+
+الفرق: إزالة التكرار والمسافة
+
+========================================
+القيم الصحيحة (كلها):
+========================================
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+NEXTAUTH_URL=https://ata-frontend-pied.vercel.app
+
+NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
+
+DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+NEXT_PUBLIC_API_URL=https://ata-backend-production.up.railway.app
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Edit DIRECT_URL → استبدل بالقيمة الجديدة
+3. Edit NEXT_PUBLIC_API_URL → استبدل بالقيمة الجديدة
+4. Save
+5. Redeploy
+
+========================================
+

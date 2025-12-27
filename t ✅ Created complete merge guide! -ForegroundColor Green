@@ -1,0 +1,10 @@
+[33m31fc66a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcleanup-hooks[m[33m, [m[1;31mfrontend/cleanup-hooks[m[33m)[m  Add Vercel Environment Variables Update Guide
+[33mf53bcb8[m  Add Database Connection Setup Guides with Transaction Pooler Configuration
+[33ma900d5c[m  Free Performance Improvements Phase 1: Connection Pooling, Lazy Loading, Optimistic UI
+[33m02f7fab[m  Fix: Remove ssr: false from dynamic import in Server Component
+[33m694f260[m  Additional Performance Optimizations: Debouncing, Dynamic Imports, Query Optimization - Added 500ms debouncing to search inputs (80% reduction in API calls) - Converted CalendarView to dynamic import (200KB bundle reduction) - Optimized Prisma queries with selective field fetching (40-50% data reduction) - Added HTTP caching headers for static assets (90% reduction in repeat requests)
+[33m22fbd28[m  Performance Optimizations: Fix N+1 queries, add caching, improve UI responsiveness
+[33me29b19a[m fix: Fix CSP violations and improve Socket.io connection handling - Update CSP to allow all WebSocket connections (wss://* ws://*) - Allow Vercel domains for Socket.io polling - Fix task details page CSP issues - Improve error handling in task API
+[33mcea80b1[m fix: Fix build error in OrderProgressTrackerCompact and CSP violations - Fix memo component structure with displayName - Add safeIndex validation to handle invalid stages - Update CSP to allow Cloudinary and Supabase WebSocket connections - Fix all currentIndex references to use safeIndex
+[33m1dfab81[m perf: Optimize Order Details page rendering - Add pagination limit (10) for order_histories query - Memoize all permission checks using useMemo - Optimize tab change handler with useCallback - Memoize recent histories slice - Add React.memo to OrderProgressTrackerCompact - Reduce re-renders and improve performance
+[33m2baa4e7[m perf: Optimize update stage component to prevent UI blocking - Use useTransition for non-blocking router.refresh - Add useCallback for event handlers - Add useMemo for stage options - Replace alert with toast notifications - Improve button disabled state handling - Fix 280ms UI blocking issue

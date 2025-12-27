@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle, Menu } from "lucide-react";
+import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle, Menu, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -288,12 +288,20 @@ export function Navbar({ user }: NavbarProps) {
                 </DropdownMenuItem>
                 {/* Clients - Admin Only */}
                 {user.role === "ADMIN" && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients" className="flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      Clients
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/clients" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Clients
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/company-knowledge" className="flex items-center">
+                        <Building2 className="mr-2 h-4 w-4" />
+                        Company Knowledge
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
                   <DropdownMenuItem asChild>

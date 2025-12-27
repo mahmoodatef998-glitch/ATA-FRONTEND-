@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,12 +25,17 @@ interface OrderActionsProps {
 
 export function OrderActions({ orderId, currentStatus, publicToken }: OrderActionsProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<"approve" | "reject" | "complete" | null>(null);
+  // Optimistic UI: Track optimistic status for immediate feedback
+  const [optimisticStatus, setOptimisticStatus] = useState<OrderStatus | null>(null);
 
   const handleStatusChange = async (newStatus: OrderStatus, actionNote?: string) => {
+    // OPTIMISTIC UI: Update UI immediately before API call
+    setOptimisticStatus(newStatus);
     setLoading(true);
 
     try {
@@ -48,14 +53,23 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
       const data = await response.json();
 
       if (!response.ok) {
+        // Revert optimistic update on error
+        setOptimisticStatus(null);
         throw new Error(data.error || "Failed to update status");
       }
 
       setOpen(false);
       setNote("");
       setSelectedAction(null);
-      router.refresh();
+      setOptimisticStatus(null); // Clear optimistic status after success
+      
+      // Use startTransition for non-blocking UI updates
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error: any) {
+      // Revert optimistic update on error
+      setOptimisticStatus(null);
       alert(error.message || "An error occurred");
     } finally {
       setLoading(false);
@@ -105,9 +119,12 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
     }
   };
 
+  // Use optimistic status if available, otherwise use current status
+  const displayStatus = optimisticStatus || currentStatus;
+
   return (
     <div className="space-y-2" suppressHydrationWarning>
-      {currentStatus === OrderStatus.PENDING && (
+      {displayStatus === OrderStatus.PENDING && (
         <>
           <Button
             variant="default"
@@ -128,7 +145,7 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
         </>
       )}
 
-      {(currentStatus === OrderStatus.APPROVED || currentStatus === OrderStatus.QUOTATION_SENT) && (
+      {(displayStatus === OrderStatus.APPROVED || displayStatus === OrderStatus.QUOTATION_SENT) && (
         <Button
           variant="default"
           className="w-full"

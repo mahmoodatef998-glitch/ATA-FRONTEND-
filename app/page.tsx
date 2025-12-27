@@ -411,6 +411,9 @@ export default function HomePage() {
                   alt="Sukatra Island Power Solution Project"
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                  quality={85}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
@@ -464,7 +467,8 @@ export default function HomePage() {
                   alt="5-Star Hotel Power Solution Project"
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  quality={90}
+                  quality={85}
+                  loading="lazy"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -519,7 +523,8 @@ export default function HomePage() {
                   alt="Manufacturing Plant Power Project"
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  quality={90}
+                  quality={85}
+                  loading="lazy"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -574,7 +579,8 @@ export default function HomePage() {
                   alt="Office Tower Backup System Project"
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  quality={90}
+                  quality={85}
+                  loading="lazy"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -658,7 +664,8 @@ export default function HomePage() {
                       alt="CEO"
                       width={256}
                       height={256}
-                      quality={95}
+                      quality={85}
+                      loading="lazy"
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -694,7 +701,8 @@ export default function HomePage() {
                       alt="Partner"
                       width={256}
                       height={256}
-                      quality={95}
+                      quality={85}
+                      loading="lazy"
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -746,7 +754,8 @@ export default function HomePage() {
                         alt={member.name}
                         width={144}
                         height={144}
-                        quality={95}
+                        quality={85}
+                        loading="lazy"
                         className="w-full h-full object-cover rounded-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;

@@ -1,0 +1,42 @@
+========================================
+✅ DATABASE_URL - للنسخ واللصق في Vercel
+========================================
+
+Copy this to Vercel Environment Variables:
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+========================================
+⚠️ مهم:
+========================================
+- هذا للـ Vercel (ليس Supabase)
+- Supabase = Database Provider فقط
+- Vercel = المكان الذي تضع فيه DATABASE_URL
+
+========================================
+Configuration:
+========================================
+✅ Method: Direct Connection
+✅ Port: 5432
+✅ Host: db.xvpjqmftyqipyqomnkgm.supabase.co
+✅ Username: postgres
+✅ Password: M00243540000m
+✅ No parameters (simple and stable)
+
+========================================
+Steps:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Find DATABASE_URL
+3. Edit
+4. Paste the value above
+5. Save
+6. Redeploy
+
+========================================
+✅ This is the original simple configuration
+✅ Most stable option
+✅ No complex parameters
+
+========================================
+

@@ -114,8 +114,20 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Fetch orders with pagination
-    const [orders, total] = await Promise.all([
+    // Create cache key based on user, company, and filters
+    const cacheKey = `orders:${userId}:${companyId}:${JSON.stringify({
+      page,
+      limit,
+      status,
+      search,
+    })}`;
+
+    // Use cached data if available (1 minute cache for order lists)
+    const result = await getCached(
+      cacheKey,
+      async () => {
+        // Fetch orders with pagination
+        const [orders, total] = await Promise.all([
       prisma.orders.findMany({
         where,
         include: {
@@ -137,8 +149,18 @@ export async function GET(request: NextRequest) {
         skip,
         take: parseInt(limit),
       }),
-      prisma.orders.count({ where }),
-    ]);
+          prisma.orders.count({ where }),
+        ]);
+
+        return {
+          orders,
+          total,
+        };
+      },
+      60 // 1 minute cache TTL for order lists
+    );
+
+    const { orders, total } = result;
 
     // Get rate limit headers (from the check we already did)
     const rateLimitHeaders = rateLimitInfo 

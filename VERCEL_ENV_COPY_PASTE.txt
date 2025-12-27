@@ -1,22 +1,19 @@
-# ============================================
-# Environment Variables للـ Frontend على Vercel
-# ============================================
-# 
-# ⚠️ مهم: انسخ كل Variable واحدة تلو الأخرى في Vercel
-# 
-# ملاحظة: Backend موجود على Railway منفصل
-# ============================================
+========================================
+📋 DATABASE_URL - Copy & Paste for Vercel
+========================================
 
 # 1. DATABASE_URL (Transaction Pooler - للـ Frontend Production)
 # استخدام Transaction Pooler للـ connection pooling في Production
-DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+# ✅ Optimized with connection pooling parameters
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?connection_limit=20&pool_timeout=10&connect_timeout=10&sslmode=require
 
 # 2. DIRECT_URL (Direct Connection - للـ Migrations)
 # استخدام الاتصال المباشر للـ migrations (أفضل للـ schema changes)
 DIRECT_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
 
-# 3. NEXTAUTH_SECRET (نفس المفتاح المستخدم في Backend)
-NEXTAUTH_SECRET=00977c8a2861fbdc76834100d555e5a51bd4b707b51d35395b51fbf4afa8620d
+# 3. NEXTAUTH_SECRET (مطلوب للـ Authentication)
+# ⚠️ أنشئ secret عشوائي قوي (32+ حرف)
+NEXTAUTH_SECRET=your-secret-key-here-min-32-chars
 
 # 4. NEXTAUTH_URL (URL الـ Frontend على Vercel)
 # ⚠️ URL الفعلي للموقع
@@ -39,9 +36,19 @@ NEXT_PUBLIC_BACKEND_URL=https://ata-backend-production.up.railway.app
 # السماح للـ Backend بالاتصال من Frontend
 ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-production.up.railway.app
 
-# ============================================
+========================================
+📝 خطوات سريعة:
+========================================
+1. Vercel Dashboard → مشروعك → Settings → Environment Variables
+2. ابحث عن DATABASE_URL
+3. اضغط Edit أو Update
+4. الصق القيمة أعلاه (مع connection pooling parameters)
+5. Save
+6. Redeploy المشروع
+
+========================================
 # كيفية الإضافة في Vercel:
-# ============================================
+========================================
 # 
 # 1. Vercel Dashboard → Project → Settings → Environment Variables
 # 2. Add New
@@ -50,7 +57,7 @@ ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-product
 # 5. Environment: اختر Production, Preview, Development
 # 6. Save
 # 
-# ============================================
+========================================
 # 
 # ✅ DATABASE_URL جاهز مع Connection Pooling!
 # ⚠️ تذكير مهم:
@@ -58,10 +65,10 @@ ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-product
 # - حدث ALLOWED_ORIGINS بنفس الـ URL
 # - حدث CORS_ORIGIN في Railway Backend
 # 
-# ============================================
+========================================
 # 
 # 🚀 خطوات ما بعد Deploy الأول:
-# ============================================
+========================================
 # 
 # 1. بعد Deploy على Vercel:
 #    - انسخ URL Frontend (مثل: https://ata-frontend.vercel.app)
@@ -79,4 +86,4 @@ ALLOWED_ORIGINS=https://ata-frontend-pied.vercel.app,https://ata-backend-product
 # 
 # 3. جاهز للاستخدام! 🎉
 # 
-# ============================================
+========================================

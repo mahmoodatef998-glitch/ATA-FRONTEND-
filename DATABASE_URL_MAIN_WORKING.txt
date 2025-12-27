@@ -1,0 +1,41 @@
+========================================
+✅ DATABASE_URL - الإعدادات التي كانت تعمل في Main
+========================================
+
+Option 1: Direct Connection (الأكثر احتمالاً)
+========================================
+
+DATABASE_URL=postgresql://postgres:M00243540000m@db.xvpjqmftyqipyqomnkgm.supabase.co:5432/postgres
+
+========================================
+Option 2: Transaction Pooler (بدون Parameters)
+========================================
+
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+
+========================================
+Option 3: Transaction Pooler (مع pgbouncer)
+========================================
+
+DATABASE_URL=postgresql://postgres.xvpjqmftyqipyqomnkgm:M00243540000m@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+========================================
+📝 خطوات:
+========================================
+1. Vercel Dashboard → Settings → Environment Variables
+2. Find DATABASE_URL
+3. Edit
+4. جرب Option 1 أولاً (Direct Connection)
+5. Save
+6. Redeploy
+7. إذا لم يعمل، جرب Option 2 أو 3
+
+========================================
+💡 نصيحة:
+========================================
+- Option 1 (Direct) هو الأبسط والأكثر استقراراً
+- جربه أولاً
+- إذا استمرت المشكلة، جرب Option 2 أو 3
+
+========================================
+

@@ -36,6 +36,13 @@ model companies {
   officeLat       Float? // Office latitude for location validation
   officeLng       Float? // Office longitude for location validation
   timezone        String            @default("Asia/Dubai") // Company timezone
+  // Company Knowledge Base for Chatbot
+  description     String? // Company description/bio
+  products        String? // Products and services offered (JSON or text)
+  services        String? // Services description
+  contactInfo     String? // Contact information (phone, email, address)
+  businessHours   String? // Business hours
+  specialties     String? // Company specialties/expertise
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   notifications   notifications[]
