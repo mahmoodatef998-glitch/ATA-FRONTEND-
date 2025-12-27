@@ -10,14 +10,25 @@ import { isCloudinaryConfigured, getCloudinaryInstance } from "@/lib/cloudinary"
  * Checks the health of various system components
  */
 export async function GET() {
-  const health = {
-    status: "healthy" as const,
+  const health: {
+    status: "healthy" | "unhealthy" | "error";
+    timestamp: string;
+    services: {
+      database: "unknown" | "connected" | "disconnected";
+      email: "unknown" | "configured" | "not_configured" | "error";
+      storage: "unknown" | "available" | "unavailable" | "error";
+      cloudinary: "unknown" | "configured" | "not_configured" | "error";
+    };
+    version: string;
+    environment: string;
+  } = {
+    status: "healthy",
     timestamp: new Date().toISOString(),
     services: {
-      database: "unknown" as const,
-      email: "unknown" as const,
-      storage: "unknown" as const,
-      cloudinary: "unknown" as const,
+      database: "unknown",
+      email: "unknown",
+      storage: "unknown",
+      cloudinary: "unknown",
     },
     version: process.env.npm_package_version || "1.0.0",
     environment: process.env.NODE_ENV || "development",
