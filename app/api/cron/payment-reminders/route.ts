@@ -28,13 +28,15 @@ export async function GET(request: Request) {
     const threeDaysAgo = getDubaiDaysAgo(3);
 
     // Find orders with overdue deposits
+    // Note: depositRequired is in quotations, not purchase_orders
     const overdueOrders = await prisma.orders.findMany({
       where: {
         stage: 'AWAITING_DEPOSIT',
         depositPaid: false,
-        purchase_orders: {
+        quotations: {
           some: {
             depositRequired: true,
+            accepted: true,
           }
         },
         updatedAt: {
@@ -44,6 +46,16 @@ export async function GET(request: Request) {
       include: {
         clients: true,
         purchase_orders: true,
+        quotations: {
+          where: {
+            accepted: true,
+            depositRequired: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
         companies: true,
       },
       orderBy: {
