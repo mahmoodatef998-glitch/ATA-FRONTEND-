@@ -153,13 +153,25 @@ YOUR CAPABILITIES:
    - Share contact details and business hours
    - Explain company services and specialties
 
+CRITICAL LANGUAGE INSTRUCTIONS:
+- ALWAYS respond in the EXACT SAME LANGUAGE the user is using (Arabic or English)
+- If user writes in Arabic, respond ONLY in Arabic with proper Arabic text (UTF-8 encoding)
+- If user writes in English, respond ONLY in English
+- NEVER mix languages in the same response
+- NEVER use special characters or symbols that could cause encoding issues
+- Use proper Arabic diacritics when appropriate, but avoid if it causes display issues
+- Write Arabic text naturally and clearly - avoid transliteration
+- If you see Arabic text in the knowledge base, preserve it exactly as written
+- NEVER output garbled text, special symbols, or encoding errors
+- If you're unsure about Arabic text, write it in simple, clear Arabic without complex diacritics
+
 RESPONSE GUIDELINES:
 - Be DETAILED and SPECIFIC - don't give vague answers
 - Provide STEP-BY-STEP instructions when explaining processes
 - Use EXAMPLES when helpful
 - Be PROACTIVE - anticipate follow-up questions
 - Be FRIENDLY and PROFESSIONAL
-- Always respond in the SAME LANGUAGE the user is using (Arabic or English)
+- Ensure all text is properly encoded (UTF-8) and readable
 - If you don't know something, admit it and guide them to contact support
 - When explaining order stages, explain what happens in each stage and what the client should do next
 - When troubleshooting, provide specific actionable steps
@@ -168,7 +180,8 @@ IMPORTANT:
 - Always use the company knowledge base information when available
 - When client has orders, reference their specific order details
 - Explain workflows clearly with next steps
-- Provide solutions, not just descriptions of problems`;
+- Provide solutions, not just descriptions of problems
+- Ensure all responses are clean, properly encoded, and free of special characters that could cause display issues`;
 
     // Add company knowledge to system prompt
     if (companyKnowledge) {
@@ -189,38 +202,65 @@ IMPORTANT:
     // Add troubleshooting guide
     systemPrompt += getTroubleshootingGuide();
 
+    // Clean and sanitize user message
+    const cleanedMessage = message.trim()
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/\uFEFF/g, '') // Remove BOM
+      .trim();
+
     // Prepare messages for Groq API
     const messages = [
       {
         role: "system",
         content: systemPrompt,
       },
-      // Add conversation history (last 10 messages)
-      ...conversationHistory.slice(-10).map((msg: { role: string; content: string }) => ({
+      // Add conversation history (last 8 messages to reduce token usage)
+      ...conversationHistory.slice(-8).map((msg: { role: string; content: string }) => ({
         role: msg.role === "user" ? "user" : "assistant",
-        content: msg.content,
+        content: (msg.content || "").trim().substring(0, 500), // Limit history message length
       })),
       {
         role: "user",
-        content: message.trim(),
+        content: cleanedMessage,
       },
     ];
 
-    // Call Groq API
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000, // Increased for more detailed responses
-        stream: false,
-      }),
-    });
+    // Call Groq API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    let groqResponse;
+    try {
+      groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqApiKey}`,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 1500, // Increased for more detailed responses
+          stream: false,
+          response_format: { type: "text" }, // Ensure text format for better encoding
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Request timeout. Please try again.",
+          },
+          { status: 504 }
+        );
+      }
+      throw fetchError;
+    }
 
     if (!groqResponse.ok) {
       const errorData = await groqResponse.text();
@@ -247,7 +287,27 @@ IMPORTANT:
       );
     }
 
-    const aiReply = groqData.choices[0].message.content;
+    let aiReply = groqData.choices[0].message.content;
+
+    // Sanitize and clean the response
+    // Remove any problematic characters that could cause encoding issues
+    aiReply = aiReply
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/\uFEFF/g, '') // Remove BOM
+      .trim();
+
+    // Ensure proper UTF-8 encoding
+    try {
+      // Validate that the string is valid UTF-8
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      const encoded = encoder.encode(aiReply);
+      aiReply = decoder.decode(encoded);
+    } catch (error) {
+      console.error("Encoding error:", error);
+      // If encoding fails, try to recover
+      aiReply = aiReply.replace(/[^\x20-\x7E\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
+    }
 
     return NextResponse.json(
       {
@@ -258,7 +318,12 @@ IMPORTANT:
           usage: groqData.usage,
         },
       },
-      { status: 200 }
+      { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      }
     );
   } catch (error) {
     console.error("Chat API error:", error);
