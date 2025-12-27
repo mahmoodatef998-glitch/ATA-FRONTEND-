@@ -16,10 +16,6 @@ import {
  * Enhanced with company knowledge and client order history
  */
 
-// Configure runtime for Vercel
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // GET method for health check
 export async function GET() {
   return NextResponse.json(

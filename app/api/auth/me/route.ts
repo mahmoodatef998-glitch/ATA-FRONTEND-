@@ -7,10 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-helpers";
 import { getUserPermissions, getUserRoles } from "@/lib/rbac/permission-service";
 
-// Configure for Vercel
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   // Build-time probe safe response
   if (process.env.NEXT_PHASE === "phase-production-build") {
