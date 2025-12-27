@@ -155,3 +155,4 @@ https://your-site.vercel.app/api/chat
 2. Network tab → `/api/chat` → Response
 3. Console errors (فقط من `/api/chat`)
 
+

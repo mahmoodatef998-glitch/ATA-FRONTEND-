@@ -161,3 +161,4 @@ max_tokens: 1000, // Longer responses
 - [ ] Chat history persistence
 - [ ] Admin chat analytics
 
+
