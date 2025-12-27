@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Package, User, Home, LayoutDashboard, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useI18n } from "@/lib/i18n/context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +33,7 @@ export function ClientNavbar({ clientName, clientEmail }: ClientNavbarProps) {
       <div className="container mx-auto px-2 sm:px-4 h-16 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <Link href="/client/portal" className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent whitespace-nowrap flex-shrink-0">
-            ATA CRM
+            {t('home.ataGenerators')}
           </Link>
 
           {/* Desktop Navigation */}

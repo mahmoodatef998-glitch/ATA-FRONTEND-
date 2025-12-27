@@ -10,7 +10,7 @@ import { Chatbot } from "@/components/chat/chatbot";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "الطاقة الملونة CRM - نظام إدارة الطلبات",
+  title: "ATA SYSTEM",
   description: "نظام CRM احترافي مع إدارة طلبات الشراء وعروض الأسعار",
   icons: {
     icon: [

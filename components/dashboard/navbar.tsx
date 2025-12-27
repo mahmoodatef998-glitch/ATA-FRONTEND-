@@ -164,7 +164,7 @@ export function Navbar({ user }: NavbarProps) {
       <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between gap-2" suppressHydrationWarning>
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1" suppressHydrationWarning>
           <Link href="/dashboard/orders" className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0">
-            {t('home.ataGenerators')} CRM
+            {t('home.ataGenerators')}
           </Link>
 
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
