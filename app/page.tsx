@@ -184,7 +184,7 @@ export default function HomePage() {
       </div>
 
       {/* About Us Section */}
-      <section className="relative py-20 bg-white dark:bg-gray-900">
+      <section id="about" className="relative py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -389,7 +389,7 @@ export default function HomePage() {
       </section>
 
       {/* Our Work Section */}
-      <section className="relative py-20 bg-white dark:bg-gray-900">
+      <section id="work" className="relative py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -636,7 +636,7 @@ export default function HomePage() {
       </section>
 
       {/* Meet Our Team Section */}
-      <section className="relative py-20 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-950 dark:to-blue-950">
+      <section id="team" className="relative py-20 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-950 dark:to-blue-950">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -799,7 +799,7 @@ export default function HomePage() {
       </section>
 
       {/* Contact & CTA Section */}
-      <section className="relative py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+      <section id="contact" className="relative py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
