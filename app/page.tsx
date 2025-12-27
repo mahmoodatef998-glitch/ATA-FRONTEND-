@@ -816,7 +816,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.callUs')}</div>
-                    <div className="text-blue-100">+971 XX XXX XXXX</div>
+                    <div className="text-blue-100">+971 509403180</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -825,7 +825,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.emailUs')}</div>
-                    <div className="text-blue-100">info@ata-generators.com</div>
+                    <div className="text-blue-100">info@ataswg.com</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -834,7 +834,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.visitUs')}</div>
-                    <div className="text-blue-100">{t('home.unitedArabEmirates')}</div>
+                    <div className="text-blue-100">Sharjah Free Zone - United Arab Emirates</div>
                   </div>
                 </div>
               </div>
@@ -941,15 +941,15 @@ export default function HomePage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <Phone className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm">+971 XX XXX XXXX</span>
+                  <span className="text-sm">+971 509403180</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <Mail className="h-4 w-4 text-purple-400" />
-                  <span className="text-sm">info@ata-generators.com</span>
+                  <span className="text-sm">info@ataswg.com</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <MapPin className="h-4 w-4 text-pink-400" />
-                  <span className="text-sm">Dubai, United Arab Emirates</span>
+                  <span className="text-sm">Sharjah Free Zone - United Arab Emirates</span>
                 </div>
               </div>
 
