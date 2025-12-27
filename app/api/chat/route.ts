@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import {
   getCompanyKnowledge,
   getClientOrderHistory,
