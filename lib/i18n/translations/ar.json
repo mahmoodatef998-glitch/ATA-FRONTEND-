@@ -245,7 +245,48 @@
     "pendingClients": "العملاء المعلقة",
     "approvedClients": "العملاء المعتمدون",
     "addClient": "إضافة عميل",
-    "noClients": "لا يوجد عملاء"
+    "noClients": "لا يوجد عملاء",
+    "clientAccounts": "حسابات العملاء",
+    "manageClientApprovals": "إدارة موافقات حسابات العملاء",
+    "accessDenied": "الوصول مرفوض",
+    "onlyAdministrators": "فقط المديرون يمكنهم الوصول إلى هذه الصفحة"
+  },
+  "team": {
+    "title": "فريقنا",
+    "manageTeam": "إدارة فريقك، المهام، والأداء",
+    "myTasks": "مهامي",
+    "viewManageTasks": "عرض وإدارة جميع المهام المخصصة لك",
+    "goToMyTasks": "الذهاب إلى مهامي",
+    "teamMembers": "أعضاء الفريق",
+    "checkedIn": "تم تسجيل الحضور",
+    "checkedOut": "تم تسجيل المغادرة",
+    "notCheckedIn": "لم يتم تسجيل الحضور",
+    "pendingTasks": "مهام معلقة",
+    "pendingOvertime": "ساعات إضافية معلقة",
+    "activeNow": "نشط الآن",
+    "leftToday": "غادر اليوم",
+    "absentToday": "غائب اليوم",
+    "needsAttention": "يحتاج انتباه",
+    "awaitingApproval": "في انتظار الموافقة",
+    "checkedInUsers": "المستخدمون المسجلون",
+    "checkedOutUsers": "المستخدمون المسجلون للمغادرة",
+    "notCheckedInUsers": "المستخدمون غير المسجلين",
+    "noOneCheckedIn": "لا أحد سجل الحضور بعد",
+    "noOneCheckedOut": "لا أحد سجل المغادرة بعد",
+    "everyoneCheckedIn": "الجميع سجل الحضور",
+    "backToTeamMembers": "العودة إلى أعضاء الفريق",
+    "teamDashboard": "لوحة تحكم الفريق",
+    "attendance": "الحضور",
+    "tasks": "المهام",
+    "members": "الأعضاء",
+    "performance": "الأداء",
+    "kpi": "مؤشرات الأداء",
+    "myPerformance": "أدائي",
+    "teamAverages": "متوسطات الفريق",
+    "attendanceRate": "معدل الحضور",
+    "avgHours": "متوسط الساعات",
+    "tasksCompleted": "المهام المكتملة",
+    "avgRating": "التقييم المتوسط"
   },
   "common": {
     "save": "حفظ",
@@ -278,8 +319,10 @@
     "description": "الوصف",
     "notes": "ملاحظات",
     "createdAt": "تاريخ الإنشاء",
-    "updatedAt": "تاريخ التحديث"
+    "updatedAt": "تاريخ التحديث",
+    "approval": "الموافقة",
+    "since": "منذ",
+    "outAt": "خرج في"
   }
-}
 }
 

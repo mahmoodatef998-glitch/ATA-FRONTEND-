@@ -11,6 +11,7 @@ import { UserRole } from "@prisma/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModuleSwitcher } from "@/components/navigation/module-switcher";
+import { useI18n } from "@/lib/i18n/context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ import {
 export function TeamNavbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { t } = useI18n();
 
   const isTechnician = session?.user?.role === UserRole.TECHNICIAN;
   const isSupervisor = 
@@ -65,7 +67,7 @@ export function TeamNavbar() {
                 <Users className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
               <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent whitespace-nowrap hidden sm:inline">
-                Our Team
+                {t('team.title')}
               </span>
             </Link>
           </div>
@@ -79,8 +81,8 @@ export function TeamNavbar() {
                 className="whitespace-nowrap flex-shrink-0 text-xs px-2"
               >
                 <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
-                <span className="hidden lg:inline">Dashboard</span>
-                <span className="lg:hidden">Home</span>
+                <span className="hidden lg:inline">{t('navbar.dashboard')}</span>
+                <span className="lg:hidden">{t('navbar.home')}</span>
               </Button>
             </Link>
 
@@ -93,8 +95,8 @@ export function TeamNavbar() {
                   className="whitespace-nowrap flex-shrink-0 text-xs px-2"
                 >
                   <Package className="mr-1.5 h-3.5 w-3.5" />
-                  <span className="hidden lg:inline">My Tasks</span>
-                  <span className="lg:hidden">Tasks</span>
+                  <span className="hidden lg:inline">{t('team.myTasks')}</span>
+                  <span className="lg:hidden">{t('navbar.tasks')}</span>
                 </Button>
               </Link>
             )}
@@ -109,8 +111,8 @@ export function TeamNavbar() {
                     className="whitespace-nowrap flex-shrink-0 text-xs px-2"
                   >
                     <Users className="mr-1.5 h-3.5 w-3.5" />
-                    <span className="hidden lg:inline">Team Members</span>
-                    <span className="lg:hidden">Team</span>
+                    <span className="hidden lg:inline">{t('team.teamMembers')}</span>
+                    <span className="lg:hidden">{t('navbar.team')}</span>
                   </Button>
                 </Link>
                 <Link href="/team/tasks">
@@ -120,8 +122,8 @@ export function TeamNavbar() {
                     className="whitespace-nowrap flex-shrink-0 text-xs px-2"
                   >
                     <Package className="mr-1.5 h-3.5 w-3.5" />
-                    <span className="hidden lg:inline">All Tasks</span>
-                    <span className="lg:hidden">Tasks</span>
+                    <span className="hidden lg:inline">{t('navbar.tasks')}</span>
+                    <span className="lg:hidden">{t('navbar.tasks')}</span>
                   </Button>
                 </Link>
               </>
@@ -136,8 +138,8 @@ export function TeamNavbar() {
                   className="whitespace-nowrap flex-shrink-0 text-xs px-2"
                 >
                   <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-                  <span className="hidden lg:inline">Approval</span>
-                  <span className="lg:hidden">Approve</span>
+                  <span className="hidden lg:inline">{t('common.approval')}</span>
+                  <span className="lg:hidden">{t('common.approval')}</span>
                 </Button>
               </Link>
             )}
@@ -150,8 +152,8 @@ export function TeamNavbar() {
                 className="whitespace-nowrap flex-shrink-0 text-xs px-2"
               >
                 <Clock className="mr-1.5 h-3.5 w-3.5" />
-                <span className="hidden lg:inline">Attendance</span>
-                <span className="lg:hidden">Attend</span>
+                <span className="hidden lg:inline">{t('navbar.attendance')}</span>
+                <span className="lg:hidden">{t('navbar.attendance')}</span>
               </Button>
             </Link>
 
@@ -310,7 +312,7 @@ export function TeamNavbar() {
                 className="text-xs"
               >
                 <Clock className="h-3 w-3 mr-1" />
-                Attendance
+                {t('navbar.attendance')}
               </Button>
             </Link>
 
