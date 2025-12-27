@@ -258,7 +258,7 @@ export default function HomePage() {
       </section>
 
       {/* Products Section */}
-      <section className="relative py-20 bg-gray-50 dark:bg-gray-950">
+      <section id="products" className="relative py-20 bg-gray-50 dark:bg-gray-950">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
