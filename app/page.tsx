@@ -41,8 +41,6 @@ export default function HomePage() {
             
             <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent leading-tight">
               {t('home.ataGenerators')}
-              <br />
-              <span className="text-5xl md:text-6xl">{t('home.powerSolutions')}</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -230,7 +228,7 @@ export default function HomePage() {
             <div className="relative h-96 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-2xl overflow-hidden shadow-xl">
               <Image
                 src="/images/about/company-photo.jpg.png"
-                alt="ATA Generators & Power Solutions Company"
+                alt={t('home.ataGenerators')}
                 fill
                 className="object-cover rounded-2xl"
                 quality={95}
