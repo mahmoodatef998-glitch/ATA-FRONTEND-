@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
         accountStatus: true,
         name: true,
         email: true,
+        phone: true,
       },
     });
 
