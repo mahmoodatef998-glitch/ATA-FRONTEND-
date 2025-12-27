@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModuleSwitcher } from "@/components/navigation/module-switcher";
+import { useI18n } from "@/lib/i18n/context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +35,7 @@ interface NavbarProps {
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const { toast } = useToast();
+  const { t } = useI18n();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
@@ -162,7 +164,7 @@ export function Navbar({ user }: NavbarProps) {
       <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between gap-2" suppressHydrationWarning>
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1" suppressHydrationWarning>
           <Link href="/dashboard/orders" className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0">
-            ATA CRM
+            {t('home.ataGenerators')} CRM
           </Link>
 
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
@@ -174,7 +176,7 @@ export function Navbar({ user }: NavbarProps) {
                 suppressHydrationWarning
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" />
-                Dashboard
+                {t('navbar.dashboard')}
               </Button>
             </Link>
 
@@ -185,7 +187,7 @@ export function Navbar({ user }: NavbarProps) {
                 className="whitespace-nowrap flex-shrink-0"
               >
                 <Package className="mr-2 h-4 w-4" />
-                Orders
+                {t('navbar.orders')}
               </Button>
             </Link>
             
@@ -226,7 +228,7 @@ export function Navbar({ user }: NavbarProps) {
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   <User className="mr-2 h-4 w-4" />
-                  Clients
+                  {t('clients.title')}
                 </Button>
               </Link>
             )}
@@ -240,7 +242,7 @@ export function Navbar({ user }: NavbarProps) {
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   <Users className="mr-2 h-4 w-4" />
-                  Our Team
+                  {t('home.ourTeam')}
                 </Button>
               </Link>
             )}

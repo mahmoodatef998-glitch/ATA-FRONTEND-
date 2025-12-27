@@ -84,15 +84,15 @@ interface MemberDetails {
 }
 
 const roleColors: Record<UserRole, string> = {
-  ADMIN: "bg-red-100 text-red-800",
-  ACCOUNTANT: "bg-blue-100 text-blue-800",
-  OPERATIONS_MANAGER: "bg-green-100 text-green-800",
-  FACTORY_SUPERVISOR: "bg-yellow-100 text-yellow-800",
-  SALES_REP: "bg-purple-100 text-purple-800",
-  CLIENT: "bg-gray-100 text-gray-800",
-  TECHNICIAN: "bg-cyan-100 text-cyan-800",
-  SUPERVISOR: "bg-orange-100 text-orange-800",
-  HR: "bg-pink-100 text-pink-800",
+  ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  ACCOUNTANT: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  OPERATIONS_MANAGER: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  FACTORY_SUPERVISOR: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  SALES_REP: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  CLIENT: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  TECHNICIAN: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  SUPERVISOR: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  HR: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -473,7 +473,7 @@ export default function TeamMemberDetailsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Profile Picture */}
-            <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+            <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               {member.user.profilePicture ? (
                 <Image
                   src={member.user.profilePicture}

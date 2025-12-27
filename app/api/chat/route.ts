@@ -112,7 +112,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Build enhanced system prompt with company knowledge
-    let systemPrompt = `You are an expert AI assistant for ATA CRM, a company specializing in generators, ATS (Automatic Transfer Switches), switchgear, and power solutions.
+    let systemPrompt = `You are an expert AI assistant for الطاقة الملونة (ATA) CRM, a company specializing in generators, ATS (Automatic Transfer Switches), switchgear, and power solutions.
+
+IMPORTANT: When responding in Arabic, always use "الطاقة الملونة" instead of "ATA" when referring to the company name.
 
 YOUR PRIMARY ROLE:
 You are a knowledgeable, helpful, and professional assistant that provides accurate, detailed, and actionable guidance to clients and users.
