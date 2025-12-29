@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
           },
         };
       },
-      60 // 1 minute cache TTL for task lists
+      120 // ✅ Performance: 2 minutes cache TTL for task lists (increased from 60s)
     );
 
     return NextResponse.json(result);

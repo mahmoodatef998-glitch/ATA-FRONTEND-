@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle, Menu, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -34,10 +34,16 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { toast } = useToast();
   const { t } = useI18n();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  
+  // ✅ Performance: Prefetch pages on hover for faster navigation
+  const handlePrefetch = useCallback((path: string) => {
+    router.prefetch(path);
+  }, [router]);
 
   // Initialize WebSocket connection - non-blocking, will fail gracefully on Vercel
   // Socket.io is optional and should not delay page load
@@ -163,12 +169,19 @@ export function Navbar({ user }: NavbarProps) {
     <nav className="border-b bg-background" suppressHydrationWarning>
       <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between gap-2" suppressHydrationWarning>
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1" suppressHydrationWarning>
-          <Link href="/dashboard/orders" className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0">
+          <Link 
+            href="/dashboard/orders" 
+            className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0"
+            onMouseEnter={() => handlePrefetch("/dashboard/orders")}
+          >
             {t('home.ataGenerators')}
           </Link>
 
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
-            <Link href="/dashboard">
+            <Link 
+              href="/dashboard"
+              onMouseEnter={() => handlePrefetch("/dashboard")}
+            >
               <Button
                 variant={pathname === "/dashboard" ? "default" : "ghost"}
                 size="sm"
@@ -180,7 +193,10 @@ export function Navbar({ user }: NavbarProps) {
               </Button>
             </Link>
 
-            <Link href="/dashboard/orders">
+            <Link 
+              href="/dashboard/orders"
+              onMouseEnter={() => handlePrefetch("/dashboard/orders")}
+            >
               <Button
                 variant={pathname.startsWith("/dashboard/orders") ? "default" : "ghost"}
                 size="sm"
@@ -191,7 +207,10 @@ export function Navbar({ user }: NavbarProps) {
               </Button>
             </Link>
             
-            <Link href="/dashboard/notifications">
+            <Link 
+              href="/dashboard/notifications"
+              onMouseEnter={() => handlePrefetch("/dashboard/notifications")}
+            >
               <Button
                 variant={pathname === "/dashboard/notifications" ? "default" : "ghost"}
                 size="sm"
@@ -209,7 +228,10 @@ export function Navbar({ user }: NavbarProps) {
               </Button>
             </Link>
 
-            <Link href="/dashboard/calendar">
+            <Link 
+              href="/dashboard/calendar"
+              onMouseEnter={() => handlePrefetch("/dashboard/calendar")}
+            >
               <Button
                 variant={pathname === "/dashboard/calendar" ? "default" : "ghost"}
                 size="sm"
@@ -221,7 +243,10 @@ export function Navbar({ user }: NavbarProps) {
 
             {/* Clients - Admin Only */}
             {user.role === "ADMIN" && (
-              <Link href="/dashboard/clients">
+              <Link 
+                href="/dashboard/clients"
+                onMouseEnter={() => handlePrefetch("/dashboard/clients")}
+              >
                 <Button
                   variant={pathname === "/dashboard/clients" ? "default" : "ghost"}
                   size="sm"
@@ -235,7 +260,10 @@ export function Navbar({ user }: NavbarProps) {
 
             {/* Our Team Dashboard - Only for Technicians and Supervisors */}
             {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
-              <Link href="/team">
+              <Link 
+                href="/team"
+                onMouseEnter={() => handlePrefetch("/team")}
+              >
                 <Button
                   variant={pathname.startsWith("/team") ? "default" : "ghost"}
                   size="sm"
@@ -260,19 +288,31 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuLabel>Navigation</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="flex items-center">
+                  <Link 
+                    href="/dashboard" 
+                    className="flex items-center"
+                    onMouseEnter={() => handlePrefetch("/dashboard")}
+                  >
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/orders" className="flex items-center">
+                  <Link 
+                    href="/dashboard/orders" 
+                    className="flex items-center"
+                    onMouseEnter={() => handlePrefetch("/dashboard/orders")}
+                  >
                     <Package className="mr-2 h-4 w-4" />
                     Orders
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/notifications" className="flex items-center">
+                  <Link 
+                    href="/dashboard/notifications" 
+                    className="flex items-center"
+                    onMouseEnter={() => handlePrefetch("/dashboard/notifications")}
+                  >
                     <Bell className="mr-2 h-4 w-4" />
                     Notifications
                     {unreadCount > 0 && (
@@ -283,7 +323,11 @@ export function Navbar({ user }: NavbarProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/calendar" className="flex items-center">
+                  <Link 
+                    href="/dashboard/calendar" 
+                    className="flex items-center"
+                    onMouseEnter={() => handlePrefetch("/dashboard/calendar")}
+                  >
                     <Calendar className="mr-2 h-4 w-4" />
                     Calendar
                   </Link>
@@ -292,13 +336,21 @@ export function Navbar({ user }: NavbarProps) {
                 {user.role === "ADMIN" && (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/clients" className="flex items-center">
+                      <Link 
+                        href="/dashboard/clients" 
+                        className="flex items-center"
+                        onMouseEnter={() => handlePrefetch("/dashboard/clients")}
+                      >
                         <User className="mr-2 h-4 w-4" />
                         Clients
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/company-knowledge" className="flex items-center">
+                      <Link 
+                        href="/dashboard/company-knowledge" 
+                        className="flex items-center"
+                        onMouseEnter={() => handlePrefetch("/dashboard/company-knowledge")}
+                      >
                         <Building2 className="mr-2 h-4 w-4" />
                         Company Knowledge
                       </Link>
@@ -307,7 +359,11 @@ export function Navbar({ user }: NavbarProps) {
                 )}
                 {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
                   <DropdownMenuItem asChild>
-                    <Link href="/team" className="flex items-center">
+                    <Link 
+                      href="/team" 
+                      className="flex items-center"
+                      onMouseEnter={() => handlePrefetch("/team")}
+                    >
                       <Users className="mr-2 h-4 w-4" />
                       Our Team
                     </Link>

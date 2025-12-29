@@ -518,26 +518,38 @@ export default function TeamDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <Link href="/team/tasks">
+            <Link 
+              href="/team/tasks"
+              onMouseEnter={() => router.prefetch("/team/tasks")}
+            >
               <Button variant="outline" className="w-full justify-start">
                 <FileText className="mr-2 h-4 w-4" />
                 Tasks Management
               </Button>
             </Link>
-            <Link href="/team/attendance">
+            <Link 
+              href="/team/attendance"
+              onMouseEnter={() => router.prefetch("/team/attendance")}
+            >
               <Button variant="outline" className="w-full justify-start">
                 <Clock className="mr-2 h-4 w-4" />
                 Attendance History
               </Button>
             </Link>
-            <Link href="/team/kpi">
+            <Link 
+              href="/team/kpi"
+              onMouseEnter={() => router.prefetch("/team/kpi")}
+            >
               <Button variant="outline" className="w-full justify-start">
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Performance KPI
               </Button>
             </Link>
             {(isSupervisor || isAccountant) && (
-              <Link href="/team/members">
+              <Link 
+                href="/team/members"
+                onMouseEnter={() => router.prefetch("/team/members")}
+              >
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="mr-2 h-4 w-4" />
                   Team Members

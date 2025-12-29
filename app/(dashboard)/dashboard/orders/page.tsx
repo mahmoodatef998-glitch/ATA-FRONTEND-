@@ -15,13 +15,11 @@ import { formatDate } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { OrderFilters } from "@/components/dashboard/order-filters";
+import { getCached } from "@/lib/cache";
 
 // Fetch orders from API
-async function getOrders(searchParams: Promise<any>) {
+async function getOrders(searchParams: Promise<any>, companyId: number) {
   try {
-    // Use direct Prisma query instead of API call (server component)
-    const { prisma } = await import("@/lib/prisma");
-    
     // Await searchParams in Next.js 15
     const params = await searchParams;
     
@@ -29,76 +27,112 @@ async function getOrders(searchParams: Promise<any>) {
     const limit = parseInt(params.limit || "20");
     const skip = (page - 1) * limit;
     
-    const where: any = {};
+    // ✅ Performance: Create cache key with companyId and filters
+    const cacheKey = `orders:${companyId}:${JSON.stringify({
+      page,
+      limit,
+      status: params.status,
+      processing: params.processing,
+      search: params.search,
+    })}`;
     
-    // Add filters
-    if (params.processing === "true") {
-      // Processing = all orders that are not completed or cancelled (in development)
-      where.status = { notIn: ["COMPLETED", "CANCELLED"] };
-    } else if (params.status && params.status !== "") {
-      where.status = params.status;
-    }
-    
-    // Advanced search - Full-text search in multiple fields
-    if (params.search && params.search !== "") {
-      const searchTerm = params.search.trim();
-      where.OR = [
-        { id: { equals: isNaN(parseInt(searchTerm)) ? -1 : parseInt(searchTerm) } },
-        { details: { contains: searchTerm, mode: "insensitive" } },
-        { clients: { name: { contains: searchTerm, mode: "insensitive" } } },
-        { clients: { phone: { contains: searchTerm } } },
-        { clients: { email: { contains: searchTerm, mode: "insensitive" } } },
-        { purchase_orders: { some: { poNumber: { contains: searchTerm, mode: "insensitive" } } } },
-        { quotations: { some: { id: { equals: isNaN(parseInt(searchTerm)) ? -1 : parseInt(searchTerm) } } } },
-        { delivery_notes: { some: { dnNumber: { contains: searchTerm, mode: "insensitive" } } } },
-      ];
-    }
-    
-    // Optimized: Only fetch required fields to reduce data transfer
-    const [orders, total] = await Promise.all([
-      prisma.orders.findMany({
-        where,
-        select: {
-          id: true,
-          status: true,
-          stage: true,
-          totalAmount: true,
-          currency: true,
-          createdAt: true,
-          updatedAt: true,
-          clients: {
+    // ✅ Performance: Cache for 2 minutes (120 seconds) to reduce database load
+    return await getCached(
+      cacheKey,
+      async () => {
+        // Use direct Prisma query instead of API call (server component)
+        const { prisma } = await import("@/lib/prisma");
+        
+        const where: any = {
+          companyId, // ✅ Performance: Always filter by companyId for security and performance
+        };
+        
+        // Add filters
+        if (params.processing === "true") {
+          // Processing = all orders that are not completed or cancelled (in development)
+          where.status = { notIn: ["COMPLETED", "CANCELLED"] };
+        } else if (params.status && params.status !== "") {
+          where.status = params.status;
+        }
+        
+        // ✅ Performance: Optimized search - use indexes for faster queries
+        if (params.search && params.search !== "") {
+          const searchTerm = params.search.trim();
+          
+          // If search is a number, search by ID only (fastest)
+          if (!isNaN(parseInt(searchTerm))) {
+            where.OR = [
+              { id: parseInt(searchTerm) },
+              { quotations: { some: { id: parseInt(searchTerm) } } },
+            ];
+          } else {
+            // Text search - use indexed fields
+            where.OR = [
+              { details: { contains: searchTerm, mode: "insensitive" } },
+              { 
+                clients: { 
+                  OR: [
+                    { name: { contains: searchTerm, mode: "insensitive" } },
+                    { phone: { contains: searchTerm } },
+                    { email: { contains: searchTerm, mode: "insensitive" } },
+                  ]
+                } 
+              },
+              { purchase_orders: { some: { poNumber: { contains: searchTerm, mode: "insensitive" } } } },
+              { delivery_notes: { some: { dnNumber: { contains: searchTerm, mode: "insensitive" } } } },
+            ];
+          }
+        }
+        
+        // ✅ Performance: Only fetch required fields to reduce data transfer
+        const [orders, total] = await Promise.all([
+          prisma.orders.findMany({
+            where,
             select: {
-              name: true,
-              phone: true,
-              email: true,
+              id: true,
+              status: true,
+              stage: true,
+              totalAmount: true,
+              currency: true,
+              createdAt: true,
+              updatedAt: true,
+              clients: {
+                select: {
+                  name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  quotations: true,
+                  purchase_orders: true,
+                  delivery_notes: true,
+                },
+              },
             },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: limit,
+          }),
+          prisma.orders.count({ where }),
+        ]);
+        
+        return {
+          orders,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
           },
-          _count: {
-            select: {
-              quotations: true,
-              purchase_orders: true,
-              delivery_notes: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.orders.count({ where }),
-    ]);
-    
-    return {
-      orders,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        };
       },
-    };
+      120 // ✅ Performance: 2 minutes cache TTL
+    );
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    const logger = await import("@/lib/logger").then(m => m.logger);
+    logger.error("Error fetching orders", error, "orders-page");
     return {
       orders: [],
       pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
@@ -132,11 +166,12 @@ export default async function OrdersPage({
 }) {
   // Check authentication
   const session = await auth();
-  if (!session) {
+  if (!session || !session.user || !session.user.companyId) {
     redirect("/login");
   }
   
-  const data = await getOrders(searchParams);
+  // ✅ Performance: Pass companyId to getOrders for filtering and caching
+  const data = await getOrders(searchParams, session.user.companyId);
 
   return (
     <div className="space-y-6">

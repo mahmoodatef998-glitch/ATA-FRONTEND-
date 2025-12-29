@@ -152,6 +152,20 @@ BEGIN
     
     CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
     
+    -- ✅ Performance: Indexes for fast search in clients
+    CREATE INDEX IF NOT EXISTS idx_clients_name_search ON clients USING gin(to_tsvector('english', "name"));
+    CREATE INDEX IF NOT EXISTS idx_clients_email_search ON clients("email");
+    
+    -- ✅ Performance: Indexes for orders search optimization
+    IF company_col IS NOT NULL AND created_at_col IS NOT NULL THEN
+        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_orders_company_created ON orders(%I, %I DESC)', company_col, created_at_col);
+    END IF;
+    
+    IF company_col IS NOT NULL THEN
+        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_orders_company_status_stage ON orders(%I, status, stage)', company_col);
+        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_orders_company_client_created ON orders(%I, %I, %I DESC)', company_col, client_col, created_at_col);
+    END IF;
+    
     -- Quotations indexes
     SELECT column_name INTO order_col
     FROM information_schema.columns
@@ -201,6 +215,13 @@ BEGIN
         EXECUTE format('CREATE INDEX IF NOT EXISTS idx_purchase_orders_order_id ON purchase_orders(%I)', order_col);
     END IF;
     
+    -- ✅ Performance: Index for PO number search
+    BEGIN
+        CREATE INDEX IF NOT EXISTS idx_purchase_orders_po_number ON purchase_orders("poNumber");
+    EXCEPTION WHEN OTHERS THEN
+        CREATE INDEX IF NOT EXISTS idx_purchase_orders_po_number ON purchase_orders(po_number);
+    END;
+    
     -- Delivery notes indexes
     SELECT column_name INTO order_col
     FROM information_schema.columns
@@ -212,6 +233,13 @@ BEGIN
     IF order_col IS NOT NULL THEN
         EXECUTE format('CREATE INDEX IF NOT EXISTS idx_delivery_notes_order_id ON delivery_notes(%I)', order_col);
     END IF;
+    
+    -- ✅ Performance: Index for DN number search
+    BEGIN
+        CREATE INDEX IF NOT EXISTS idx_delivery_notes_dn_number ON delivery_notes("dnNumber");
+    EXCEPTION WHEN OTHERS THEN
+        CREATE INDEX IF NOT EXISTS idx_delivery_notes_dn_number ON delivery_notes(dn_number);
+    END;
     
     -- Work logs indexes
     SELECT column_name INTO task_col

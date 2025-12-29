@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth-helpers";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
+import { getCached } from "@/lib/cache";
 
 export async function GET(request: NextRequest) {
   // Build-time probe safe response
@@ -30,18 +31,25 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Build date filter
-    const dateFilter: any = {};
-    if (startDate) {
-      dateFilter.gte = new Date(startDate);
-    }
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      dateFilter.lte = end;
-    }
+    // ✅ Performance: Create cache key with companyId and date filters
+    const cacheKey = `kpi:team:${companyId}:${startDate || 'all'}:${endDate || 'all'}`;
 
-    // Get all technicians in the company
+    // ✅ Performance: Cache team KPI for 2 minutes
+    const result = await getCached(
+      cacheKey,
+      async () => {
+        // Build date filter
+        const dateFilter: any = {};
+        if (startDate) {
+          dateFilter.gte = new Date(startDate);
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          dateFilter.lte = end;
+        }
+
+        // Get all technicians in the company
     const technicians = await prisma.users.findMany({
       where: {
         companyId: session.user.companyId,
@@ -160,17 +168,22 @@ export async function GET(request: NextRequest) {
         : "0.00",
     };
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        team: teamKPI,
-        averages: teamAverages,
-        period: {
-          startDate: startDate || null,
-          endDate: endDate || null,
-        },
+        return {
+          success: true,
+          data: {
+            team: teamKPI,
+            averages: teamAverages,
+            period: {
+              startDate: startDate || null,
+              endDate: endDate || null,
+            },
+          },
+        };
       },
-    });
+      120 // ✅ Performance: 2 minutes cache TTL
+    );
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error("Get team KPI error:", error);
     return NextResponse.json(
