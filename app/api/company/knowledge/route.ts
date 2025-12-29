@@ -24,15 +24,6 @@ export async function GET(request: NextRequest) {
 
     const company = await prisma.companies.findUnique({
       where: { id: companyId },
-      select: {
-        id: true,
-        name: true,
-        products: true,
-        services: true,
-        contactInfo: true,
-        businessHours: true,
-        specialties: true,
-      },
     });
 
     if (!company) {
@@ -42,12 +33,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Return only the knowledge base fields
+    const knowledgeData = {
+      id: company.id,
+      name: company.name,
+      products: company.products,
+      services: company.services,
+      contactInfo: company.contactInfo,
+      businessHours: company.businessHours,
+      specialties: company.specialties,
+    };
+
     return NextResponse.json({
       success: true,
-      data: company,
+      data: knowledgeData,
     });
   } catch (error: any) {
-    console.error("Error fetching company knowledge:", error);
+    const logger = await import("@/lib/logger").then(m => m.logger);
+    logger.error("Error fetching company knowledge", error, "company-knowledge");
     return NextResponse.json(
       { success: false, error: error.message || "Failed to fetch company knowledge" },
       { status: 500 }
@@ -80,23 +83,26 @@ export async function PATCH(request: NextRequest) {
         businessHours: validatedData.businessHours ?? null,
         specialties: validatedData.specialties ?? null,
       },
-      select: {
-        id: true,
-        name: true,
-        products: true,
-        services: true,
-        contactInfo: true,
-        businessHours: true,
-        specialties: true,
-      },
     });
+
+    // Return only the knowledge base fields
+    const knowledgeData = {
+      id: company.id,
+      name: company.name,
+      products: company.products,
+      services: company.services,
+      contactInfo: company.contactInfo,
+      businessHours: company.businessHours,
+      specialties: company.specialties,
+    };
 
     return NextResponse.json({
       success: true,
-      data: company,
+      data: knowledgeData,
     });
   } catch (error: any) {
-    console.error("Error updating company knowledge:", error);
+    const logger = await import("@/lib/logger").then(m => m.logger);
+    logger.error("Error updating company knowledge", error, "company-knowledge");
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
