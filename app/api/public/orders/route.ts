@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
     const clientIp = getClientIp(request);
     const rateLimit = await rateLimiter.check(
       `public-order:${clientIp}`,
-      RATE_LIMITS.PUBLIC_ORDER.limit,
-      RATE_LIMITS.PUBLIC_ORDER.windowMs
+      RATE_LIMITS.PUBLIC_ORDER_CREATE.limit,
+      RATE_LIMITS.PUBLIC_ORDER_CREATE.windowMs
     );
 
     if (!rateLimit.success) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
-            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
+            "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
             "X-RateLimit-Remaining": rateLimit.remaining.toString(),
             "X-RateLimit-Reset": rateLimit.resetAt.toString(),
           },
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
       {
         status: 201,
         headers: {
-          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER.limit.toString(),
+          "X-RateLimit-Limit": RATE_LIMITS.PUBLIC_ORDER_CREATE.limit.toString(),
           "X-RateLimit-Remaining": rateLimit.remaining.toString(),
           "X-RateLimit-Reset": rateLimit.resetAt.toString(),
         },

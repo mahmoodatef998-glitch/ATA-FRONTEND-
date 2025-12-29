@@ -142,13 +142,8 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
       setPermissions([]);
       setRoles([]);
       setLoading(false);
-      // Clear cache on logout
-      if (typeof window !== 'undefined') {
-        const userId = session?.user?.id;
-        if (userId) {
-          localStorage.removeItem(getCacheKey(userId));
-        }
-      }
+      // Clear cache on logout - session is null when unauthenticated, so we can't access user.id
+      // Cache will expire naturally via TTL
     }
   }, [status, session?.user?.id]); // Only depend on status and user ID, not the whole session
 

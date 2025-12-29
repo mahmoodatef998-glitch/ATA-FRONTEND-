@@ -27,7 +27,7 @@ const prisma = new PrismaClient({
 async function main() {
   try {
     console.log("🔍 Testing database connection...");
-    console.log(`   URL: ${databaseUrl.replace(/:[^:@]+@/, ':****@')}`); // Hide password
+    console.log(`   URL: ${databaseUrl!.replace(/:[^:@]+@/, ':****@')}`); // Hide password (non-null assertion safe due to check above)
     console.log();
 
     // Test connection

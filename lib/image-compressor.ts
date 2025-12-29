@@ -1,5 +1,10 @@
 import sharp from "sharp";
-import { isImage } from "./file-validator";
+import { validateMimeType } from "./file-validator";
+
+// Helper function to check if file is an image
+function isImage(file: File): boolean {
+  return validateMimeType(file, ["image"]);
+}
 
 export interface CompressionOptions {
   maxWidth?: number;

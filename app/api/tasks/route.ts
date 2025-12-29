@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
         description,
         assignedToId: assigneeIdsArray.length > 0 ? assigneeIdsArray[0] : null, // Legacy - first assignee
         assignedById: userId,
-        priority: priority as Prisma.TaskPriority,
+        priority: priority,
         deadline: deadline ? new Date(deadline) : null,
         location,
         locationLat,

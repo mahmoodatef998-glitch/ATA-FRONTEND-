@@ -65,7 +65,7 @@ export async function POST(
     const updatedWorkLog = await prisma.work_logs.update({
       where: { id: workLogId },
       data: {
-        status: approved ? "APPROVED" : "REJECTED",
+        status: (approved ? "APPROVED" : "REJECTED") as any,
         approvedById: userId,
         approvedAt: new Date(),
       },

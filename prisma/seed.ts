@@ -400,9 +400,15 @@ async function main() {
       const checkOut = new Date(date);
       checkOut.setHours(17, 30, 0, 0);
 
+      // Create normalized date (date only, time = 00:00:00) in UTC+4
+      const normalizedDate = new Date(date);
+      normalizedDate.setHours(0, 0, 0, 0);
+
       await prisma.attendance.create({
         data: {
           userId: tech.id,
+          companyId: company.id, // Required field
+          date: normalizedDate, // Required field
           checkInTime: checkIn,
           checkOutTime: checkOut,
           checkInLat: 25.2048,

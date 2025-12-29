@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as any;
     }
 
     const [workLogs, total] = await Promise.all([
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         description,
         startTime: new Date(startTime),
         endTime: endTime ? new Date(endTime) : null,
-        photos: photoUrls.length > 0 ? photoUrls : null,
+        photos: photoUrls.length > 0 ? photoUrls : undefined,
         status: "SUBMITTED",
       },
       include: {

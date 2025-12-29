@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { ordersQuerySchema } from "@/lib/validators/order";
-import { UserRole, Prisma } from "@prisma/client";
+import { UserRole, Prisma, OrderStatus } from "@prisma/client";
 import { applyRateLimit, RATE_LIMITS, getRateLimitHeaders } from "@/lib/rate-limit";
 import { handleApiError } from "@/lib/error-handler";
+import { getCached } from "@/lib/cache";
 
 /**
  * @swagger
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status
     if (status) {
-      where.status = status;
+      where.status = status as OrderStatus;
     }
 
     // Search by client name or phone

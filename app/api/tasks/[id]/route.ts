@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
 import { authorize, authorizeAny } from "@/lib/rbac/authorize";
@@ -153,7 +153,7 @@ export async function PATCH(
     const existingTask = await prisma.tasks.findFirst({
       where: {
         id: taskId,
-        companyId: companyId,
+        companyId: authCompanyId,
       },
     });
 
@@ -340,7 +340,7 @@ export async function PATCH(
       // Legacy: Notify if assignedToId changed
       await prisma.notifications.create({
         data: {
-          companyId: companyId,
+          companyId: authCompanyId,
           userId: parseInt(body.assignedToId),
           title: `Task Assigned: ${task.title}`,
           body: "You have been assigned a new task",
