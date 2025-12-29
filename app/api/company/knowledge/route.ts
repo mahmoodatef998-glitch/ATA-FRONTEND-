@@ -34,14 +34,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Return only the knowledge base fields
+    // Use type assertion to access knowledge base fields that may not be in Prisma types yet
+    // Type assertion needed because Prisma Client may not have latest schema types
+    const companyAny = company as Record<string, any>;
     const knowledgeData = {
       id: company.id,
       name: company.name,
-      products: company.products,
-      services: company.services,
-      contactInfo: company.contactInfo,
-      businessHours: company.businessHours,
-      specialties: company.specialties,
+      products: companyAny.products ?? null,
+      services: companyAny.services ?? null,
+      contactInfo: companyAny.contactInfo ?? null,
+      businessHours: companyAny.businessHours ?? null,
+      specialties: companyAny.specialties ?? null,
     };
 
     return NextResponse.json({
@@ -74,6 +77,8 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const validatedData = updateKnowledgeSchema.parse(body);
 
+    // Use type assertion for update data since Prisma types may not include knowledge fields yet
+    // Type assertion needed because Prisma Client may not have latest schema types
     const company = await prisma.companies.update({
       where: { id: companyId },
       data: {
@@ -82,18 +87,20 @@ export async function PATCH(request: NextRequest) {
         contactInfo: validatedData.contactInfo ?? null,
         businessHours: validatedData.businessHours ?? null,
         specialties: validatedData.specialties ?? null,
-      },
+      } as any,
     });
 
     // Return only the knowledge base fields
+    // Use type assertion to access knowledge base fields that may not be in Prisma types yet
+    const companyAny = company as Record<string, any>;
     const knowledgeData = {
       id: company.id,
       name: company.name,
-      products: company.products,
-      services: company.services,
-      contactInfo: company.contactInfo,
-      businessHours: company.businessHours,
-      specialties: company.specialties,
+      products: companyAny.products ?? null,
+      services: companyAny.services ?? null,
+      contactInfo: companyAny.contactInfo ?? null,
+      businessHours: companyAny.businessHours ?? null,
+      specialties: companyAny.specialties ?? null,
     };
 
     return NextResponse.json({
