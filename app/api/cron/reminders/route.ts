@@ -24,10 +24,17 @@ export async function GET(request: NextRequest) {
     const threeDaysFromNow = getDubaiDaysFromNow(3);
 
     // 1. Reminder: Deposit Payment Overdue (> 3 days)
+    // Note: depositRequired is in quotations, not purchase_orders
     const overdueDeposits = await prisma.orders.findMany({
       where: {
         stage: "AWAITING_DEPOSIT",
         depositPaid: false,
+        quotations: {
+          some: {
+            depositRequired: true,
+            accepted: true,
+          }
+        },
         createdAt: {
           lt: threeDaysFromNow,
         },
@@ -35,8 +42,14 @@ export async function GET(request: NextRequest) {
       include: {
         clients: true,
         companies: true,
-        purchase_orders: {
-          where: { depositRequired: true },
+        quotations: {
+          where: {
+            accepted: true,
+            depositRequired: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
           take: 1,
         },
       },
@@ -83,8 +96,12 @@ export async function GET(request: NextRequest) {
     // Deposit reminders
     for (const order of overdueDeposits) {
       if (order.clients?.email) {
-        const po = order.purchase_orders[0];
+        const quotation = order.quotations[0];
+        if (!quotation) continue;
+        
         const daysOverdue = Math.floor((now.getTime() - order.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        const depositPercent = quotation.depositPercent || order.depositPercentage || 0;
+        const depositAmount = quotation.depositAmount || order.depositAmount || 0;
 
         sendEmail({
           to: order.clients.email,
@@ -93,7 +110,7 @@ export async function GET(request: NextRequest) {
             <h2>Payment Reminder</h2>
             <p>Dear ${order.clients.name},</p>
             <p>This is a friendly reminder that your deposit payment for Order #${order.id} is pending.</p>
-            ${po ? `<p><strong>Deposit Amount:</strong> ${po.depositPercent}% = AED ${po.depositAmount}</p>` : ''}
+            <p><strong>Deposit Amount:</strong> ${depositPercent}% = ${order.currency || 'AED'} ${depositAmount.toLocaleString()}</p>
             <p><strong>Days since order:</strong> ${daysOverdue} days</p>
             <p>Please complete the payment to proceed with manufacturing.</p>
             <p>If you have already made the payment, please contact us.</p>

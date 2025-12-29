@@ -41,8 +41,6 @@ export default function HomePage() {
             
             <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent leading-tight">
               {t('home.ataGenerators')}
-              <br />
-              <span className="text-5xl md:text-6xl">{t('home.powerSolutions')}</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -186,7 +184,7 @@ export default function HomePage() {
       </div>
 
       {/* About Us Section */}
-      <section className="relative py-20 bg-white dark:bg-gray-900">
+      <section id="about" className="relative py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -230,7 +228,7 @@ export default function HomePage() {
             <div className="relative h-96 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-2xl overflow-hidden shadow-xl">
               <Image
                 src="/images/about/company-photo.jpg.png"
-                alt="ATA Generators & Power Solutions Company"
+                alt={t('home.ataGenerators')}
                 fill
                 className="object-cover rounded-2xl"
                 quality={95}
@@ -260,7 +258,7 @@ export default function HomePage() {
       </section>
 
       {/* Products Section */}
-      <section className="relative py-20 bg-gray-50 dark:bg-gray-950">
+      <section id="products" className="relative py-20 bg-gray-50 dark:bg-gray-950">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -391,7 +389,7 @@ export default function HomePage() {
       </section>
 
       {/* Our Work Section */}
-      <section className="relative py-20 bg-white dark:bg-gray-900">
+      <section id="work" className="relative py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -638,7 +636,7 @@ export default function HomePage() {
       </section>
 
       {/* Meet Our Team Section */}
-      <section className="relative py-20 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-950 dark:to-blue-950">
+      <section id="team" className="relative py-20 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-950 dark:to-blue-950">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -801,7 +799,7 @@ export default function HomePage() {
       </section>
 
       {/* Contact & CTA Section */}
-      <section className="relative py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+      <section id="contact" className="relative py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
@@ -818,7 +816,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.callUs')}</div>
-                    <div className="text-blue-100">+971 XX XXX XXXX</div>
+                    <div className="text-blue-100">+971 509403180</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -827,7 +825,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.emailUs')}</div>
-                    <div className="text-blue-100">info@ata-generators.com</div>
+                    <div className="text-blue-100">info@ataswg.com</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -836,7 +834,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="font-semibold">{t('home.visitUs')}</div>
-                    <div className="text-blue-100">{t('home.unitedArabEmirates')}</div>
+                    <div className="text-blue-100">Sharjah Free Zone - United Arab Emirates</div>
                   </div>
                 </div>
               </div>
@@ -943,15 +941,15 @@ export default function HomePage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <Phone className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm">+971 XX XXX XXXX</span>
+                  <span className="text-sm">+971 509403180</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <Mail className="h-4 w-4 text-purple-400" />
-                  <span className="text-sm">info@ata-generators.com</span>
+                  <span className="text-sm">info@ataswg.com</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
                   <MapPin className="h-4 w-4 text-pink-400" />
-                  <span className="text-sm">Dubai, United Arab Emirates</span>
+                  <span className="text-sm">Sharjah Free Zone - United Arab Emirates</span>
                 </div>
               </div>
 

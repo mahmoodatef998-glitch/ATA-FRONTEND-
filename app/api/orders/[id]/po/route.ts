@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-helpers";
+import { requireRole, requireAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@prisma/client";
 import { sendEmail } from "@/lib/email";
 import { sendPOCreatedEmail } from "@/lib/email-templates";
@@ -143,6 +143,8 @@ export async function POST(
         clientId: true,
         status: true,
         stage: true,
+        totalAmount: true,
+        currency: true,
         clients: {
           select: {
             id: true,

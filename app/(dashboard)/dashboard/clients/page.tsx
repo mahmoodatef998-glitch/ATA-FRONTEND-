@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { ClientApprovalList } from "@/components/dashboard/client-approval-list";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
+import { getTranslation } from "@/lib/i18n/server";
+import { logger } from "@/lib/logger";
 
 async function getPendingClients() {
   try {
@@ -53,7 +55,7 @@ async function getPendingClients() {
       },
     };
   } catch (error) {
-    console.error("Error fetching pending clients:", error);
+    logger.error("Error fetching pending clients", error, "clients");
     return {
       clients: [],
       pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
@@ -70,14 +72,16 @@ export default async function ClientsPage() {
 
   // Only ADMIN can access this page
   if (session.user.role !== UserRole.ADMIN) {
+    const accessDenied = await getTranslation('clients.accessDenied');
+    const onlyAdministrators = await getTranslation('clients.onlyAdministrators');
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+              <h2 className="text-2xl font-bold mb-2">{accessDenied}</h2>
               <p className="text-muted-foreground">
-                Only administrators can access this page.
+                {onlyAdministrators}
               </p>
             </div>
           </CardContent>
@@ -87,15 +91,17 @@ export default async function ClientsPage() {
   }
 
   const data = await getPendingClients();
+  const clientAccounts = await getTranslation('clients.clientAccounts');
+  const manageClientApprovals = await getTranslation('clients.manageClientApprovals');
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Client Accounts
+          {clientAccounts}
         </h1>
         <p className="text-muted-foreground">
-          Manage client account approvals and registrations
+          {manageClientApprovals}
         </p>
       </div>
 

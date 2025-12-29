@@ -28,6 +28,7 @@ import { Users, Edit, Trash2, Loader2, CheckCircle, XCircle, Clock, UserPlus } f
 import { toast } from "@/hooks/use-toast";
 import { UserRole, UserAccountStatus } from "@prisma/client";
 import { useSession } from "next-auth/react";
+import { logger } from "@/lib/logger-client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,15 +54,15 @@ interface User {
 }
 
 const roleColors: Record<UserRole, string> = {
-  ADMIN: "bg-red-100 text-red-800",
-  ACCOUNTANT: "bg-blue-100 text-blue-800",
-  OPERATIONS_MANAGER: "bg-green-100 text-green-800",
-  FACTORY_SUPERVISOR: "bg-yellow-100 text-yellow-800",
-  SALES_REP: "bg-purple-100 text-purple-800",
-  CLIENT: "bg-gray-100 text-gray-800",
-  TECHNICIAN: "bg-cyan-100 text-cyan-800",
-  SUPERVISOR: "bg-orange-100 text-orange-800",
-  HR: "bg-pink-100 text-pink-800",
+  ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  ACCOUNTANT: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  OPERATIONS_MANAGER: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  FACTORY_SUPERVISOR: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  SALES_REP: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  CLIENT: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  TECHNICIAN: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  SUPERVISOR: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  HR: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -132,7 +133,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      logger.error("Error fetching users", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while loading users",
@@ -192,7 +193,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error saving user:", error);
+      logger.error("Error saving user", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while saving user",
@@ -243,7 +244,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error(`Error ${action}ing user:`, error);
+      logger.error(`Error ${action}ing user`, error, "users");
       toast({
         title: "Error",
         description: `An error occurred while ${action === "approve" ? "approving" : "rejecting"} user`,
@@ -279,7 +280,7 @@ export default function UsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logger.error("Error deleting user", error, "users");
       toast({
         title: "Error",
         description: "An error occurred while deleting user",

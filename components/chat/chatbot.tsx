@@ -86,28 +86,72 @@ export function Chatbot({ className }: ChatbotProps) {
         content: msg.content,
       }));
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          conversationHistory,
-          clientId: clientId, // Include client ID if available
-        }),
-      });
+      // Add timeout to request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second timeout
 
-      const data = await response.json();
+      let response;
+      try {
+        response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            conversationHistory,
+            clientId: clientId, // Include client ID if available
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error("Request timeout. Please try again.");
+        }
+        throw fetchError;
+      }
+
+      // Ensure proper encoding when reading response
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        throw new Error("Invalid response format");
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Failed to get response");
       }
 
+      // Sanitize and clean the AI reply
+      let aiReply = data.data.reply || "";
+      
+      // Remove any problematic characters
+      aiReply = aiReply
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+        .replace(/\uFEFF/g, '') // Remove BOM
+        .trim();
+
+      // Ensure proper UTF-8 encoding
+      try {
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder('utf-8', { fatal: false });
+        const encoded = encoder.encode(aiReply);
+        aiReply = decoder.decode(encoded);
+      } catch (encodingError) {
+        console.error("Encoding error in frontend:", encodingError);
+        // If encoding fails, try to recover
+        aiReply = aiReply.replace(/[^\x20-\x7E\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
+      }
+
       // Add AI response
       const aiMessage: Message = {
         role: "assistant",
-        content: data.data.reply,
+        content: aiReply,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);

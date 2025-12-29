@@ -84,11 +84,12 @@ export async function POST(request: NextRequest) {
       });
       logger.info("User created with enum accountStatus", { userId: user.id, email }, "team-register");
     } catch (createError: any) {
-      logger.error("Error creating user with enum", createError, "team-register", {
+      logger.error("Error creating user with enum", {
+        error: createError,
         email,
         code: createError.code,
         meta: createError.meta,
-      });
+      }, "team-register");
       
       // If enum doesn't work, try string literal
       if (
@@ -112,11 +113,12 @@ export async function POST(request: NextRequest) {
           });
           logger.info("User created with string literal accountStatus", { userId: user.id, email }, "team-register");
         } catch (secondError: any) {
-          logger.error("Error creating user with string literal", secondError, "team-register", {
+          logger.error("Error creating user with string literal", {
+            error: secondError,
             email,
             code: secondError.code,
             meta: secondError.meta,
-          });
+          }, "team-register");
           
           // If that fails, create without accountStatus and update via raw SQL
           logger.warn("Creating user without accountStatus, will update via SQL", { email }, "team-register");
@@ -146,18 +148,20 @@ export async function POST(request: NextRequest) {
                 where: { id: user.id },
               }) as any;
             } catch (updateError: any) {
-              logger.error("Could not update accountStatus", updateError, "team-register", {
+              logger.error("Could not update accountStatus", {
+                error: updateError,
                 userId: user.id,
                 code: updateError.code,
-              });
+              }, "team-register");
               // Continue anyway - user is created
             }
           } catch (thirdError: any) {
-            logger.error("Error creating user without accountStatus", thirdError, "team-register", {
+            logger.error("Error creating user without accountStatus", {
+              error: thirdError,
               email,
               code: thirdError.code,
               meta: thirdError.meta,
-            });
+            }, "team-register");
             throw thirdError;
           }
         }
@@ -228,12 +232,13 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error: any) {
-    logger.error("Team registration error", error, "team-register", {
+    logger.error("Team registration error", {
+      error,
       message: error.message,
       code: error.code,
       meta: error.meta,
       stack: error.stack,
-    });
+    }, "team-register");
     return NextResponse.json(
       { 
         success: false, 

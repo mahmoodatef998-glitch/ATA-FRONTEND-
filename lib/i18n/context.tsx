@@ -34,6 +34,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (typeof document !== 'undefined') {
       document.documentElement.lang = language;
       document.documentElement.dir = isRTL(language) ? 'rtl' : 'ltr';
+      
+      // Also set cookie for server-side rendering
+      document.cookie = `ata-crm-language=${language}; path=/; max-age=31536000; SameSite=Lax`;
     }
   }, [language]);
 

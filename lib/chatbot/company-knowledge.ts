@@ -42,7 +42,6 @@ export async function getCompanyKnowledge(companyId: number): Promise<CompanyKno
       where: { id: companyId },
       select: {
         name: true,
-        description: true,
         products: true,
         services: true,
         contactInfo: true,
@@ -51,7 +50,7 @@ export async function getCompanyKnowledge(companyId: number): Promise<CompanyKno
       },
     });
 
-    return company;
+    return company as CompanyKnowledge | null;
   } catch (error) {
     console.error("Error fetching company knowledge:", error);
     return null;

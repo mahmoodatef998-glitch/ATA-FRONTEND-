@@ -5,7 +5,6 @@ import { UserRole } from "@prisma/client";
 import { z } from "zod";
 
 const updateKnowledgeSchema = z.object({
-  description: z.string().optional(),
   products: z.string().optional(),
   services: z.string().optional(),
   contactInfo: z.string().optional(),
@@ -28,7 +27,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        description: true,
         products: true,
         services: true,
         contactInfo: true,
@@ -76,7 +74,6 @@ export async function PATCH(request: NextRequest) {
     const company = await prisma.companies.update({
       where: { id: companyId },
       data: {
-        description: validatedData.description ?? null,
         products: validatedData.products ?? null,
         services: validatedData.services ?? null,
         contactInfo: validatedData.contactInfo ?? null,
@@ -86,7 +83,6 @@ export async function PATCH(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        description: true,
         products: true,
         services: true,
         contactInfo: true,

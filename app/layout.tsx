@@ -10,8 +10,8 @@ import { Chatbot } from "@/components/chat/chatbot";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ATA CRM - Order Management System",
-  description: "Professional CRM with Purchase Order and Quotation Management",
+  title: "ATA SYSTEM",
+  description: "نظام CRM احترافي مع إدارة طلبات الشراء وعروض الأسعار",
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

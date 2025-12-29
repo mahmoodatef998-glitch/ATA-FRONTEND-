@@ -57,8 +57,8 @@ export async function GET(
     // Technicians can only view their own profile
     // Others need TEAM_MEMBERS_READ permission
     const sessionUserId = typeof session.user.id === "string" ? parseInt(session.user.id) : session.user.id;
-    const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    // Check if user is admin - requireTeamModuleAccess allows ADMIN, but TypeScript doesn't know that
+    const isAdmin = (session.user.role as UserRole) === UserRole.ADMIN;
     
     // Admin can view any member, others need permission if not viewing own profile
     if (sessionUserId !== memberId && !isAdmin) {
@@ -400,8 +400,7 @@ export async function PATCH(
     const { userId, companyId } = await authorize(PermissionAction.USER_UPDATE);
     
     const session = await requireAuth();
-    const userRole = session.user.role;
-    const isAdmin = userRole === UserRole.ADMIN || userRole === "ADMIN" || String(userRole) === "ADMIN";
+    const isAdmin = (session.user.role as UserRole) === UserRole.ADMIN;
     
     const { id } = await params;
     const memberId = parseInt(id);
@@ -427,7 +426,7 @@ export async function PATCH(
     // Check if member exists and belongs to same company
     const existingMember = await prisma.users.findUnique({
       where: { id: memberId },
-      select: { companyId: true, role: true },
+      select: { companyId: true, role: true, email: true, isActive: true },
     });
 
     if (!existingMember) {
@@ -449,7 +448,7 @@ export async function PATCH(
     // Note: isAdmin is already defined above (line 398)
     
     // Only allow editing team member roles (all team module roles)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,
@@ -459,7 +458,7 @@ export async function PATCH(
     ];
     
     // If trying to edit an Admin account, only Admin can do that
-    if (existingMember.role === UserRole.ADMIN && !isAdmin) {
+    if ((existingMember.role as UserRole) === UserRole.ADMIN && !isAdmin) {
       return NextResponse.json(
         { success: false, error: "Only administrators can edit administrator accounts" },
         { status: 403 }
@@ -467,7 +466,7 @@ export async function PATCH(
     }
     
     // If member is not in allowed roles, check if Admin is trying to edit them
-    if (!allowedTeamRoles.includes(existingMember.role) && !isAdmin) {
+    if (!allowedTeamRoles.includes(existingMember.role as typeof allowedTeamRoles[number]) && !isAdmin) {
       return NextResponse.json(
         { success: false, error: "Can only edit team member accounts" },
         { status: 403 }
@@ -684,7 +683,7 @@ export async function PATCH(
         select: { role: true },
       });
       
-      if (adminCheck && adminCheck.role !== UserRole.ADMIN && adminCheck.role !== "ADMIN") {
+      if (adminCheck && (adminCheck.role as UserRole) !== UserRole.ADMIN) {
         // Emergency rollback - restore original role
         await prisma.users.update({
           where: { id: userId },
@@ -767,7 +766,7 @@ export async function DELETE(
     }
 
     // Only allow deleting team member roles (not Admin)
-    const allowedTeamRoles = [
+    const allowedTeamRoles: UserRole[] = [
       UserRole.TECHNICIAN,
       UserRole.SUPERVISOR,
       UserRole.HR,
@@ -775,7 +774,7 @@ export async function DELETE(
       UserRole.ACCOUNTANT,
     ];
     
-    if (!allowedTeamRoles.includes(existingMember.role)) {
+    if (!allowedTeamRoles.includes(existingMember.role as typeof allowedTeamRoles[number])) {
       return NextResponse.json(
         { success: false, error: "Can only delete team member accounts" },
         { status: 403 }

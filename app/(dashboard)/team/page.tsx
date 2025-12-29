@@ -12,12 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
+import { useI18n } from "@/lib/i18n/context";
+import { logger } from "@/lib/logger-client";
 
 export default function TeamDashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const { data: session, status } = useSession();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   
   // For Technicians - Dashboard stats
@@ -90,7 +93,7 @@ export default function TeamDashboardPage() {
         setKpi(kpiResult.data.kpi);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      logger.error("Error fetching data", error, "team-dashboard");
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -151,7 +154,7 @@ export default function TeamDashboardPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      logger.error("Error fetching stats", error, "team-dashboard");
     } finally {
       setLoading(false);
     }
@@ -241,15 +244,15 @@ export default function TeamDashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold mb-1">My Tasks</h3>
+                <h3 className="text-lg font-semibold mb-1">{t('team.myTasks')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  View and manage all your assigned tasks
+                  {t('team.viewManageTasks')}
                 </p>
               </div>
               <Link href="/team/technician">
                 <Button>
                   <Package className="mr-2 h-4 w-4" />
-                  Go to My Tasks
+                  {t('team.goToMyTasks')}
                 </Button>
               </Link>
             </div>
@@ -263,8 +266,8 @@ export default function TeamDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Our Team</h1>
-        <p className="text-muted-foreground">Manage your team, tasks, and performance</p>
+        <h1 className="text-3xl font-bold">{t('team.title')}</h1>
+        <p className="text-muted-foreground">{t('team.manageTeam')}</p>
       </div>
 
       {/* Check In/Out - For all employees except Admin */}
@@ -274,78 +277,78 @@ export default function TeamDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Team Members</CardDescription>
+            <CardDescription>{t('team.teamMembers')}</CardDescription>
             <CardTitle className="text-2xl font-bold">{teamStats.totalTechnicians}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Users className="h-4 w-4 mr-1" />
-              Team Members
+              {t('team.teamMembers')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Checked In</CardDescription>
+            <CardDescription>{t('team.checkedIn')}</CardDescription>
             <CardTitle className="text-2xl font-bold text-green-600">{teamStats.checkedIn}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <CheckCircle className="h-4 w-4 mr-1" />
-              Active Now
+              {t('team.activeNow')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Checked Out</CardDescription>
+            <CardDescription>{t('team.checkedOut')}</CardDescription>
             <CardTitle className="text-2xl font-bold text-blue-600">{teamStats.checkedOut}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-1" />
-              Left Today
+              {t('team.leftToday')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Not Checked In</CardDescription>
+            <CardDescription>{t('team.notCheckedIn')}</CardDescription>
             <CardTitle className="text-2xl font-bold text-red-600">{teamStats.notCheckedIn}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <XCircle className="h-4 w-4 mr-1" />
-              Absent Today
+              {t('team.absentToday')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Pending Tasks</CardDescription>
+            <CardDescription>{t('team.pendingTasks')}</CardDescription>
             <CardTitle className="text-2xl font-bold text-yellow-600">{teamStats.pendingTasks}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Package className="h-4 w-4 mr-1" />
-              Needs Attention
+              {t('team.needsAttention')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Pending Overtime</CardDescription>
+            <CardDescription>{t('team.pendingOvertime')}</CardDescription>
             <CardTitle className="text-2xl font-bold text-orange-600">{teamStats.pendingOvertime}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-1" />
-              Awaiting Approval
+              {t('team.awaitingApproval')}
             </div>
           </CardContent>
         </Card>
@@ -358,13 +361,13 @@ export default function TeamDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              Checked In ({attendanceDetails.checkedInUsers.length})
+              {t('team.checkedIn')} ({attendanceDetails.checkedInUsers.length})
             </CardTitle>
-            <CardDescription>Team members currently active</CardDescription>
+            <CardDescription>{t('team.checkedInUsers')}</CardDescription>
           </CardHeader>
           <CardContent>
             {attendanceDetails.checkedInUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No one is checked in</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('team.noOneCheckedIn')}</p>
             ) : (
               <div className="space-y-2">
                 {attendanceDetails.checkedInUsers.map((user) => (
@@ -379,7 +382,7 @@ export default function TeamDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Since</p>
+                      <p className="text-xs text-muted-foreground">{t('common.since')}</p>
                       <p className="text-xs font-medium">{formatTime(user.checkInTime)}</p>
                     </div>
                   </div>
@@ -394,13 +397,13 @@ export default function TeamDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-600" />
-              Checked Out ({attendanceDetails.checkedOutUsers.length})
+              {t('team.checkedOut')} ({attendanceDetails.checkedOutUsers.length})
             </CardTitle>
-            <CardDescription>Team members who checked out today</CardDescription>
+            <CardDescription>{t('team.checkedOutUsers')}</CardDescription>
           </CardHeader>
           <CardContent>
             {attendanceDetails.checkedOutUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No one has checked out</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('team.noOneCheckedOut')}</p>
             ) : (
               <div className="space-y-2">
                 {attendanceDetails.checkedOutUsers.map((user) => (
@@ -415,7 +418,7 @@ export default function TeamDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Out at</p>
+                      <p className="text-xs text-muted-foreground">{t('common.outAt')}</p>
                       <p className="text-xs font-medium">{formatTime(user.checkOutTime)}</p>
                     </div>
                   </div>
@@ -430,13 +433,13 @@ export default function TeamDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <XCircle className="h-5 w-5 text-red-600" />
-              Not Checked In ({attendanceDetails.notCheckedInUsers.length})
+              {t('team.notCheckedIn')} ({attendanceDetails.notCheckedInUsers.length})
             </CardTitle>
-            <CardDescription>Team members who haven&apos;t checked in today</CardDescription>
+            <CardDescription>{t('team.notCheckedInUsers')}</CardDescription>
           </CardHeader>
           <CardContent>
             {attendanceDetails.notCheckedInUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">All team members are checked in</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('team.everyoneCheckedIn')}</p>
             ) : (
               <div className="space-y-2">
                 {attendanceDetails.notCheckedInUsers.map((user) => (

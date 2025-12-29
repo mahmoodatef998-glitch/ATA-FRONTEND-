@@ -53,7 +53,7 @@ export interface FileValidationResult {
  */
 export function validateMimeType(file: File, allowedTypes: AllowedFileType[]): boolean {
   const allowedMimeTypes = allowedTypes.flatMap((type) => ALLOWED_FILE_TYPES[type].mimeTypes);
-  return allowedMimeTypes.includes(file.type);
+  return allowedMimeTypes.includes(file.type as any);
 }
 
 /**
@@ -139,7 +139,7 @@ export async function validateFileContent(
     // Check if detected type matches allowed types
     const allowedMimeTypes = allowedTypes.flatMap((type) => ALLOWED_FILE_TYPES[type].mimeTypes);
     
-    if (!allowedMimeTypes.includes(detectedType.mime)) {
+    if (!allowedMimeTypes.includes(detectedType.mime as any)) {
       return {
         valid: false,
         error: `File type mismatch. Detected: ${detectedType.mime}, but only ${allowedTypes.join(", ")} are allowed.`,

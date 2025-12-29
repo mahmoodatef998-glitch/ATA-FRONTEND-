@@ -4,9 +4,9 @@ const nextConfig: NextConfig = {
   // Turbopack config (required for Next.js 16)
   turbopack: {},
   
-  // Disable TypeScript checking during build (temporary - for faster deployment)
+  // TypeScript checking enabled for production quality
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false, // ✅ Enable type checking for better code quality
   },
   
   // Production optimizations

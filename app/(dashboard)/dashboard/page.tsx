@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { AnalyticsSection } from "@/components/dashboard/analytics-section";
 import { UserRole } from "@prisma/client";
 import { getCached } from "@/lib/cache";
+import { getTranslation } from "@/lib/i18n/server";
 
 async function getDashboardStats() {
   try {
@@ -227,15 +228,35 @@ export default async function DashboardPage() {
     );
   }
 
+  const dashboardTitle = await getTranslation('dashboard.title');
+  const welcomeBack = await getTranslation('dashboard.welcomeBack');
+  const actionRequired = await getTranslation('dashboard.actionRequired');
+  const theseOrdersNeedAttention = await getTranslation('dashboard.theseOrdersNeedAttention');
+  const newOrder = await getTranslation('dashboard.newOrder');
+  const reviewOrder = await getTranslation('dashboard.reviewOrder');
+  const quotationAccepted = await getTranslation('dashboard.quotationAccepted');
+  const createPO = await getTranslation('dashboard.createPO');
+  const depositReceived = await getTranslation('dashboard.depositReceived');
+  const updateStage = await getTranslation('dashboard.updateStage');
+  const finalPaymentReceived = await getTranslation('dashboard.finalPaymentReceived');
+  const completeOrder = await getTranslation('dashboard.completeOrder');
+  const recentOrders = await getTranslation('dashboard.recentOrders');
+  const topClients = await getTranslation('dashboard.topClients');
+  const viewAll = await getTranslation('dashboard.viewAll');
+  const totalOrders = await getTranslation('dashboard.totalOrders');
+  const pendingOrders = await getTranslation('dashboard.pendingOrders');
+  const completedOrders = await getTranslation('dashboard.completedOrders');
+  const totalRevenue = await getTranslation('dashboard.totalRevenue');
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Dashboard
+          {dashboardTitle}
         </h1>
         <p className="text-muted-foreground">
-          Welcome back, <span className="font-semibold">{session.user.name}</span>!
+          {welcomeBack}, <span className="font-semibold">{session.user.name}</span>!
         </p>
       </div>
 
@@ -249,10 +270,10 @@ export default async function DashboardPage() {
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-xl text-amber-900 dark:text-amber-100 mb-1">
-                  ⚠️ Action Required ({stats.actionRequiredOrders.length})
+                  ⚠️ {actionRequired} ({stats.actionRequiredOrders.length})
                 </h3>
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  These orders need your attention
+                  {theseOrdersNeedAttention}
                 </p>
               </div>
             </div>
@@ -272,20 +293,20 @@ export default async function DashboardPage() {
                 let actionHref = "";
                 
                 if (isNewOrder) {
-                  actionText = "📋 New order - needs review and quotation";
-                  actionButton = "Review Order";
+                  actionText = `📋 ${newOrder}`;
+                  actionButton = reviewOrder;
                   actionHref = `/dashboard/orders/${order.id}`;
                 } else if (needsPO) {
-                  actionText = "✅ Quotation accepted - create Purchase Order";
-                  actionButton = "Create PO";
+                  actionText = `✅ ${quotationAccepted}`;
+                  actionButton = createPO;
                   actionHref = `/dashboard/orders/${order.id}`;
                 } else if (depositReceived) {
-                  actionText = "💰 Deposit received - update to manufacturing";
-                  actionButton = "Update Status";
+                  actionText = `💰 ${depositReceived}`;
+                  actionButton = updateStage;
                   actionHref = `/dashboard/orders/${order.id}`;
                 } else if (finalPaymentReceived) {
-                  actionText = "✅ Final payment received - close order";
-                  actionButton = "Complete Order";
+                  actionText = `✅ ${finalPaymentReceived}`;
+                  actionButton = completeOrder;
                   actionHref = `/dashboard/orders/${order.id}`;
                 }
                 
@@ -395,7 +416,7 @@ export default async function DashboardPage() {
         {/* Total Orders */}
         <Card className="border-2 border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">{totalOrders}</CardTitle>
             <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
@@ -411,7 +432,7 @@ export default async function DashboardPage() {
         {/* Processing Orders */}
         <Card className="border-2 border-amber-200 dark:border-amber-900 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing</CardTitle>
+            <CardTitle className="text-sm font-medium">{pendingOrders}</CardTitle>
             <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
@@ -427,7 +448,7 @@ export default async function DashboardPage() {
         {/* Completed Orders */}
         <Card className="border-2 border-green-200 dark:border-green-900 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">{completedOrders}</CardTitle>
             <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
@@ -443,7 +464,7 @@ export default async function DashboardPage() {
         {/* Total Revenue */}
         <Card className="border-2 border-purple-200 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{totalRevenue}</CardTitle>
             <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
@@ -463,11 +484,11 @@ export default async function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Orders</CardTitle>
+                <CardTitle>{recentOrders}</CardTitle>
                 <CardDescription>Latest 5 orders</CardDescription>
               </div>
               <Link href="/dashboard/orders">
-                <Button variant="ghost" size="sm">View All</Button>
+                <Button variant="ghost" size="sm">{viewAll}</Button>
               </Link>
             </div>
           </CardHeader>
@@ -516,7 +537,7 @@ export default async function DashboardPage() {
         {/* Top Clients */}
         <Card className="border-2">
           <CardHeader>
-            <CardTitle>Top Clients</CardTitle>
+                <CardTitle>{topClients}</CardTitle>
             <CardDescription>By number of orders</CardDescription>
           </CardHeader>
           <CardContent>
