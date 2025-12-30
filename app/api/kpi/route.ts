@@ -5,6 +5,7 @@ import { authorize } from "@/lib/rbac/authorize";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
 import { UserRole } from "@prisma/client";
 import { logger } from "@/lib/logger";
+import { getCached } from "@/lib/cache";
 
 export async function GET(request: NextRequest) {
   // Build-time probe safe response
@@ -145,17 +146,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Calculate attendance KPI
-    const attendanceWhere: any = {
-      userId: targetUserId,
-    };
-    if (Object.keys(dateFilter).length > 0) {
-      attendanceWhere.checkInTime = dateFilter;
-    }
+    // ✅ Performance: Create cache key with userId, companyId, and date filters
+    const cacheKey = `kpi:${targetUserId}:${companyId}:${startDate || 'all'}:${endDate || 'all'}`;
 
-    const attendanceRecords = await prisma.attendance.findMany({
-      where: attendanceWhere,
-    });
+    // ✅ Performance: Cache KPI data for 2 minutes
+    return await getCached(
+      cacheKey,
+      async () => {
+        // Calculate attendance KPI
+        const attendanceWhere: any = {
+          userId: targetUserId,
+        };
+        if (Object.keys(dateFilter).length > 0) {
+          attendanceWhere.checkInTime = dateFilter;
+        }
+
+        // ✅ Performance: Use select to fetch only needed fields
+        const attendanceRecords = await prisma.attendance.findMany({
+          where: attendanceWhere,
+          select: {
+            checkInTime: true,
+            checkOutTime: true,
+          },
+        });
 
     const totalDays = attendanceRecords.length;
     const daysPresent = attendanceRecords.filter((a) => a.checkOutTime !== null).length;
@@ -179,94 +192,109 @@ export async function GET(request: NextRequest) {
       overtimeWhere.date = dateFilter;
     }
 
-    const overtimeRecords = await prisma.overtime.findMany({
-      where: overtimeWhere,
-    });
+        // ✅ Performance: Use select to fetch only hours field
+        const overtimeRecords = await prisma.overtime.findMany({
+          where: overtimeWhere,
+          select: {
+            hours: true,
+          },
+        });
 
-    const totalOvertimeHours = overtimeRecords.reduce((sum, record) => sum + record.hours, 0);
+        const totalOvertimeHours = overtimeRecords.reduce((sum, record) => sum + record.hours, 0);
 
-    // Calculate task completion
-    const tasksWhere: any = {
-      assignedToId: targetUserId,
-      companyId: session.user.companyId,
-    };
-    if (Object.keys(dateFilter).length > 0) {
-      tasksWhere.createdAt = dateFilter;
-    }
+        // Calculate task completion
+        const tasksWhere: any = {
+          assignedToId: targetUserId,
+          companyId: session.user.companyId,
+        };
+        if (Object.keys(dateFilter).length > 0) {
+          tasksWhere.createdAt = dateFilter;
+        }
 
-    const allTasks = await prisma.tasks.findMany({
-      where: tasksWhere,
-    });
+        // ✅ Performance: Use select to fetch only status field
+        const allTasks = await prisma.tasks.findMany({
+          where: tasksWhere,
+          select: {
+            status: true,
+          },
+        });
 
     const completedTasks = allTasks.filter((t) => t.status === "COMPLETED").length;
     const taskCompletionRate = allTasks.length > 0 ? (completedTasks / allTasks.length) * 100 : 0;
 
-    // Calculate average rating
-    let reviews: any[] = [];
-    try {
-      reviews = await prisma.supervisor_reviews.findMany({
-        where: {
-          technicianId: targetUserId,
-          ...(Object.keys(dateFilter).length > 0 && {
-            createdAt: dateFilter,
-          }),
-        },
-      });
-    } catch (error: any) {
-      logger.error("[KPI API] Error fetching reviews", error, "kpi");
-      // If reviews table doesn't exist or has issues, continue with empty array
-      reviews = [];
-    }
+        // Calculate average rating
+        let reviews: any[] = [];
+        try {
+          // ✅ Performance: Use select to fetch only rating field
+          reviews = await prisma.supervisor_reviews.findMany({
+            where: {
+              technicianId: targetUserId,
+              ...(Object.keys(dateFilter).length > 0 && {
+                createdAt: dateFilter,
+              }),
+            },
+            select: {
+              rating: true,
+            },
+          });
+        } catch (error: any) {
+          logger.error("[KPI API] Error fetching reviews", error, "kpi");
+          // If reviews table doesn't exist or has issues, continue with empty array
+          reviews = [];
+        }
 
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-      : 0;
+        const averageRating = reviews.length > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+          : 0;
 
-    // Calculate overall score (weighted)
-    const overallScore =
-      attendanceRate * 0.3 +
-      taskCompletionRate * 0.3 +
-      (averageRating / 5) * 100 * 0.2 +
-      (totalHours > 0 ? Math.min((totalHours / (allTasks.length * 8)) * 100, 100) : 0) * 0.2;
+        // Calculate overall score (weighted)
+        const overallScore =
+          attendanceRate * 0.3 +
+          taskCompletionRate * 0.3 +
+          (averageRating / 5) * 100 * 0.2 +
+          (totalHours > 0 ? Math.min((totalHours / (allTasks.length * 8)) * 100, 100) : 0) * 0.2;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-        kpi: {
-          attendance: {
-            totalDays,
-            daysPresent,
-            attendanceRate: attendanceRate.toFixed(2),
+        return {
+          success: true,
+          data: {
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+            kpi: {
+              attendance: {
+                totalDays,
+                daysPresent,
+                attendanceRate: attendanceRate.toFixed(2),
+              },
+              hours: {
+                totalHours: totalHours.toFixed(2),
+                overtimeHours: totalOvertimeHours.toFixed(2),
+                averageHoursPerDay: totalDays > 0 ? (totalHours / totalDays).toFixed(2) : 0,
+              },
+              tasks: {
+                total: allTasks.length,
+                completed: completedTasks,
+                inProgress: allTasks.filter((t) => t.status === "IN_PROGRESS").length,
+                pending: allTasks.filter((t) => t.status === "PENDING").length,
+                completionRate: taskCompletionRate.toFixed(2),
+              },
+              performance: {
+                averageRating: averageRating.toFixed(2),
+                totalReviews: reviews.length,
+              },
+              overallScore: overallScore.toFixed(2),
+            },
+            period: {
+              startDate: startDate || null,
+              endDate: endDate || null,
+            },
           },
-          hours: {
-            totalHours: totalHours.toFixed(2),
-            overtimeHours: totalOvertimeHours.toFixed(2),
-            averageHoursPerDay: totalDays > 0 ? (totalHours / totalDays).toFixed(2) : 0,
-          },
-          tasks: {
-            total: allTasks.length,
-            completed: completedTasks,
-            inProgress: allTasks.filter((t) => t.status === "IN_PROGRESS").length,
-            pending: allTasks.filter((t) => t.status === "PENDING").length,
-            completionRate: taskCompletionRate.toFixed(2),
-          },
-          performance: {
-            averageRating: averageRating.toFixed(2),
-            totalReviews: reviews.length,
-          },
-          overallScore: overallScore.toFixed(2),
-        },
-        period: {
-          startDate: startDate || null,
-          endDate: endDate || null,
-        },
+        };
       },
-    });
+      120 // ✅ Performance: 2 minutes cache TTL
+    ).then((result) => NextResponse.json(result));
   } catch (error: any) {
     logger.error("[KPI API] Error details", {
       message: error.message,
