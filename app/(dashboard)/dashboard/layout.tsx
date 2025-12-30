@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth-helpers";
 import { Navbar } from "@/components/dashboard/navbar";
 import { Toaster } from "@/components/ui/toaster";
+import { DataPrefetcher } from "@/components/dashboard/data-prefetcher";
 import { UserRole } from "@prisma/client";
 
 export default async function DashboardLayout({
@@ -23,7 +24,10 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950" suppressHydrationWarning>
       <Navbar user={session.user} />
-      <main className="container mx-auto px-4 py-8" suppressHydrationWarning>{children}</main>
+      <main className="container mx-auto px-4 py-8" suppressHydrationWarning>
+        <DataPrefetcher />
+        {children}
+      </main>
       <Toaster />
     </div>
   );

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { TeamNavbar } from "@/components/team/team-navbar";
 import { Toaster } from "@/components/ui/toaster";
+import { TeamDataPrefetcher } from "@/components/team/data-prefetcher";
 import { UserRole } from "@prisma/client";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -48,7 +49,10 @@ export default function TeamLayout({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950" suppressHydrationWarning>
       <TeamNavbar />
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mx-auto px-4 py-8">
+        <TeamDataPrefetcher />
+        {children}
+      </main>
       <Toaster />
     </div>
   );
