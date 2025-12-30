@@ -22,7 +22,7 @@ export function Chatbot({ className }: ChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! 👋 I'm your AI assistant. How can I help you today?",
+      content: "مرحباً! 👋 أنا مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟\n\nHello! 👋 I'm your AI assistant. How can I help you today?",
       timestamp: new Date(),
     },
   ]);
@@ -180,7 +180,7 @@ export function Chatbot({ className }: ChatbotProps) {
     setMessages([
       {
         role: "assistant",
-        content: "Hello! 👋 I'm your AI assistant. How can I help you today?",
+        content: "مرحباً! 👋 أنا مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟\n\nHello! 👋 I'm your AI assistant. How can I help you today?",
         timestamp: new Date(),
       },
     ]);
