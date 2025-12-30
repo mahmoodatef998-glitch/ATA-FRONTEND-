@@ -1,57 +1,26 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckInOut } from "@/components/technician/check-in-out";
 import { KPICard } from "@/components/technician/kpi-card";
-import { Loader2, Users, CheckCircle, Clock, TrendingUp, Package, MapPin, FileText, XCircle } from "lucide-react";
+import { Users, CheckCircle, Clock, TrendingUp, Package, FileText, XCircle } from "lucide-react";
 import { formatTime } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { useI18n } from "@/lib/i18n/context";
-import { logger } from "@/lib/logger-client";
+import { useTeamStats } from "@/lib/hooks/use-team-stats";
+import { useTasks } from "@/lib/hooks/use-tasks";
+import { useKPI } from "@/lib/hooks/use-kpi";
+import { TeamDashboardSkeleton } from "@/components/loading-skeletons/team-dashboard-skeleton";
 
 export default function TeamDashboardPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const { toast } = useToast();
   const { data: session, status } = useSession();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  
-  // For Technicians - Dashboard stats
-  const [kpi, setKpi] = useState<any>(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0,
-  });
-
-  // For Supervisors/Admins - Team stats
-  const [teamStats, setTeamStats] = useState({
-    totalTechnicians: 0,
-    checkedIn: 0,
-    checkedOut: 0,
-    notCheckedIn: 0,
-    pendingTasks: 0,
-    pendingOvertime: 0,
-  });
-  
-  // Attendance details
-  const [attendanceDetails, setAttendanceDetails] = useState<{
-    checkedInUsers: Array<{ id: number; name: string; email: string; checkInTime: string }>;
-    checkedOutUsers: Array<{ id: number; name: string; email: string; checkInTime: string; checkOutTime: string }>;
-    notCheckedInUsers: Array<{ id: number; name: string; email: string }>;
-  }>({
-    checkedInUsers: [],
-    checkedOutUsers: [],
-    notCheckedInUsers: [],
-  });
 
   // Memoize role checks to prevent unnecessary re-renders
   const isTechnician = useMemo(() => session?.user?.role === UserRole.TECHNICIAN, [session?.user?.role]);
@@ -67,128 +36,82 @@ export default function TeamDashboardPage() {
   const isAccountant = useMemo(() => session?.user?.role === UserRole.ACCOUNTANT, [session?.user?.role]);
   const canCheckInOut = useMemo(() => !isAdmin, [isAdmin]);
 
-  // Define fetch functions before useEffect
-  const fetchTechnicianData = useCallback(async () => {
-    if (!session?.user) return;
-    try {
-      setLoading(true);
+  // React Query hooks - only fetch when authenticated
+  const isAuthenticated = status === "authenticated" && !!session?.user;
 
-      // Fetch tasks stats
-      const tasksResponse = await fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100");
-      const tasksResult = await tasksResponse.json();
-      if (tasksResult.success) {
-        const allTasks = tasksResult.data.tasks;
-        setStats({
-          total: allTasks.length,
-          pending: allTasks.filter((t: any) => t.status === "PENDING").length,
-          inProgress: allTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
-          completed: allTasks.filter((t: any) => t.status === "COMPLETED").length,
-        });
-      }
+  // For Technicians - Dashboard stats
+  const { data: tasksData, isLoading: tasksLoading } = useTasks({
+    status: ["PENDING", "IN_PROGRESS", "COMPLETED"],
+    limit: 100,
+    enabled: isAuthenticated && isTechnician,
+  });
 
-      // Fetch KPI
-      const kpiResponse = await fetch("/api/kpi");
-      const kpiResult = await kpiResponse.json();
-      if (kpiResult.success) {
-        setKpi(kpiResult.data.kpi);
-      }
-    } catch (error) {
-      logger.error("Error fetching data", error, "team-dashboard");
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const { data: kpiData, isLoading: kpiLoading } = useKPI();
+
+  // For Supervisors/Admins - Team stats
+  const { data: teamStatsData, isLoading: teamStatsLoading } = useTeamStats();
+
+  // Calculate stats from tasks data
+  const stats = useMemo(() => {
+    if (!tasksData?.tasks) {
+      return { total: 0, pending: 0, inProgress: 0, completed: 0 };
     }
-  }, [session?.user, toast]);
+    const allTasks = tasksData.tasks;
+    return {
+      total: allTasks.length,
+      pending: allTasks.filter((t: any) => t.status === "PENDING").length,
+      inProgress: allTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
+      completed: allTasks.filter((t: any) => t.status === "COMPLETED").length,
+    };
+  }, [tasksData]);
 
-  const fetchTeamStats = useCallback(async () => {
-    if (!session?.user) return;
-    try {
-      setLoading(true);
-
-      // Fetch pending tasks
-      const tasksResponse = await fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&limit=100");
-      const tasksResult = await tasksResponse.json();
-      const tasks = tasksResult.success ? tasksResult.data.tasks : [];
-
-      // Fetch pending overtime
-      const overtimeResponse = await fetch("/api/overtime?approved=false&limit=100");
-      const overtimeResult = await overtimeResponse.json();
-      const overtime = overtimeResult.success ? overtimeResult.data.overtime : [];
-
-      // Fetch attendance statistics (includes team members count)
-      const attendanceResponse = await fetch("/api/team/attendance-stats");
-      const attendanceResult = await attendanceResponse.json();
-      
-      if (attendanceResult.success) {
-        const { total, checkedIn, checkedOut, notCheckedIn, checkedInUsers, checkedOutUsers, notCheckedInUsers } = attendanceResult.data;
-        setTeamStats({
-          totalTechnicians: total,
-          checkedIn,
-          checkedOut,
-          notCheckedIn,
-          pendingTasks: tasks.length,
-          pendingOvertime: overtime.length,
-        });
-        setAttendanceDetails({
-          checkedInUsers: checkedInUsers || [],
-          checkedOutUsers: checkedOutUsers || [],
-          notCheckedInUsers: notCheckedInUsers || [],
-        });
-      } else {
-        setTeamStats({
-          totalTechnicians: 0,
-          checkedIn: 0,
-          checkedOut: 0,
-          notCheckedIn: 0,
-          pendingTasks: tasks.length,
-          pendingOvertime: overtime.length,
-        });
-        setAttendanceDetails({
-          checkedInUsers: [],
-          checkedOutUsers: [],
-          notCheckedInUsers: [],
-        });
-      }
-    } catch (error) {
-      logger.error("Error fetching stats", error, "team-dashboard");
-    } finally {
-      setLoading(false);
+  // Extract team stats and attendance details
+  const teamStats = useMemo(() => {
+    if (!teamStatsData) {
+      return {
+        totalTechnicians: 0,
+        checkedIn: 0,
+        checkedOut: 0,
+        notCheckedIn: 0,
+        pendingTasks: 0,
+        pendingOvertime: 0,
+      };
     }
-  }, [session?.user]);
+    return {
+      totalTechnicians: teamStatsData.total || 0,
+      checkedIn: teamStatsData.checkedIn || 0,
+      checkedOut: teamStatsData.checkedOut || 0,
+      notCheckedIn: teamStatsData.notCheckedIn || 0,
+      pendingTasks: 0, // Will be fetched separately if needed
+      pendingOvertime: 0, // Will be fetched separately if needed
+    };
+  }, [teamStatsData]);
 
-  // useEffect after function definitions
-  useEffect(() => {
-    // Only run when authenticated
-    if (status !== "authenticated" || !session?.user) {
-      return;
+  const attendanceDetails = useMemo(() => {
+    if (!teamStatsData) {
+      return {
+        checkedInUsers: [],
+        checkedOutUsers: [],
+        notCheckedInUsers: [],
+      };
     }
+    return {
+      checkedInUsers: teamStatsData.checkedInUsers || [],
+      checkedOutUsers: teamStatsData.checkedOutUsers || [],
+      notCheckedInUsers: teamStatsData.notCheckedInUsers || [],
+    };
+  }, [teamStatsData]);
 
-    // Fetch data based on role
-    const userRole = session.user.role;
-    if (userRole === UserRole.TECHNICIAN) {
-      fetchTechnicianData();
-    } else if (
-      userRole === UserRole.SUPERVISOR ||
-      userRole === UserRole.ADMIN ||
-      userRole === UserRole.OPERATIONS_MANAGER ||
-      userRole === UserRole.HR ||
-      userRole === UserRole.ACCOUNTANT
-    ) {
-      fetchTeamStats();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, session?.user?.role, pathname]); // Removed fetchTechnicianData and fetchTeamStats from deps to prevent re-renders
+  const handlePrefetch = useCallback((path: string) => {
+    router.prefetch(path);
+  }, [router]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  // Loading state
+  const loading = (isTechnician && (tasksLoading || kpiLoading)) || 
+                  (isSupervisor && teamStatsLoading);
+
+  if (loading || !isAuthenticated) {
+    return <TeamDashboardSkeleton />;
   }
 
   // Technician Dashboard
@@ -232,10 +155,10 @@ export default function TeamDashboardPage() {
         </div>
 
         {/* KPI Overview */}
-        {kpi && (
+        {kpiData?.kpi && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Performance Overview</h2>
-            <KPICard kpi={kpi} />
+            <KPICard kpi={kpiData.kpi} />
           </div>
         )}
 
@@ -370,7 +293,7 @@ export default function TeamDashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-4">{t('team.noOneCheckedIn')}</p>
             ) : (
               <div className="space-y-2">
-                {attendanceDetails.checkedInUsers.map((user) => (
+                {attendanceDetails.checkedInUsers.map((user: { id: number; name: string; email: string; checkInTime: string }) => (
                   <div key={user.id} className="flex items-center justify-between p-2 border rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -406,7 +329,7 @@ export default function TeamDashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-4">{t('team.noOneCheckedOut')}</p>
             ) : (
               <div className="space-y-2">
-                {attendanceDetails.checkedOutUsers.map((user) => (
+                {attendanceDetails.checkedOutUsers.map((user: { id: number; name: string; email: string; checkInTime: string; checkOutTime: string }) => (
                   <div key={user.id} className="flex items-center justify-between p-2 border rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -442,7 +365,7 @@ export default function TeamDashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-4">{t('team.everyoneCheckedIn')}</p>
             ) : (
               <div className="space-y-2">
-                {attendanceDetails.notCheckedInUsers.map((user) => (
+                {attendanceDetails.notCheckedInUsers.map((user: { id: number; name: string; email: string }) => (
                   <div key={user.id} className="flex items-center gap-2 p-2 border rounded-lg">
                     <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
                       <XCircle className="h-4 w-4 text-red-600" />
