@@ -134,7 +134,10 @@ export function formatCompanyKnowledge(knowledge: CompanyKnowledge | null): stri
   }
 
   let context = `\n\n=== Company Information ===\n`;
-  context += `Company Name: ${knowledge.name}\n`;
+  context += `Company Name (Arabic): الطاقة الملونة للمولدات وحلول الطاقة\n`;
+  context += `Company Name (English): ATA GENERATORS AND SWITCHGEAR SOLUTIONS\n`;
+  context += `Company Name in Database: ${knowledge.name}\n`;
+  context += `Note: This CRM system is used by the company to manage orders. The company itself is NOT called "CRM".\n`;
 
   if (knowledge.description) {
     context += `Description: ${knowledge.description}\n`;
