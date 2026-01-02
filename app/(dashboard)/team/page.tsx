@@ -102,9 +102,11 @@ export default function TeamDashboardPage() {
     };
   }, [teamStatsData]);
 
-  const handlePrefetch = useCallback((path: string) => {
-    router.prefetch(path);
-  }, [router]);
+  // ✅ Performance: Disable RSC prefetching - causes excessive _rsc requests
+  // Client-side navigation is fast enough with React Query cache
+  // const handlePrefetch = useCallback((path: string) => {
+  //   router.prefetch(path);
+  // }, [router]);
 
   // Loading state
   const loading = (isTechnician && (tasksLoading || kpiLoading)) || 
@@ -443,7 +445,7 @@ export default function TeamDashboardPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Link 
               href="/team/tasks"
-              onMouseEnter={() => router.prefetch("/team/tasks")}
+              prefetch={false}
             >
               <Button variant="outline" className="w-full justify-start">
                 <FileText className="mr-2 h-4 w-4" />
@@ -452,7 +454,7 @@ export default function TeamDashboardPage() {
             </Link>
             <Link 
               href="/team/attendance"
-              onMouseEnter={() => router.prefetch("/team/attendance")}
+              prefetch={false}
             >
               <Button variant="outline" className="w-full justify-start">
                 <Clock className="mr-2 h-4 w-4" />
@@ -461,7 +463,7 @@ export default function TeamDashboardPage() {
             </Link>
             <Link 
               href="/team/kpi"
-              onMouseEnter={() => router.prefetch("/team/kpi")}
+              prefetch={false}
             >
               <Button variant="outline" className="w-full justify-start">
                 <TrendingUp className="mr-2 h-4 w-4" />
@@ -471,7 +473,7 @@ export default function TeamDashboardPage() {
             {(isSupervisor || isAccountant) && (
               <Link 
                 href="/team/members"
-                onMouseEnter={() => router.prefetch("/team/members")}
+                prefetch={false}
               >
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="mr-2 h-4 w-4" />

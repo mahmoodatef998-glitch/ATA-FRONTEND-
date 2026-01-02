@@ -127,7 +127,15 @@ export async function GET(request: NextRequest) {
       120 // ✅ Performance: 2 minutes cache TTL
     );
 
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+    
+    // ✅ Performance: Add cache headers for better performance
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=120, stale-while-revalidate=240'
+    );
+    
+    return response;
   } catch (error) {
     return handleApiError(error);
   }

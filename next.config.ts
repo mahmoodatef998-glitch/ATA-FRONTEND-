@@ -176,12 +176,22 @@ const nextConfig: NextConfig = {
           cacheGroups: {
             default: false,
             vendors: false,
+            // ✅ Performance: Optimize framework bundle
+            framework: {
+              name: 'framework',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            // ✅ Performance: Separate vendor libraries
             vendor: {
               name: 'vendor',
               chunks: 'all',
-              test: /node_modules/,
+              test: /[\\/]node_modules[\\/]/,
               priority: 20,
+              reuseExistingChunk: true,
             },
+            // ✅ Performance: Common chunks for shared code
             common: {
               name: 'common',
               minChunks: 2,

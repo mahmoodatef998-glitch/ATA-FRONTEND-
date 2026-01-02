@@ -221,7 +221,7 @@ export function DashboardClient() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/dashboard/orders/${order.id}`}>
+                      <Link href={`/dashboard/orders/${order.id}`} prefetch={false}>
                         <Button 
                           size="sm" 
                           className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-md"
@@ -257,13 +257,13 @@ export function DashboardClient() {
               </div>
             </div>
             
-            <Link href="/dashboard/clients">
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
-                <Users className="mr-2 h-4 w-4" />
-                Review Client Approvals
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+                    <Link href="/dashboard/clients" prefetch={false}>
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
+                        <Users className="mr-2 h-4 w-4" />
+                        Review Client Approvals
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
           </CardContent>
         </Card>
       )}
@@ -332,7 +332,7 @@ export function DashboardClient() {
                 <CardTitle>{t("dashboard.recentOrders") || "Recent Orders"}</CardTitle>
                 <CardDescription>Latest 5 orders</CardDescription>
               </div>
-              <Link href="/dashboard/orders">
+              <Link href="/dashboard/orders" prefetch={false}>
                 <Button variant="ghost" size="sm">{t("dashboard.viewAll") || "View All"}</Button>
               </Link>
             </div>
@@ -343,11 +343,12 @@ export function DashboardClient() {
             ) : (
               <div className="space-y-3">
                 {data.data.recentOrders.map((order) => (
-                  <Link
-                    key={order.id}
-                    href={`/dashboard/orders/${order.id}`}
-                    className="block"
-                  >
+                      <Link
+                            key={order.id}
+                            href={`/dashboard/orders/${order.id}`}
+                            prefetch={false}
+                            className="block"
+                          >
                     <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <div className="flex-1">
                         <p className="font-medium text-sm">Order #{order.id}</p>
@@ -460,26 +461,26 @@ export function DashboardClient() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-            <Link href="/dashboard/orders">
+            <Link href="/dashboard/orders" prefetch={false}>
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Package className="h-6 w-6" />
                 View All Orders
               </Button>
             </Link>
-            <Link href="/dashboard/notifications">
+            <Link href="/dashboard/notifications" prefetch={false}>
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Clock className="h-6 w-6" />
                 Notifications
               </Button>
             </Link>
-            <Link href="/dashboard/orders?processing=true">
+            <Link href="/dashboard/orders?processing=true" prefetch={false}>
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <TrendingUp className="h-6 w-6" />
                 Processing Orders
               </Button>
             </Link>
             {session?.user?.role === "ADMIN" && (
-              <Link href="/dashboard/company-knowledge">
+              <Link href="/dashboard/company-knowledge" prefetch={false}>
                 <Button variant="outline" className="w-full h-20 flex-col gap-2">
                   <Building2 className="h-6 w-6" />
                   Company Knowledge

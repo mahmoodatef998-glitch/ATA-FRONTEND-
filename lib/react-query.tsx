@@ -21,19 +21,19 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // ✅ Performance: Optimized caching strategy
-            staleTime: 2 * 60 * 1000, // 2 minutes - data is fresh for 2 minutes
-            gcTime: 5 * 60 * 1000, // 5 minutes - keep unused data in cache
+            // ✅ Performance: Enhanced caching strategy for better performance
+            staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes (increased from 2)
+            gcTime: 10 * 60 * 1000, // 10 minutes - keep unused data in cache longer (increased from 5)
             // Retry failed requests once (fast failure for better UX)
             retry: 1,
             // Exponential backoff with max delay
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
             // Disable automatic refetching for better performance
             refetchOnWindowFocus: false, // Don't refetch on window focus
             refetchOnReconnect: false, // Don't refetch on reconnect
-            refetchOnMount: false, // Use cached data if available
-            // Network mode: prefer cache over network
-            networkMode: "online", // Only fetch when online
+            refetchOnMount: false, // Use cached data if available (don't refetch on mount)
+            // Network mode: prefer cache over network for better performance
+            networkMode: "offlineFirst", // ✅ Use cache first, then network if needed
           },
           mutations: {
             // Retry failed mutations once

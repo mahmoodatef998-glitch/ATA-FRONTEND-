@@ -210,6 +210,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // ✅ Performance: Add cache headers for better performance
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=120, stale-while-revalidate=240'
+    );
+
     // Add rate limit headers
     Object.entries(rateLimitHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);

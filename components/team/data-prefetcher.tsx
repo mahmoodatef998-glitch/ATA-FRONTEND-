@@ -28,17 +28,16 @@ export function TeamDataPrefetcher() {
     // Prefetch data and pages based on user role
     const prefetchData = async () => {
       try {
-        // ✅ Prefetch common team pages (Next.js will cache them)
-        const pagesToPrefetch = [
-          "/team/tasks",
-          "/team/attendance",
-          "/team/kpi",
-        ];
-
-        // Prefetch pages in background
-        pagesToPrefetch.forEach((page) => {
-          router.prefetch(page);
-        });
+        // ✅ Performance: Disable RSC prefetching - causes excessive _rsc requests
+        // Client-side navigation is fast enough with React Query cache
+        // const pagesToPrefetch = [
+        //   "/team/tasks",
+        //   "/team/attendance",
+        //   "/team/kpi",
+        // ];
+        // pagesToPrefetch.forEach((page) => {
+        //   router.prefetch(page);
+        // });
 
         const prefetches: Promise<any>[] = [];
 
@@ -53,7 +52,7 @@ export function TeamDataPrefetcher() {
         ) {
           // Prefetch team attendance stats
           prefetches.push(
-            fetch("/api/team/attendance-stats")
+            fetch("/api/team/attendance-stats", { credentials: "include" })
               .then((res) => res.json())
               .then((data) => {
                 if (data.success) {
@@ -65,7 +64,7 @@ export function TeamDataPrefetcher() {
 
           // Prefetch tasks
           prefetches.push(
-            fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100")
+            fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", { credentials: "include" })
               .then((res) => res.json())
               .then((data) => {
                 if (data.success) {
@@ -83,7 +82,7 @@ export function TeamDataPrefetcher() {
         if (userRole === UserRole.TECHNICIAN) {
           // Prefetch KPI
           prefetches.push(
-            fetch("/api/kpi")
+            fetch("/api/kpi", { credentials: "include" })
               .then((res) => res.json())
               .then((data) => {
                 if (data.success) {
@@ -100,12 +99,12 @@ export function TeamDataPrefetcher() {
           userRole === UserRole.ADMIN ||
           userRole === UserRole.OPERATIONS_MANAGER
         ) {
-          // Prefetch team members page
-          router.prefetch("/team/members");
+          // ✅ Performance: Disable RSC prefetching
+          // router.prefetch("/team/members");
 
           // Prefetch team KPI
           prefetches.push(
-            fetch("/api/kpi/team")
+            fetch("/api/kpi/team", { credentials: "include" })
               .then((res) => res.json())
               .then((data) => {
                 if (data.success) {
@@ -117,7 +116,7 @@ export function TeamDataPrefetcher() {
 
           // Prefetch team members data
           prefetches.push(
-            fetch("/api/team/members")
+            fetch("/api/team/members", { credentials: "include" })
               .then((res) => res.json())
               .then((data) => {
                 if (data.success) {
