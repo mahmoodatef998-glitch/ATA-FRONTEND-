@@ -19,6 +19,7 @@ import { formatDate } from "@/lib/utils";
 import { OrderFilters } from "@/components/dashboard/order-filters";
 import { useQuery } from "@tanstack/react-query";
 import { OrdersSkeleton } from "@/components/loading-skeletons/orders-skeleton";
+import { useSession } from "next-auth/react";
 
 interface Order {
   id: number;
@@ -65,6 +66,7 @@ interface OrdersResponse {
 export function OrdersClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   
   // Get filters from URL
   const page = parseInt(searchParams.get("page") || "1");
@@ -74,7 +76,7 @@ export function OrdersClient() {
   const search = searchParams.get("search") || undefined;
 
   // ✅ Performance: Single API call with React Query caching
-  const { data, isLoading, error } = useQuery<OrdersResponse>({
+  const { data, isLoading, error, refetch } = useQuery<OrdersResponse>({
     queryKey: ["orders", { page, limit, status, processing, search }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -91,11 +93,63 @@ export function OrdersClient() {
         credentials: "include", // ✅ Critical: Include credentials for authentication
       });
       
-      if (!response.ok) throw new Error("Failed to fetch orders");
-      return response.json();
+      if (!response.ok) {
+        // ✅ Better error handling with status codes
+        let errorData: any = {};
+        try {
+          const text = await response.text();
+          errorData = text ? JSON.parse(text) : {};
+        } catch {
+          // If JSON parsing fails, use default error
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
+        const errorMessage = errorData.error || `Failed to fetch orders (${response.status})`;
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401 || response.status === 403) {
+          // Clear any cached data
+          if (typeof window !== "undefined") {
+            sessionStorage.clear();
+          }
+          window.location.href = "/login";
+          throw new Error("Session expired. Redirecting to login...");
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      
+      // ✅ Validate response structure
+      if (!result || typeof result !== "object") {
+        throw new Error("Invalid response format: Expected JSON object");
+      }
+      
+      if (!result.success) {
+        throw new Error(result.error || "Request failed");
+      }
+      
+      if (!result.data) {
+        throw new Error("Invalid response: Missing data field");
+      }
+      
+      return result;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // ✅ Don't retry on authentication errors
+      if (error instanceof Error && error.message.includes("Session expired")) {
+        return false;
+      }
+      // ✅ Retry up to 2 times for other errors
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: true, // ✅ Refetch when connection is restored
+    enabled: sessionStatus === "authenticated", // ✅ Only fetch when authenticated
   });
 
   // Memoize stats calculations
@@ -131,16 +185,50 @@ export function OrdersClient() {
     }
   };
 
-  if (isLoading) {
+  // Show loading if session is loading or query is loading
+  if (sessionStatus === "loading" || isLoading) {
     return <OrdersSkeleton />;
   }
 
-  if (error || !data?.success || !data?.data) {
+  // Redirect to login if not authenticated
+  if (sessionStatus === "unauthenticated") {
+    router.push("/login");
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-2 border-red-200 dark:border-red-900">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center py-8">
+              <Package className="h-12 w-12 text-red-500 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Unable to load orders</h3>
+              <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+                {error instanceof Error ? error.message : "An error occurred while loading orders"}
+              </p>
+              <Button onClick={() => refetch()} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!data?.success || !data?.data) {
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground">Unable to load orders.</p>
+            <div className="flex flex-col items-center justify-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">No orders data available.</p>
+              <Button onClick={() => refetch()} variant="outline">
+                Refresh
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -71,8 +71,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // التحقق من صلاحية عرض الطلبات
-    const { userId, companyId } = await authorize(PermissionAction.LEAD_READ);
+    // ✅ Better error handling for authentication
+    let userId: number;
+    let companyId: number;
+    try {
+      const authResult = await authorize(PermissionAction.LEAD_READ);
+      userId = authResult.userId;
+      companyId = authResult.companyId;
+    } catch (authError: any) {
+      // Return proper JSON error response for authentication failures
+      return NextResponse.json(
+        {
+          success: false,
+          error: authError?.message || "Unauthorized: Please log in to continue",
+          errorType: "authentication",
+        },
+        { status: 401 }
+      );
+    }
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -80,6 +96,7 @@ export async function GET(request: NextRequest) {
       page: searchParams.get("page") || "1",
       limit: searchParams.get("limit") || "20",
       status: searchParams.get("status") || undefined,
+      processing: searchParams.get("processing") || undefined, // ✅ Added processing parameter
       search: searchParams.get("search") || undefined,
       companyId: searchParams.get("companyId") || undefined,
     });
@@ -91,7 +108,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, status, search } = validation.data;
+    const { page, limit, status, processing, search } = validation.data;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build where clause with proper Prisma types
@@ -100,8 +117,11 @@ export async function GET(request: NextRequest) {
       companyId: companyId,
     };
 
-    // Filter by status
-    if (status) {
+    // ✅ Filter by processing status (all orders that are not completed or cancelled)
+    if (processing === "true") {
+      where.status = { notIn: ["COMPLETED", "CANCELLED"] };
+    } else if (status) {
+      // Filter by specific status
       where.status = status as OrderStatus;
     }
 
@@ -120,6 +140,7 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       status,
+      processing,
       search,
     })}`;
 

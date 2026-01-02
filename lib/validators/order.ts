@@ -58,6 +58,7 @@ export const ordersQuerySchema = z.object({
   page: z.string().optional().default("1"),
   limit: z.string().optional().default("20"),
   status: z.string().optional(),
+  processing: z.string().optional(), // ✅ Added processing parameter
   search: z.string().optional(),
   companyId: z.string().optional(),
 });
