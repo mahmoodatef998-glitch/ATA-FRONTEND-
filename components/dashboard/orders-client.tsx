@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ export function OrdersClient() {
   const search = searchParams.get("search") || undefined;
 
   // ✅ Performance: Single API call with React Query caching
-  const { data, isLoading, error, refetch } = useQuery<OrdersResponse>({
+  const { data, isLoading, error, refetch, isFetching } = useQuery<OrdersResponse>({
     queryKey: ["orders", { page, limit, status, processing, search }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -143,14 +143,39 @@ export function OrdersClient() {
       if (error instanceof Error && error.message.includes("Session expired")) {
         return false;
       }
-      // ✅ Retry up to 2 times for other errors
-      return failureCount < 2;
+      // ✅ Retry up to 3 times for other errors (increased from 2)
+      return failureCount < 3;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchOnReconnect: true, // ✅ Refetch when connection is restored
-    enabled: sessionStatus === "authenticated", // ✅ Only fetch when authenticated
+    // ✅ Fix: Only fetch when authenticated AND session is ready (not loading)
+    enabled: sessionStatus === "authenticated" && !!session?.user,
+    // ✅ Fix: Retry when session becomes available
+    refetchOnMount: true, // Refetch when component mounts (if session is ready)
   });
+
+  // ✅ Fix: Auto-retry when session becomes authenticated
+  useEffect(() => {
+    // Only retry if:
+    // 1. Session is authenticated
+    // 2. Session user exists
+    // 3. Query is not currently loading/fetching
+    // 4. Either there's an error OR no data and query is not enabled
+    if (
+      sessionStatus === "authenticated" && 
+      session?.user && 
+      !isLoading && 
+      !isFetching &&
+      (error || (!data && !isLoading))
+    ) {
+      // Session is ready but query failed or hasn't run - retry after small delay
+      const timer = setTimeout(() => {
+        refetch();
+      }, 200); // Small delay to ensure session is fully ready
+      return () => clearTimeout(timer);
+    }
+  }, [sessionStatus, session?.user, error, data, isLoading, isFetching, refetch]);
 
   // Memoize stats calculations
   const stats = useMemo(() => {
@@ -185,15 +210,25 @@ export function OrdersClient() {
     }
   };
 
-  // Show loading if session is loading or query is loading
-  if (sessionStatus === "loading" || isLoading) {
+  // ✅ Fix: Handle unauthenticated state with useEffect (must be at top level)
+  useEffect(() => {
+    if (sessionStatus === "unauthenticated") {
+      // Small delay to avoid race condition
+      const timer = setTimeout(() => {
+        router.push("/login");
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sessionStatus, router]);
+
+  // ✅ Fix: Show loading if session is loading or query is loading/fetching
+  if (sessionStatus === "loading" || isLoading || isFetching) {
     return <OrdersSkeleton />;
   }
 
-  // Redirect to login if not authenticated
+  // ✅ Fix: Show loading if unauthenticated (will redirect via useEffect)
   if (sessionStatus === "unauthenticated") {
-    router.push("/login");
-    return null;
+    return <OrdersSkeleton />;
   }
 
   if (error) {
