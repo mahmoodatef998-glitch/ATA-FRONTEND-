@@ -87,7 +87,7 @@ const nextConfig: NextConfig = {
       },
       {
         key: 'Content-Security-Policy',
-        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.groq.com https://*.supabase.com https://*.cloudinary.com https://*.vercel.app https://*.vercel.com wss://* ws://* http://localhost:* https://localhost:*; frame-src 'self' https://vercel.live;"
+        value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.groq.com https://*.supabase.com https://*.cloudinary.com https://*.vercel.app https://*.vercel.com wss://* ws://* http://localhost:* https://localhost:*; frame-src 'self' https://vercel.live; report-uri /api/csp-report;"
       },
     ];
 

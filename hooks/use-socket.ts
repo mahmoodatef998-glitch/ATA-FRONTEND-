@@ -89,6 +89,11 @@ export function useSocket(options?: UseSocketOptions) {
       // This is expected on Vercel and should not block the app
       setIsConnected(false);
       
+      // Only log in development, and ignore Pusher errors (likely from browser extensions)
+      if (process.env.NODE_ENV === "development" && !error.message?.includes("pusher")) {
+        console.debug("Socket connection error (non-critical):", error.message);
+      }
+      
       // Stop reconnection attempts after first error on Vercel
       if (isVercel) {
         socketInstance.disconnect();

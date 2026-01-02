@@ -35,6 +35,17 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Suppress Pusher WebSocket errors from browser extensions
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const message = args.join(' ');
+                  // Ignore Pusher WebSocket errors (from browser extensions)
+                  if (message.includes('pusher.com') || message.includes('Pusher')) {
+                    return; // Silently ignore
+                  }
+                  originalError.apply(console, args);
+                };
+                
                 // Remove browser extension attributes before React hydration
                 const removeAttrs = () => {
                   try {
