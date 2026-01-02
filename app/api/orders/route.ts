@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       search,
     })}`;
 
-    // Use cached data if available (1 minute cache for order lists)
+    // ✅ Performance: Use cached data with explicit revalidation (2 minutes cache for order lists)
     const result = await getCached(
       cacheKey,
       async () => {
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
           total,
         };
       },
-      60 // 1 minute cache TTL for order lists
+      120 // ✅ Performance: 2 minutes cache TTL for order lists
     );
 
     const { orders, total } = result;
