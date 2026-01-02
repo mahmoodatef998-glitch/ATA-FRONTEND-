@@ -36,10 +36,11 @@ export function TeamNavbar() {
     session?.user?.role === UserRole.HR;
   const isAdmin = session?.user?.role === UserRole.ADMIN;
 
-  // ✅ Performance: Prefetch pages on hover for faster navigation
-  const handlePrefetch = useCallback((path: string) => {
-    router.prefetch(path);
-  }, [router]);
+  // ✅ Performance: Disable RSC prefetching on hover - causes RSC storms
+  // Client-side navigation is fast enough without prefetching
+  // const handlePrefetch = useCallback((path: string) => {
+  //   router.prefetch(path);
+  // }, [router]);
 
   const handleLogout = async () => {
     try {
@@ -83,7 +84,6 @@ export function TeamNavbar() {
           <div className="hidden md:flex items-center gap-1 flex-1 min-w-0 justify-center overflow-hidden">
             <Link 
               href="/team"
-              onMouseEnter={() => handlePrefetch("/team")}
             >
               <Button
                 variant={pathname === "/team" || (isTechnician && pathname === "/team") ? "default" : "ghost"}
@@ -100,7 +100,6 @@ export function TeamNavbar() {
             {isTechnician && (
               <Link 
                 href="/team/technician"
-                onMouseEnter={() => handlePrefetch("/team/technician")}
               >
                 <Button
                   variant={pathname === "/team/technician" || pathname.startsWith("/team/technician") ? "default" : "ghost"}
@@ -119,7 +118,6 @@ export function TeamNavbar() {
               <>
                 <Link 
                   href="/team/members"
-                  onMouseEnter={() => handlePrefetch("/team/members")}
                 >
                   <Button
                     variant={pathname.startsWith("/team/members") ? "default" : "ghost"}
@@ -133,7 +131,6 @@ export function TeamNavbar() {
                 </Link>
                 <Link 
                   href="/team/tasks"
-                  onMouseEnter={() => handlePrefetch("/team/tasks")}
                 >
                   <Button
                     variant={pathname.startsWith("/team/tasks") ? "default" : "ghost"}
@@ -152,7 +149,6 @@ export function TeamNavbar() {
             {isAdmin && (
               <Link 
                 href="/team/approval"
-                onMouseEnter={() => handlePrefetch("/team/approval")}
               >
                 <Button
                   variant={pathname.startsWith("/team/approval") ? "default" : "ghost"}
@@ -169,7 +165,6 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/attendance"
-              onMouseEnter={() => handlePrefetch("/team/attendance")}
             >
               <Button
                 variant={pathname === "/team/attendance" ? "default" : "ghost"}
@@ -184,7 +179,6 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/kpi"
-              onMouseEnter={() => handlePrefetch("/team/kpi")}
             >
               <Button
                 variant={pathname === "/team/kpi" ? "default" : "ghost"}
@@ -271,7 +265,6 @@ export function TeamNavbar() {
           <div className="flex items-center gap-3 overflow-x-auto">
             <Link 
               href="/team"
-              onMouseEnter={() => handlePrefetch("/team")}
             >
               <Button
                 variant={pathname === "/team" ? "default" : "ghost"}
@@ -286,7 +279,6 @@ export function TeamNavbar() {
             {isTechnician && (
               <Link 
                 href="/team/technician"
-                onMouseEnter={() => handlePrefetch("/team/technician")}
               >
                 <Button
                   variant={pathname === "/team/technician" ? "default" : "ghost"}
@@ -303,7 +295,6 @@ export function TeamNavbar() {
               <>
                 <Link 
                   href="/team/members"
-                  onMouseEnter={() => handlePrefetch("/team/members")}
                 >
                   <Button
                     variant={pathname.startsWith("/team/members") ? "default" : "ghost"}
@@ -316,7 +307,6 @@ export function TeamNavbar() {
                 </Link>
                 <Link 
                   href="/team/tasks"
-                  onMouseEnter={() => handlePrefetch("/team/tasks")}
                 >
                   <Button
                     variant={pathname.startsWith("/team/tasks") ? "default" : "ghost"}
@@ -334,7 +324,6 @@ export function TeamNavbar() {
             {isAdmin && (
               <Link 
                 href="/team/approval"
-                onMouseEnter={() => handlePrefetch("/team/approval")}
               >
                 <Button
                   variant={pathname.startsWith("/team/approval") ? "default" : "ghost"}
@@ -350,7 +339,6 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/attendance"
-              onMouseEnter={() => handlePrefetch("/team/attendance")}
             >
               <Button
                 variant={pathname === "/team/attendance" ? "default" : "ghost"}
@@ -364,7 +352,6 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/kpi"
-              onMouseEnter={() => handlePrefetch("/team/kpi")}
             >
               <Button
                 variant={pathname === "/team/kpi" ? "default" : "ghost"}

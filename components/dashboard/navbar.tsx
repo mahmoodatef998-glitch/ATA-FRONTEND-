@@ -41,10 +41,11 @@ export function Navbar({ user }: NavbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
   
-  // ✅ Performance: Prefetch pages on hover for faster navigation
-  const handlePrefetch = useCallback((path: string) => {
-    router.prefetch(path);
-  }, [router]);
+  // ✅ Performance: Disable RSC prefetching on hover - causes RSC storms
+  // Client-side navigation is fast enough without prefetching
+  // const handlePrefetch = useCallback((path: string) => {
+  //   router.prefetch(path);
+  // }, [router]);
 
   // Initialize WebSocket connection - non-blocking, will fail gracefully on Vercel
   // Socket.io is optional and should not delay page load
@@ -178,7 +179,6 @@ export function Navbar({ user }: NavbarProps) {
           <Link 
             href="/dashboard/orders" 
             className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0"
-            onMouseEnter={() => handlePrefetch("/dashboard/orders")}
           >
             {t('home.ataGenerators')}
           </Link>
@@ -186,7 +186,6 @@ export function Navbar({ user }: NavbarProps) {
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
             <Link 
               href="/dashboard"
-              onMouseEnter={() => handlePrefetch("/dashboard")}
             >
               <Button
                 variant={pathname === "/dashboard" ? "default" : "ghost"}
@@ -201,7 +200,6 @@ export function Navbar({ user }: NavbarProps) {
 
             <Link 
               href="/dashboard/orders"
-              onMouseEnter={() => handlePrefetch("/dashboard/orders")}
             >
               <Button
                 variant={pathname.startsWith("/dashboard/orders") ? "default" : "ghost"}
@@ -215,7 +213,6 @@ export function Navbar({ user }: NavbarProps) {
             
             <Link 
               href="/dashboard/notifications"
-              onMouseEnter={() => handlePrefetch("/dashboard/notifications")}
             >
               <Button
                 variant={pathname === "/dashboard/notifications" ? "default" : "ghost"}
@@ -236,7 +233,6 @@ export function Navbar({ user }: NavbarProps) {
 
             <Link 
               href="/dashboard/calendar"
-              onMouseEnter={() => handlePrefetch("/dashboard/calendar")}
             >
               <Button
                 variant={pathname === "/dashboard/calendar" ? "default" : "ghost"}
@@ -251,7 +247,6 @@ export function Navbar({ user }: NavbarProps) {
             {user.role === "ADMIN" && (
               <Link 
                 href="/dashboard/clients"
-                onMouseEnter={() => handlePrefetch("/dashboard/clients")}
               >
                 <Button
                   variant={pathname === "/dashboard/clients" ? "default" : "ghost"}
@@ -268,7 +263,6 @@ export function Navbar({ user }: NavbarProps) {
             {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
               <Link 
                 href="/team"
-                onMouseEnter={() => handlePrefetch("/team")}
               >
                 <Button
                   variant={pathname.startsWith("/team") ? "default" : "ghost"}
@@ -297,7 +291,6 @@ export function Navbar({ user }: NavbarProps) {
                   <Link 
                     href="/dashboard" 
                     className="flex items-center"
-                    onMouseEnter={() => handlePrefetch("/dashboard")}
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
@@ -307,7 +300,6 @@ export function Navbar({ user }: NavbarProps) {
                   <Link 
                     href="/dashboard/orders" 
                     className="flex items-center"
-                    onMouseEnter={() => handlePrefetch("/dashboard/orders")}
                   >
                     <Package className="mr-2 h-4 w-4" />
                     Orders
@@ -317,7 +309,6 @@ export function Navbar({ user }: NavbarProps) {
                   <Link 
                     href="/dashboard/notifications" 
                     className="flex items-center"
-                    onMouseEnter={() => handlePrefetch("/dashboard/notifications")}
                   >
                     <Bell className="mr-2 h-4 w-4" />
                     Notifications
@@ -332,7 +323,6 @@ export function Navbar({ user }: NavbarProps) {
                   <Link 
                     href="/dashboard/calendar" 
                     className="flex items-center"
-                    onMouseEnter={() => handlePrefetch("/dashboard/calendar")}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     Calendar
@@ -345,7 +335,6 @@ export function Navbar({ user }: NavbarProps) {
                       <Link 
                         href="/dashboard/clients" 
                         className="flex items-center"
-                        onMouseEnter={() => handlePrefetch("/dashboard/clients")}
                       >
                         <User className="mr-2 h-4 w-4" />
                         Clients
@@ -355,7 +344,6 @@ export function Navbar({ user }: NavbarProps) {
                       <Link 
                         href="/dashboard/company-knowledge" 
                         className="flex items-center"
-                        onMouseEnter={() => handlePrefetch("/dashboard/company-knowledge")}
                       >
                         <Building2 className="mr-2 h-4 w-4" />
                         Company Knowledge
@@ -368,7 +356,6 @@ export function Navbar({ user }: NavbarProps) {
                     <Link 
                       href="/team" 
                       className="flex items-center"
-                      onMouseEnter={() => handlePrefetch("/team")}
                     >
                       <Users className="mr-2 h-4 w-4" />
                       Our Team

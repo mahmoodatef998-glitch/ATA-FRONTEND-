@@ -67,6 +67,7 @@ export function DashboardClient() {
         // ✅ Performance: Explicit cache control
         cache: "force-cache",
         next: { revalidate: 120 }, // 2 minutes
+        credentials: "include", // ✅ Critical: Include credentials for authentication
       });
       if (!response.ok) throw new Error("Failed to fetch dashboard data");
       return response.json();
