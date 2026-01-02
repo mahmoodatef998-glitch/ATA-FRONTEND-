@@ -1,9 +1,8 @@
 "use client";
 
-import { redirect } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { Suspense } from "react";
 import { OrdersClient } from "@/components/dashboard/orders-client";
-import { useEffect } from "react";
+import { OrdersSkeleton } from "@/components/loading-skeletons/orders-skeleton";
 
 /**
  * ✅ Performance: Client Component Boundary
@@ -15,25 +14,14 @@ import { useEffect } from "react";
  * 
  * Data fetching is handled by OrdersClient component
  * which uses React Query for client-side caching
+ * 
+ * ✅ Fix: Removed duplicate session check - OrdersClient handles it
+ * ✅ Fix: Added Suspense boundary for better loading states
  */
 export default function OrdersPage() {
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      redirect("/login");
-    }
-  }, [status]);
-
-  if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>;
-  }
-
-  if (!session?.user) {
-    return null; // Will redirect
-  }
-
-  return <OrdersClient />;
+  return (
+    <Suspense fallback={<OrdersSkeleton />}>
+      <OrdersClient />
+    </Suspense>
+  );
 }

@@ -151,8 +151,10 @@ export function OrdersClient() {
     refetchOnReconnect: true, // ✅ Refetch when connection is restored
     // ✅ Fix: Only fetch when authenticated AND session is ready (not loading)
     enabled: sessionStatus === "authenticated" && !!session?.user,
-    // ✅ Fix: Retry when session becomes available
-    refetchOnMount: true, // Refetch when component mounts (if session is ready)
+    // ✅ Fix: Always refetch on mount to ensure fresh data
+    refetchOnMount: "always", // Always refetch when component mounts (if enabled)
+    // ✅ Fix: Don't use stale cached data
+    placeholderData: undefined, // Don't use placeholder data
   });
 
   // ✅ Fix: Auto-retry when session becomes authenticated
@@ -161,19 +163,28 @@ export function OrdersClient() {
     // 1. Session is authenticated
     // 2. Session user exists
     // 3. Query is not currently loading/fetching
-    // 4. Either there's an error OR no data and query is not enabled
+    // 4. Either there's an error OR no data exists
     if (
       sessionStatus === "authenticated" && 
       session?.user && 
       !isLoading && 
-      !isFetching &&
-      (error || (!data && !isLoading))
+      !isFetching
     ) {
-      // Session is ready but query failed or hasn't run - retry after small delay
-      const timer = setTimeout(() => {
-        refetch();
-      }, 200); // Small delay to ensure session is fully ready
-      return () => clearTimeout(timer);
+      // If there's an error, retry after delay (session cookies need time to be ready)
+      if (error) {
+        const timer = setTimeout(() => {
+          refetch();
+        }, 500); // Increased delay to ensure session cookies are fully ready
+        return () => clearTimeout(timer);
+      }
+      
+      // If no data and query hasn't run yet, trigger it
+      if (!data && !error) {
+        const timer = setTimeout(() => {
+          refetch();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
     }
   }, [sessionStatus, session?.user, error, data, isLoading, isFetching, refetch]);
 
@@ -222,6 +233,7 @@ export function OrdersClient() {
   }, [sessionStatus, router]);
 
   // ✅ Fix: Show loading if session is loading or query is loading/fetching
+  // IMPORTANT: Show skeleton during loading even if there's an error (will auto-retry)
   if (sessionStatus === "loading" || isLoading || isFetching) {
     return <OrdersSkeleton />;
   }
@@ -231,20 +243,42 @@ export function OrdersClient() {
     return <OrdersSkeleton />;
   }
 
-  if (error) {
+  // ✅ Fix: Only show error if session is authenticated (not during loading)
+  // If session was loading and error occurred, it will auto-retry via useEffect
+  if (error && sessionStatus === "authenticated" && session?.user) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred while loading orders";
+    const isAuthError = errorMessage.includes("Session expired") || errorMessage.includes("Unauthorized");
+    
     return (
       <div className="space-y-6">
-        <Card className="border-2 border-red-200 dark:border-red-900">
+        <Card className={`border-2 ${isAuthError ? "border-amber-200 dark:border-amber-900" : "border-red-200 dark:border-red-900"}`}>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-8">
-              <Package className="h-12 w-12 text-red-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Unable to load orders</h3>
+              <Package className={`h-12 w-12 mb-4 ${isAuthError ? "text-amber-500" : "text-red-500"}`} />
+              <h3 className="text-lg font-semibold mb-2">
+                {isAuthError ? "Session Expired" : "Unable to load orders"}
+              </h3>
               <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
-                {error instanceof Error ? error.message : "An error occurred while loading orders"}
+                {errorMessage}
               </p>
-              <Button onClick={() => refetch()} variant="outline">
-                Try Again
-              </Button>
+              {!isAuthError && (
+                <Button 
+                  onClick={() => refetch()} 
+                  variant="outline"
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
+              )}
+              {isAuthError && (
+                <Button 
+                  onClick={() => window.location.href = "/login"} 
+                  variant="default"
+                  className="mt-2"
+                >
+                  Go to Login
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
