@@ -75,6 +75,22 @@ export function OrdersClient() {
   const processing = searchParams.get("processing") || undefined;
   const search = searchParams.get("search") || undefined;
 
+  // ✅ Fix: Track if we've waited for session to be ready
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // ✅ Fix: Wait for session to be fully ready before enabling query
+  useEffect(() => {
+    if (sessionStatus === "authenticated" && session?.user) {
+      // Small delay to ensure session cookies are fully set
+      const timer = setTimeout(() => {
+        setSessionReady(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSessionReady(false);
+    }
+  }, [sessionStatus, session?.user]);
+
   // ✅ Performance: Single API call with React Query caching
   const { data, isLoading, error, refetch, isFetching } = useQuery<OrdersResponse>({
     queryKey: ["orders", { page, limit, status, processing, search }],
@@ -150,7 +166,8 @@ export function OrdersClient() {
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchOnReconnect: true, // ✅ Refetch when connection is restored
     // ✅ Fix: Only fetch when authenticated AND session is ready (not loading)
-    enabled: sessionStatus === "authenticated" && !!session?.user,
+    // Use sessionReady flag to ensure session cookies are fully set
+    enabled: sessionStatus === "authenticated" && !!session?.user && sessionReady,
     // ✅ Fix: Always refetch on mount to ensure fresh data
     refetchOnMount: "always", // Always refetch when component mounts (if enabled)
     // ✅ Fix: Don't use stale cached data
