@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,8 @@ export function DeliveryNoteCreator({
   orderItems = [],
 }: DeliveryNoteCreatorProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [dnNumber, setDnNumber] = useState("");
   const [notes, setNotes] = useState("");
@@ -86,7 +90,9 @@ export function DeliveryNoteCreator({
         setDnNumber("");
         setNotes("");
         setDnFiles([]);
-        setTimeout(() => window.location.reload(), 1500);
+        // ✅ Performance: Invalidate cache and refresh instead of full page reload
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        setTimeout(() => router.refresh(), 500);
       } else {
         toast({
           title: "❌ خطأ في إنشاء DN",

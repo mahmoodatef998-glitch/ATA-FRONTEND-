@@ -139,3 +139,4 @@ https://ata-frontend-pied.vercel.app
 2. **القيمة الكاملة** لـ NEXTAUTH_SECRET
 3. **Vercel Logs** (من Functions tab)
 
+

@@ -41,11 +41,8 @@ export function CalendarView({ companyId }: CalendarViewProps) {
   const [currentView, setCurrentView] = useState<View>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  useEffect(() => {
-    fetchCalendarData();
-  }, [companyId]);
-
-  const fetchCalendarData = async () => {
+  // ✅ Performance: Memoize fetchCalendarData to prevent re-creation
+  const fetchCalendarData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/dashboard/calendar?companyId=${companyId}`);
@@ -86,7 +83,11 @@ export function CalendarView({ companyId }: CalendarViewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    fetchCalendarData();
+  }, [fetchCalendarData]);
 
   const eventStyleGetter = (event: OrderEvent) => {
     const backgroundColor = event.type === "order" ? "#3b82f6" : "#10b981";

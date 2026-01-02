@@ -53,42 +53,8 @@ export function Navbar({ user }: NavbarProps) {
     autoConnect: true, // Will auto-detect Vercel and skip connection
   });
 
-  // Real-time notification handler
-  const handleNewNotification = useCallback((data: any) => {
-    console.log("🔔 New notification received:", data);
-    
-    // Refresh unread count
-    fetchUnreadCount();
-    
-    // Show toast notification
-    toast({
-      title: data.title || "New Notification",
-      description: data.body || "You have a new notification",
-    });
-  }, [toast]);
-
-  // Real-time order update handler
-  const handleOrderUpdate = useCallback((data: any) => {
-    console.log("📦 Order updated:", data);
-    // Refresh unread count (in case there's a new notification)
-    fetchUnreadCount();
-  }, []);
-
-  // Subscribe to real-time events
-  useSocketEvent(socket, "new_notification", handleNewNotification);
-  useSocketEvent(socket, "order_updated", handleOrderUpdate);
-
-  useEffect(() => {
-    // Fetch initial unread count
-    fetchUnreadCount();
-
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchUnreadCount = async () => {
+  // ✅ Performance: Memoize fetchUnreadCount to prevent re-creation
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await fetch("/api/notifications/unread-count");
       if (response.ok) {
@@ -102,7 +68,55 @@ export function Navbar({ user }: NavbarProps) {
       // Silently ignore - notifications are not critical for app functionality
       setUnreadCount(0);
     }
-  };
+  }, []);
+
+  // Real-time notification handler
+  const handleNewNotification = useCallback((data: any) => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔔 New notification received:", data);
+    }
+    
+    // Refresh unread count
+    fetchUnreadCount();
+    
+    // Show toast notification
+    toast({
+      title: data.title || "New Notification",
+      description: data.body || "You have a new notification",
+    });
+  }, [toast, fetchUnreadCount]);
+
+  // Real-time order update handler
+  const handleOrderUpdate = useCallback((data: any) => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("📦 Order updated:", data);
+    }
+    // Refresh unread count (in case there's a new notification)
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  // Subscribe to real-time events
+  useSocketEvent(socket, "new_notification", handleNewNotification);
+  useSocketEvent(socket, "order_updated", handleOrderUpdate);
+
+  // ✅ Performance: Use polling hook with proper cleanup
+  useEffect(() => {
+    // Fetch initial unread count
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  // ✅ Performance: Poll only if socket is not connected (fallback)
+  useEffect(() => {
+    if (isConnected) {
+      // Socket is connected, no need for polling
+      return;
+    }
+
+    // Poll for updates every 30 seconds as fallback
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, fetchUnreadCount]);
 
   const handleLogout = async () => {
     try {

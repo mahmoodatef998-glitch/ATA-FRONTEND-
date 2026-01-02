@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -21,65 +21,8 @@ export default function ClientPortalPage() {
   const [clientEmail, setClientEmail] = useState("");
   const [viewedActionItems, setViewedActionItems] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchOrders();
-    
-    // Load viewed action items from localStorage
-    const stored = localStorage.getItem("client_viewed_action_items");
-    if (stored) {
-      try {
-        setViewedActionItems(new Set(JSON.parse(stored)));
-      } catch (e) {
-        console.error("Error loading viewed items:", e);
-      }
-    }
-    
-    // Check for success message and show it
-    const urlParams = new URLSearchParams(window.location.search);
-    const successType = urlParams.get("success");
-    
-    if (successType === "order-created") {
-      toast({
-        title: "✅ Order created successfully!",
-        description: "We will review your request and send a quotation soon.",
-        className: "bg-green-50 border-green-200",
-      });
-      window.history.replaceState({}, "", "/client/portal");
-      setTimeout(() => fetchOrders(), 500);
-    } else if (successType === "accepted") {
-      toast({
-        title: "✅ Quotation accepted",
-        description: "We will start processing your order.",
-        className: "bg-green-50 border-green-200",
-      });
-      window.history.replaceState({}, "", "/client/portal");
-    } else if (successType === "rejected") {
-      toast({
-        title: "Quotation rejected",
-        description: "We will work on improving the offer.",
-      });
-      window.history.replaceState({}, "", "/client/portal");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Save viewed items to localStorage whenever it changes
-  useEffect(() => {
-    if (viewedActionItems.size > 0) {
-      localStorage.setItem("client_viewed_action_items", JSON.stringify(Array.from(viewedActionItems)));
-    }
-  }, [viewedActionItems]);
-
-  const markActionItemAsViewed = (orderId: number, actionType: "quotation" | "payment" | "delivery") => {
-    const key = `${orderId}_${actionType}`;
-    setViewedActionItems((prev) => {
-      const newSet = new Set(prev);
-      newSet.add(key);
-      return newSet;
-    });
-  };
-
-  const fetchOrders = async () => {
+  // ✅ Performance: Memoize fetchOrders to prevent re-creation
+  const fetchOrders = useCallback(async () => {
     try {
       const response = await fetch("/api/client/orders");
       
@@ -105,7 +48,73 @@ export default function ClientPortalPage() {
     } finally {
       setLoading(false);
     }
+  }, [router]);
+
+  useEffect(() => {
+    fetchOrders();
+    
+    // Load viewed action items from localStorage
+    const stored = localStorage.getItem("client_viewed_action_items");
+    if (stored) {
+      try {
+        setViewedActionItems(new Set(JSON.parse(stored)));
+      } catch (e) {
+        console.error("Error loading viewed items:", e);
+      }
+    }
+    
+    // Check for success message and show it
+    const urlParams = new URLSearchParams(window.location.search);
+    const successType = urlParams.get("success");
+    
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (successType === "order-created") {
+      toast({
+        title: "✅ Order created successfully!",
+        description: "We will review your request and send a quotation soon.",
+        className: "bg-green-50 border-green-200",
+      });
+      window.history.replaceState({}, "", "/client/portal");
+      timeoutId = setTimeout(() => fetchOrders(), 500);
+    } else if (successType === "accepted") {
+      toast({
+        title: "✅ Quotation accepted",
+        description: "We will start processing your order.",
+        className: "bg-green-50 border-green-200",
+      });
+      window.history.replaceState({}, "", "/client/portal");
+    } else if (successType === "rejected") {
+      toast({
+        title: "Quotation rejected",
+        description: "We will work on improving the offer.",
+      });
+      window.history.replaceState({}, "", "/client/portal");
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [fetchOrders, toast]);
+
+  // Save viewed items to localStorage whenever it changes
+  useEffect(() => {
+    if (viewedActionItems.size > 0) {
+      localStorage.setItem("client_viewed_action_items", JSON.stringify(Array.from(viewedActionItems)));
+    }
+  }, [viewedActionItems]);
+
+  const markActionItemAsViewed = (orderId: number, actionType: "quotation" | "payment" | "delivery") => {
+    const key = `${orderId}_${actionType}`;
+    setViewedActionItems((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(key);
+      return newSet;
+    });
   };
+
 
   const handleLogout = async () => {
     await fetch("/api/client/logout", { method: "POST" });

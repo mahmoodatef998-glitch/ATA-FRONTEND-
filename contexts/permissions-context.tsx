@@ -65,6 +65,9 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
+  // ✅ Performance: Remove permissions.length from dependencies to prevent re-renders
+  const hasPermissionsRef = useRef(false);
+  
   const fetchPermissions = useCallback(async () => {
     if (status !== "authenticated" || !session?.user) {
       setLoading(false);
@@ -79,7 +82,9 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
       setPermissions(cached.permissions || []);
       setRoles(cached.roles || []);
       setLoading(false);
-      // Fetch in background to refresh cache
+      hasPermissionsRef.current = true;
+      
+      // Fetch in background to refresh cache (non-blocking)
       fetch("/api/auth/me")
         .then(res => res.json())
         .then(result => {
@@ -110,6 +115,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
         const rolesData = result.data.roles || [];
         setPermissions(permissionsData);
         setRoles(rolesData);
+        hasPermissionsRef.current = true;
         // Cache the result
         saveToCache(userId, {
           permissions: permissionsData,
@@ -122,7 +128,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
       console.error("Error fetching permissions:", err);
       setError(err.message || "Failed to load permissions");
       // Don't show toast on initial load to avoid spam
-      if (permissions.length > 0) {
+      if (hasPermissionsRef.current) {
         toast({
           title: "Error",
           description: "Failed to refresh permissions",
@@ -132,7 +138,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [session, status, toast, permissions.length, loadFromCache, saveToCache]);
+  }, [session, status, toast, loadFromCache, saveToCache]);
 
   // Only fetch once when session is authenticated
   useEffect(() => {

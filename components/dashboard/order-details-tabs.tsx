@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +52,8 @@ function getAvailableTabs() {
 }
 
 export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [processingPayment, setProcessingPayment] = useState(false);
   
@@ -723,7 +727,9 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 });
                                 const result = await response.json();
                                 if (result.success) {
-                                  window.location.reload();
+                                  // ✅ Performance: Invalidate cache and refresh instead of full page reload
+                                  queryClient.invalidateQueries({ queryKey: ["orders"] });
+                                  router.refresh();
                                 } else {
                                   alert(`Error: ${result.error}`);
                                 }
@@ -814,7 +820,9 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 });
                                 const result = await response.json();
                                 if (result.success) {
-                                  window.location.reload();
+                                  // ✅ Performance: Invalidate cache and refresh instead of full page reload
+                                  queryClient.invalidateQueries({ queryKey: ["orders"] });
+                                  router.refresh();
                                 } else {
                                   alert(`Error: ${result.error}`);
                                 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,8 @@ export function PaymentRecorder({
   totalAmount,
   currency = "AED",
 }: PaymentRecorderProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [paymentType, setPaymentType] = useState<string>("");
@@ -71,7 +75,9 @@ export function PaymentRecorder({
         setPaymentMethod("");
         setReference("");
         setNotes("");
-        setTimeout(() => window.location.reload(), 1500);
+        // ✅ Performance: Invalidate cache and refresh instead of full page reload
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        setTimeout(() => router.refresh(), 500);
       } else {
         toast({
           title: "❌ خطأ في تسجيل الدفعة",

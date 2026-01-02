@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,8 @@ interface QuotationManagerProps {
 
 export function QuotationManager({ orderId, orderTotal, currency = "AED" }: QuotationManagerProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState("");
   const [notes, setNotes] = useState("");
@@ -125,7 +129,9 @@ export function QuotationManager({ orderId, orderTotal, currency = "AED" }: Quot
         setTotal("");
         setNotes("");
         setSelectedFile(null);
-        setTimeout(() => window.location.reload(), 1500);
+        // ✅ Performance: Invalidate cache and refresh instead of full page reload
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        setTimeout(() => router.refresh(), 500);
       } else {
         toast({
           title: "❌ Failed to create quotation",
