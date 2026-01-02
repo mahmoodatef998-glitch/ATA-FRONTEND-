@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 
