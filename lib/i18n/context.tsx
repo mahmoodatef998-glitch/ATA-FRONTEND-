@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { Language, defaultLanguage, t, isRTL } from './index';
 
 interface I18nContextType {
@@ -47,20 +47,24 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const translate = (key: string, params?: Record<string, string | number>) => {
+  const translate = useCallback((key: string, params?: Record<string, string | number>) => {
     return t(key, language, params);
-  };
+  }, [language]);
+
+  // ✅ Performance: Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      t: translate,
+      isRTL: isRTL(language),
+    }),
+    [language, translate]
+  );
 
   // Always provide context, even before mount to avoid errors
   return (
-    <I18nContext.Provider
-      value={{
-        language,
-        setLanguage,
-        t: translate,
-        isRTL: isRTL(language),
-      }}
-    >
+    <I18nContext.Provider value={contextValue}>
       {children}
     </I18nContext.Provider>
   );

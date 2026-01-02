@@ -12,12 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { useDebounce } from "@/lib/hooks/use-debounce";
 
 export function OrderFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get("search") || "");
+  // ✅ Performance: Use debounce hook instead of manual setTimeout
+  const debouncedSearch = useDebounce(search, 500);
   const [processing, setProcessing] = useState(
     searchParams.get("processing") === "true" ? "true" : 
     searchParams.get("status") === "COMPLETED" ? "false" : 
@@ -28,15 +30,6 @@ export function OrderFilters() {
       ? searchParams.get("status") || "all" 
       : "all"
   );
-
-  // Debounce search input (500ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [search]);
 
   const handleFilter = useCallback(() => {
     const params = new URLSearchParams();

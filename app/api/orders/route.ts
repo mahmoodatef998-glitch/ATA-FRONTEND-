@@ -127,29 +127,37 @@ export async function GET(request: NextRequest) {
     const result = await getCached(
       cacheKey,
       async () => {
-        // Fetch orders with pagination
+        // ✅ Performance: Use select instead of include to fetch only needed fields
         const [orders, total] = await Promise.all([
-      prisma.orders.findMany({
-        where,
-        include: {
-          clients: {
+          prisma.orders.findMany({
+            where,
             select: {
-              name: true,
-              phone: true,
-              email: true,
+              id: true,
+              status: true,
+              stage: true,
+              totalAmount: true,
+              currency: true,
+              createdAt: true,
+              updatedAt: true,
+              clients: {
+                select: {
+                  name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  quotations: true,
+                  purchase_orders: true,
+                  delivery_notes: true,
+                },
+              },
             },
-          },
-          _count: {
-            select: {
-              quotations: true,
-              order_histories: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: parseInt(limit),
-      }),
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: parseInt(limit),
+          }),
           prisma.orders.count({ where }),
         ]);
 

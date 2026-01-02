@@ -49,19 +49,33 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const skip = (page - 1) * limit;
 
-    // Fetch orders for this client (newest first) with pagination
-    // Note: We don't use select for orders to get all fields including finalPaymentReceived, depositPaid, etc.
+    // ✅ Performance: Use select to fetch only needed fields
     const [orders, total] = await Promise.all([
       prisma.orders.findMany({
         where: { clientId },
-      include: {
-        clients: {
-          select: {
-            name: true,
-            email: true,
-            phone: true,
+        select: {
+          id: true,
+          status: true,
+          stage: true,
+          items: true,
+          details: true,
+          totalAmount: true,
+          currency: true,
+          depositPercentage: true,
+          depositAmount: true,
+          depositPaid: true,
+          depositPaidAt: true,
+          finalPaymentReceived: true,
+          finalPaymentAt: true,
+          createdAt: true,
+          updatedAt: true,
+          clients: {
+            select: {
+              name: true,
+              email: true,
+              phone: true,
+            },
           },
-        },
         companies: {
           select: {
             name: true,

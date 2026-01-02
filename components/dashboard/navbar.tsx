@@ -21,6 +21,7 @@ import { signOut } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket, useSocketEvent } from "@/hooks/use-socket";
+import { usePolling } from "@/lib/hooks/use-polling";
 
 interface NavbarProps {
   user: {
@@ -105,18 +106,9 @@ export function Navbar({ user }: NavbarProps) {
     fetchUnreadCount();
   }, [fetchUnreadCount]);
 
-  // ✅ Performance: Poll only if socket is not connected (fallback)
-  useEffect(() => {
-    if (isConnected) {
-      // Socket is connected, no need for polling
-      return;
-    }
-
-    // Poll for updates every 30 seconds as fallback
-    const interval = setInterval(fetchUnreadCount, 30000);
-
-    return () => clearInterval(interval);
-  }, [isConnected, fetchUnreadCount]);
+  // ✅ Performance: Use polling hook instead of manual setInterval
+  // Only poll if socket is not connected (fallback)
+  usePolling(fetchUnreadCount, 30000, !isConnected);
 
   const handleLogout = async () => {
     try {

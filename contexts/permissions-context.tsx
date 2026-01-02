@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -157,16 +157,20 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     await fetchPermissions();
   }, [fetchPermissions]);
 
+  // ✅ Performance: Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      permissions,
+      roles,
+      loading,
+      error,
+      refresh,
+    }),
+    [permissions, roles, loading, error, refresh]
+  );
+
   return (
-    <PermissionsContext.Provider
-      value={{
-        permissions,
-        roles,
-        loading,
-        error,
-        refresh,
-      }}
-    >
+    <PermissionsContext.Provider value={contextValue}>
       {children}
     </PermissionsContext.Provider>
   );

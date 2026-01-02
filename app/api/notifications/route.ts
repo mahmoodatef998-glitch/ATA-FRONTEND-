@@ -57,10 +57,18 @@ export async function GET(request: NextRequest) {
       where.read = false;
     }
 
-    // Fetch notifications with pagination
+    // ✅ Performance: Use select to fetch only needed fields
     const [notifications, total] = await Promise.all([
       prisma.notifications.findMany({
         where,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          read: true,
+          createdAt: true,
+          // Don't fetch userId, companyId, meta, etc. - not needed for display
+        },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
