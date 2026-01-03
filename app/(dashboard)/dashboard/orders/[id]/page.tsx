@@ -1,12 +1,21 @@
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Package, FileDown } from "lucide-react";
-import { formatDateTime } from "@/lib/utils";
-import { auth } from "@/lib/auth";
-import dynamic from "next/dynamic";
+"use client";
+
+import { OrderDetailClient } from "@/components/dashboard/order-detail-client";
+
+/**
+ * ✅ Performance: Client Component Boundary
+ * 
+ * This page is now a Client Component to prevent:
+ * - Server Component re-execution on navigation
+ * - RSC storms
+ * - Repeated HEAD/GET requests
+ * 
+ * Data fetching is handled by OrderDetailClient component
+ * which uses React Query for client-side caching
+ */
+export default function OrderDetailPage() {
+  return <OrderDetailClient />;
+}
 
 // Dynamic imports for heavy components (code splitting)
 const OrderDetailsTabs = dynamic(() => import("@/components/dashboard/order-details-tabs").then(mod => ({ default: mod.OrderDetailsTabs })), {

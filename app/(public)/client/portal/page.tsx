@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
@@ -10,49 +10,24 @@ import { Loader2, Package, CheckCircle, XCircle, Clock, FileText, Truck, Trendin
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { ClientNavbar } from "@/components/client/client-navbar";
 import { useToast } from "@/hooks/use-toast";
+import { useClientOrders } from "@/lib/hooks/use-client-orders";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ClientPortalPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [error, setError] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
+  const queryClient = useQueryClient();
   const [viewedActionItems, setViewedActionItems] = useState<Set<string>>(new Set());
 
-  // ✅ Performance: Memoize fetchOrders to prevent re-creation
-  const fetchOrders = useCallback(async () => {
-    try {
-      const response = await fetch("/api/client/orders");
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push("/client/login");
-          return;
-        }
-        throw new Error("Failed to fetch orders");
-      }
+  // ✅ Performance: Use React Query for automatic caching and deduplication
+  const { data: ordersData, isLoading, error: queryError, refetch } = useClientOrders();
 
-      const data = await response.json();
-      const fetchedOrders = data.data.orders || [];
-      setOrders(fetchedOrders);
-      
-      // Set client name from first order
-      if (fetchedOrders.length > 0 && fetchedOrders[0].clients) {
-        setClientName(fetchedOrders[0].clients.name);
-        setClientEmail(fetchedOrders[0].clients.email);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
+  const orders = ordersData?.orders || [];
+  const clientName = orders.length > 0 && orders[0].clients ? orders[0].clients.name : "";
+  const clientEmail = orders.length > 0 && orders[0].clients ? orders[0].clients.email : "";
+  const error = queryError instanceof Error ? queryError.message : "";
 
   useEffect(() => {
-    fetchOrders();
-    
     // Load viewed action items from localStorage
     const stored = localStorage.getItem("client_viewed_action_items");
     if (stored) {
@@ -67,8 +42,6 @@ export default function ClientPortalPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const successType = urlParams.get("success");
     
-    let timeoutId: NodeJS.Timeout | null = null;
-    
     if (successType === "order-created") {
       toast({
         title: "✅ Order created successfully!",
@@ -76,7 +49,10 @@ export default function ClientPortalPage() {
         className: "bg-green-50 border-green-200",
       });
       window.history.replaceState({}, "", "/client/portal");
-      timeoutId = setTimeout(() => fetchOrders(), 500);
+      // ✅ Performance: Invalidate query to refetch updated data
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
+      }, 500);
     } else if (successType === "accepted") {
       toast({
         title: "✅ Quotation accepted",
@@ -84,20 +60,23 @@ export default function ClientPortalPage() {
         className: "bg-green-50 border-green-200",
       });
       window.history.replaceState({}, "", "/client/portal");
+      queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
     } else if (successType === "rejected") {
       toast({
         title: "Quotation rejected",
         description: "We will work on improving the offer.",
       });
       window.history.replaceState({}, "", "/client/portal");
+      queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
     }
+  }, [toast, queryClient]);
 
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [fetchOrders, toast]);
+  // Handle authentication errors
+  useEffect(() => {
+    if (error === "UNAUTHORIZED") {
+      router.push("/client/login");
+    }
+  }, [error, router]);
 
   // Save viewed items to localStorage whenever it changes
   useEffect(() => {
@@ -172,10 +151,26 @@ export default function ClientPortalPage() {
     }).length,
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error && error !== "UNAUTHORIZED") {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <ClientNavbar clientName={clientName || "Client"} clientEmail={clientEmail} />
+        <Card className="mt-8 border-red-200 dark:border-red-900">
+          <CardContent className="pt-6 text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error loading your orders</h3>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => refetch()}>Try Again</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

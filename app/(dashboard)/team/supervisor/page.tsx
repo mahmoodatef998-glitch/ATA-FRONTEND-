@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,18 +9,40 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Users, CheckCircle, Clock, AlertCircle, Plus, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { UserRole } from "@prisma/client";
+import { useTasks } from "@/lib/hooks/use-tasks";
+import { useTeamKPI } from "@/lib/hooks/use-team-kpi";
+import { useOvertime } from "@/lib/hooks/use-overtime";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SupervisorDashboardPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [teamStatus, setTeamStatus] = useState<any[]>([]);
-  const [pendingTasks, setPendingTasks] = useState<any[]>([]);
-  const [pendingOvertime, setPendingOvertime] = useState<any[]>([]);
-  const [teamKPI, setTeamKPI] = useState<any>(null);
+  const queryClient = useQueryClient();
+
+  // ✅ Performance: Use React Query for automatic caching and deduplication
+  const { data: tasksData, isLoading: tasksLoading } = useTasks({
+    status: ["PENDING", "IN_PROGRESS"],
+    limit: 10,
+    enabled: status === "authenticated" && session?.user?.role === UserRole.SUPERVISOR,
+  });
+
+  const { data: overtimeData, isLoading: overtimeLoading } = useOvertime({
+    approved: false,
+    limit: 10,
+    enabled: status === "authenticated" && session?.user?.role === UserRole.SUPERVISOR,
+  });
+
+  const { data: teamKPIData, isLoading: kpiLoading } = useTeamKPI({
+    enabled: status === "authenticated" && session?.user?.role === UserRole.SUPERVISOR,
+  });
+
+  const pendingTasks = tasksData?.tasks || [];
+  const pendingOvertime = overtimeData?.overtime || [];
+  const teamKPI = teamKPIData;
+  const loading = tasksLoading || overtimeLoading || kpiLoading;
 
   useEffect(() => {
     // Redirect Admin to /team (they shouldn't access supervisor dashboard)
@@ -35,49 +57,7 @@ export default function SupervisorDashboardPage() {
         return;
       }
     }
-    fetchData();
   }, [status, session, router]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch team status (technicians with current attendance)
-      const techniciansResponse = await fetch("/api/users?role=TECHNICIAN");
-      // Note: This endpoint doesn't exist yet, we'll need to create it or use a different approach
-      // For now, we'll fetch tasks and get unique assigned users
-
-      // Fetch pending tasks
-      const tasksResponse = await fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&limit=10");
-      const tasksResult = await tasksResponse.json();
-      if (tasksResult.success) {
-        setPendingTasks(tasksResult.data.tasks);
-      }
-
-      // Fetch pending overtime
-      const overtimeResponse = await fetch("/api/overtime?approved=false&limit=10");
-      const overtimeResult = await overtimeResponse.json();
-      if (overtimeResult.success) {
-        setPendingOvertime(overtimeResult.data.overtime);
-      }
-
-      // Fetch team KPI
-      const kpiResponse = await fetch("/api/kpi/team");
-      const kpiResult = await kpiResponse.json();
-      if (kpiResult.success) {
-        setTeamKPI(kpiResult.data);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleApproveOvertime = async (overtimeId: number) => {
     try {
@@ -86,6 +66,7 @@ export default function SupervisorDashboardPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ approved: true }),
       });
 
@@ -96,7 +77,9 @@ export default function SupervisorDashboardPage() {
           description: "Overtime request has been approved",
           className: "bg-green-50 border-green-200",
         });
-        fetchData();
+        // ✅ Performance: Invalidate queries to refetch updated data
+        queryClient.invalidateQueries({ queryKey: ["overtime"] });
+        queryClient.invalidateQueries({ queryKey: ["kpi", "team"] });
       } else {
         toast({
           title: "❌ Error",
@@ -167,7 +150,7 @@ export default function SupervisorDashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Pending Tasks ({pendingTasks.length})</h2>
-          <Link href="/team/tasks/new">
+          <Link href="/team/tasks/new" prefetch={false}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Assign Task
@@ -197,7 +180,7 @@ export default function SupervisorDashboardPage() {
                       </div>
                     )}
                     <div className="flex gap-2 pt-2">
-                      <Link href={`/team/tasks/${task.id}`} className="flex-1">
+                      <Link href={`/team/tasks/${task.id}`} prefetch={false} className="flex-1">
                         <Button variant="outline" className="w-full" size="sm">
                           View Details
                         </Button>
@@ -260,10 +243,13 @@ export default function SupervisorDashboardPage() {
                           const response = await fetch(`/api/overtime/${overtime.id}/approve`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
+                            credentials: "include",
                             body: JSON.stringify({ approved: false }),
                           });
                           if (response.ok) {
-                            fetchData();
+                            // ✅ Performance: Invalidate queries to refetch updated data
+                            queryClient.invalidateQueries({ queryKey: ["overtime"] });
+                            queryClient.invalidateQueries({ queryKey: ["kpi", "team"] });
                           }
                         }}
                       >
@@ -288,7 +274,7 @@ export default function SupervisorDashboardPage() {
 
       {/* Quick Links */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Link href="/team/tasks">
+        <Link href="/team/tasks" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -303,7 +289,7 @@ export default function SupervisorDashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/team/kpi">
+        <Link href="/team/kpi" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -318,7 +304,7 @@ export default function SupervisorDashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/team/attendance">
+        <Link href="/team/attendance" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">

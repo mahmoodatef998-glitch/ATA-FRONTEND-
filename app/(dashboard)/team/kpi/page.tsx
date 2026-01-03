@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/technician/kpi-card";
 import { Loader2, TrendingUp, Users } from "lucide-react";
@@ -14,78 +14,60 @@ import {
 } from "@/components/ui/select";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
+import { useKPI } from "@/lib/hooks/use-kpi";
+import { useTeamKPI } from "@/lib/hooks/use-team-kpi";
 
 export default function KPIPage() {
   const { toast } = useToast();
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [kpi, setKpi] = useState<any>(null);
-  const [teamKPI, setTeamKPI] = useState<any>(null);
+  const { data: session, status: sessionStatus } = useSession();
   const [viewMode, setViewMode] = useState<"individual" | "team">("individual");
   const [period, setPeriod] = useState("thisMonth");
 
-  useEffect(() => {
-    fetchKPI();
-  }, [viewMode, period]);
+  // ✅ Performance: Calculate date range using useMemo to prevent unnecessary recalculations
+  const { startDate, endDate } = useMemo(() => {
+    let start: string | null = null;
+    let end: string | null = null;
 
-  const fetchKPI = async () => {
-    try {
-      setLoading(true);
-
-      let startDate: string | null = null;
-      let endDate: string | null = null;
-
-      const now = new Date();
-      switch (period) {
-        case "thisWeek":
-          const weekStart = new Date(now);
-          weekStart.setDate(now.getDate() - now.getDay());
-          weekStart.setHours(0, 0, 0, 0);
-          // Use local date to avoid timezone issues
-          startDate = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
-          endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-          break;
-        case "thisMonth":
-          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          startDate = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}-${String(monthStart.getDate()).padStart(2, "0")}`;
-          endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-          break;
-        case "lastMonth":
-          const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-          startDate = `${lastMonthStart.getFullYear()}-${String(lastMonthStart.getMonth() + 1).padStart(2, "0")}-${String(lastMonthStart.getDate()).padStart(2, "0")}`;
-          endDate = `${lastMonthEnd.getFullYear()}-${String(lastMonthEnd.getMonth() + 1).padStart(2, "0")}-${String(lastMonthEnd.getDate()).padStart(2, "0")}`;
-          break;
-      }
-
-      const params = new URLSearchParams();
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-
-      if (viewMode === "individual") {
-        const response = await fetch(`/api/kpi?${params}`);
-        const result = await response.json();
-        if (result.success) {
-          setKpi(result.data.kpi);
-        }
-      } else {
-        const response = await fetch(`/api/kpi/team?${params}`);
-        const result = await response.json();
-        if (result.success) {
-          setTeamKPI(result.data);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching KPI:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load KPI data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    const now = new Date();
+    switch (period) {
+      case "thisWeek":
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        start = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
+        end = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        break;
+      case "thisMonth":
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        start = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}-${String(monthStart.getDate()).padStart(2, "0")}`;
+        end = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        break;
+      case "lastMonth":
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        start = `${lastMonthStart.getFullYear()}-${String(lastMonthStart.getMonth() + 1).padStart(2, "0")}-${String(lastMonthStart.getDate()).padStart(2, "0")}`;
+        end = `${lastMonthEnd.getFullYear()}-${String(lastMonthEnd.getMonth() + 1).padStart(2, "0")}-${String(lastMonthEnd.getDate()).padStart(2, "0")}`;
+        break;
     }
-  };
+    return { startDate: start, endDate: end };
+  }, [period]);
+
+  // ✅ Performance: Use React Query for automatic caching and deduplication
+  const { data: kpiData, isLoading: kpiLoading } = useKPI({
+    startDate: viewMode === "individual" ? startDate || undefined : undefined,
+    endDate: viewMode === "individual" ? endDate || undefined : undefined,
+    enabled: sessionStatus === "authenticated" && viewMode === "individual",
+  });
+
+  const { data: teamKPIData, isLoading: teamKPILoading } = useTeamKPI({
+    startDate: viewMode === "team" ? startDate || undefined : undefined,
+    endDate: viewMode === "team" ? endDate || undefined : undefined,
+    enabled: sessionStatus === "authenticated" && viewMode === "team",
+  });
+
+  const kpi = kpiData?.kpi;
+  const teamKPI = teamKPIData;
+  const loading = kpiLoading || teamKPILoading;
 
   const canViewTeam = session?.user?.role === UserRole.SUPERVISOR || session?.user?.role === UserRole.ADMIN;
 

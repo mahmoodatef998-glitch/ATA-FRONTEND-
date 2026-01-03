@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/technician/task-card";
 import { Loader2, Plus, Filter, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { usePermission } from "@/lib/permissions/hooks";
 import { PermissionAction } from "@/lib/permissions/role-permissions";
+import { useTasks } from "@/lib/hooks/use-tasks";
 import {
   Select,
   SelectContent,
@@ -21,91 +22,50 @@ import {
 
 export default function TasksPage() {
   const { toast } = useToast();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   // Only Admin, Operations Manager, and Supervisor can create tasks
   // Use RBAC permission check instead of role check
   const canCreateTask = usePermission(PermissionAction.TASK_CREATE);
-  const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0,
-  });
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [pagination, setPagination] = useState({
+  const [page, setPage] = useState(1);
+  const limit = 30;
+
+  // ✅ Performance: Use React Query for automatic caching and deduplication
+  const { data: tasksData, isLoading, error } = useTasks({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    limit,
+    page,
+    enabled: sessionStatus === "authenticated",
+  });
+
+  const tasks = tasksData?.tasks || [];
+  const pagination = tasksData?.pagination || {
     page: 1,
     limit: 30,
     total: 0,
     totalPages: 0,
-  });
-
-  useEffect(() => {
-    fetchTasks();
-  }, [statusFilter]);
-
-  const fetchTasks = async (page = 1) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: pagination.limit.toString(),
-      });
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-
-      const response = await fetch(`/api/tasks?${params}`);
-      const result = await response.json();
-
-      if (result.success) {
-        const fetchedTasks = result.data.tasks;
-        setTasks(fetchedTasks);
-        setPagination(result.data.pagination);
-        
-        // Use stats from API (calculated for all tasks, not just current page)
-        if (result.data.stats) {
-          setStats({
-            total: result.data.stats.total,
-            pending: result.data.stats.pending,
-            inProgress: result.data.stats.inProgress,
-            completed: result.data.stats.completed,
-          });
-        } else {
-          // Fallback: calculate from fetched tasks if stats not available
-          setStats({
-            total: result.data.pagination.total,
-            pending: fetchedTasks.filter((t: any) => t.status === "PENDING").length,
-            inProgress: fetchedTasks.filter((t: any) => t.status === "IN_PROGRESS").length,
-            completed: fetchedTasks.filter((t: any) => t.status === "COMPLETED").length,
-          });
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to load tasks",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load tasks",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  };
+  const stats = tasksData?.stats || {
+    total: pagination.total,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
   };
 
-  if (loading && tasks.length === 0) {
+  if (isLoading && tasks.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to load tasks",
+      variant: "destructive",
+    });
   }
 
   return (
@@ -117,7 +77,7 @@ export default function TasksPage() {
         </div>
         {/* Only show "New Task" button if user has permission to create tasks */}
         {canCreateTask && (
-          <Link href="/team/tasks/new">
+          <Link href="/team/tasks/new" prefetch={false}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               New Task
@@ -162,7 +122,10 @@ export default function TasksPage() {
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Status:</span>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => {
+              setStatusFilter(value);
+              setPage(1); // Reset to first page when filter changes
+            }}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
@@ -204,18 +167,18 @@ export default function TasksPage() {
         <div className="flex items-center justify-center gap-2">
           <Button
             variant="outline"
-            disabled={pagination.page === 1}
-            onClick={() => fetchTasks(pagination.page - 1)}
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <span className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.totalPages}
+            Page {page} of {pagination.totalPages}
           </span>
           <Button
             variant="outline"
-            disabled={pagination.page === pagination.totalPages}
-            onClick={() => fetchTasks(pagination.page + 1)}
+            disabled={page >= pagination.totalPages}
+            onClick={() => setPage(page + 1)}
           >
             Next
           </Button>

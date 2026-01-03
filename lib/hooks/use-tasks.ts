@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 interface UseTasksOptions {
   status?: string | string[];
   limit?: number;
+  page?: number;
   enabled?: boolean;
 }
 
@@ -13,10 +14,10 @@ interface UseTasksOptions {
  * Provides automatic caching, refetching, and error handling
  */
 export function useTasks(options: UseTasksOptions = {}) {
-  const { status, limit = 100, enabled = true } = options;
+  const { status, limit = 100, page = 1, enabled = true } = options;
 
   return useQuery({
-    queryKey: ["tasks", { status, limit }],
+    queryKey: ["tasks", { status, limit, page }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (status) {
@@ -29,8 +30,13 @@ export function useTasks(options: UseTasksOptions = {}) {
       if (limit) {
         params.append("limit", limit.toString());
       }
+      if (page > 1) {
+        params.append("page", page.toString());
+      }
 
-      const response = await fetch(`/api/tasks?${params}`);
+      const response = await fetch(`/api/tasks?${params}`, {
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
       }

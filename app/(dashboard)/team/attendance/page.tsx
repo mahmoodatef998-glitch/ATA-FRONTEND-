@@ -43,11 +43,7 @@ const monthNames = [
 
 export default function AttendancePage() {
   const { toast } = useToast();
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [attendances, setAttendances] = useState<any[]>([]);
-  const [monthStart, setMonthStart] = useState<Date | null>(null);
-  const [monthEnd, setMonthEnd] = useState<Date | null>(null);
+  const { data: session, status: sessionStatus } = useSession();
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -55,8 +51,6 @@ export default function AttendancePage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "calendar">("cards");
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
-  const [teamAttendance, setTeamAttendance] = useState<any[]>([]);
   
   // Date filters - Default to current month (will be overridden by latest month)
   const today = new Date();
@@ -70,98 +64,41 @@ export default function AttendancePage() {
   
   // User filter (for supervisors/admins)
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const isSupervisor = session?.user?.role === UserRole.SUPERVISOR || session?.user?.role === UserRole.ADMIN;
 
+  // ✅ Performance: Use React Query for automatic caching and deduplication
+  const { data: attendanceData, isLoading: attendanceLoading } = useAttendance({
+    userId: selectedUserId && isSupervisor ? selectedUserId : undefined,
+    month: currentMonth,
+    year: currentYear,
+    enabled: sessionStatus === "authenticated",
+  });
+
+  const { data: todayTeamData, isLoading: todayTeamLoading } = useTodayTeamAttendance(
+    sessionStatus === "authenticated"
+  );
+
+  const { data: usersData, isLoading: usersLoading } = useUsers({
+    role: isSupervisor ? undefined : undefined, // Fetch all users for supervisors
+    enabled: sessionStatus === "authenticated" && isSupervisor,
+  });
+
+  const attendances = attendanceData?.attendances || [];
+  const monthStart = attendanceData?.monthStart ? new Date(attendanceData.monthStart) : null;
+  const monthEnd = attendanceData?.monthEnd ? new Date(attendanceData.monthEnd) : null;
+  const teamAttendance = todayTeamData?.team || [];
+  const users = usersData?.users || (Array.isArray(usersData) ? usersData : []);
+  const loading = attendanceLoading || todayTeamLoading || (isSupervisor && usersLoading);
+
   useEffect(() => {
-    if (isSupervisor) {
-      fetchUsers();
-      fetchTodayTeamAttendance();
-    } else {
-      // For technicians, fetch their own attendance
-      fetchTodayTeamAttendance();
+    if (attendanceData?.monthStart) {
+      const start = new Date(attendanceData.monthStart);
+      setCurrentMonth(start.getMonth() + 1);
+      setCurrentYear(start.getFullYear());
     }
-    fetchLatestMonth();
-  }, [currentMonth, currentYear, selectedUserId]);
-
-  const fetchTodayTeamAttendance = async () => {
-    try {
-      const response = await fetch("/api/attendance/today-team");
-      const result = await response.json();
-      if (result.success) {
-        setTeamAttendance(result.data.team || []);
-      }
-    } catch (error) {
-      console.error("Error fetching today team attendance:", error);
-    }
-  };
-
-  // Remove auto-open modal - now showing cards by default
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/users?role=TECHNICIAN&role=SUPERVISOR");
-      const result = await response.json();
-      if (result.success) {
-        // API returns { success: true, data: { users: [...], pagination: {...} } }
-        const usersArray = result.data?.users || (Array.isArray(result.data) ? result.data : []);
-        setUsers(usersArray);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]); // Set empty array on error
-    }
-  };
-
-  const fetchLatestMonth = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (selectedUserId && isSupervisor) {
-        params.append("userId", selectedUserId);
-      }
-      
-      // If month/year are set, use them; otherwise fetch latest month
-      if (currentMonth && currentYear) {
-        params.append("month", currentMonth.toString());
-        params.append("year", currentYear.toString());
-      }
-
-      const response = await fetch(`/api/attendance/latest-month?${params}`);
-      const result = await response.json();
-
-      if (result.success) {
-        setAttendances(result.data.attendances || []);
-        if (result.data.monthStart) {
-          setMonthStart(new Date(result.data.monthStart));
-          const endDate = new Date(result.data.monthEnd);
-          setMonthEnd(endDate);
-          
-          // Update current month/year to match fetched data
-          setCurrentMonth(endDate.getMonth() + 1);
-          setCurrentYear(endDate.getFullYear());
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to load attendance",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching attendance:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load attendance",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [attendanceData]);
 
   const handlePreviousMonth = () => {
     if (currentMonth === 1) {
