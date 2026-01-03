@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, XCircle, FileText, Package, Download, LogIn, ArrowLeft, Truck } from "lucide-react";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { OrderProgressTrackerCompact } from "@/components/order-progress-tracker-compact";
 import { CancelOrderButton } from "@/components/cancel-order-button";
 import { OrderTabs } from "@/components/client/order-tabs";

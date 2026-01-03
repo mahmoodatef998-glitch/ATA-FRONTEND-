@@ -50,10 +50,16 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Only run middleware on specific paths to reduce bundle size
+// ✅ Performance: Run middleware on all routes to block RSC prefetch requests
+// This ensures RSC prefetch blocking works across the entire application
 export const config = {
   matcher: [
     '/dashboard/:path*',
     '/client/portal/:path*',
+    '/team/:path*',        // ✅ Add team routes
+    '/login',              // ✅ Add login route
+    '/client/login',       // ✅ Add client login route
+    '/',                   // ✅ Add home page
+    '/((?!api|_next/static|_next/image|favicon.ico).*)', // ✅ Match all routes except static files
   ],
 };

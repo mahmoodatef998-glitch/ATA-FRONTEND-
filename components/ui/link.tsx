@@ -8,6 +8,8 @@ interface CustomLinkProps extends Omit<LinkProps, 'prefetch'> {
   href: LinkProps['href']; // Ensure href is required
   prefetch?: boolean;
   className?: string;
+  target?: string;
+  rel?: string;
 }
 
 /**

@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Users, Search, Clock, Loader2, User, MapPin, Edit, Trash2, Eye, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { formatDateTime } from "@/lib/utils";
