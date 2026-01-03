@@ -81,10 +81,10 @@ export function OrdersClient() {
   // ✅ Fix: Wait for session to be fully ready before enabling query
   useEffect(() => {
     if (sessionStatus === "authenticated" && session?.user) {
-      // Small delay to ensure session cookies are fully set
+      // ✅ Fix: Increased delay to ensure session cookies are fully set (especially after logout/login)
       const timer = setTimeout(() => {
         setSessionReady(true);
-      }, 300);
+      }, 500); // Increased from 300ms to 500ms for better reliability after logout/login
       return () => clearTimeout(timer);
     } else {
       setSessionReady(false);

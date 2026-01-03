@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket, useSocketEvent } from "@/hooks/use-socket";
@@ -58,7 +58,10 @@ export function Navbar({ user }: NavbarProps) {
   // ✅ Performance: Memoize fetchUnreadCount to prevent re-creation
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await fetch("/api/notifications/unread-count");
+      // ✅ Fix: Add credentials and ensure session is ready
+      const response = await fetch("/api/notifications/unread-count", {
+        credentials: "include", // ✅ Critical: Include credentials for authentication
+      });
       if (response.ok) {
         const data = await response.json();
         setUnreadCount(data.data?.count || 0);
