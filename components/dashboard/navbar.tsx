@@ -104,15 +104,24 @@ export function Navbar({ user }: NavbarProps) {
   useSocketEvent(socket, "new_notification", handleNewNotification);
   useSocketEvent(socket, "order_updated", handleOrderUpdate);
 
+  // ✅ Fix: Get session status to check if ready
+  const { status: sessionStatus } = useSession();
+
   // ✅ Performance: Use polling hook with proper cleanup
   useEffect(() => {
-    // Fetch initial unread count
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
+    // ✅ Fix: Only fetch if session is authenticated (not loading)
+    if (sessionStatus === "authenticated") {
+      // Small delay to ensure session cookies are ready
+      const timer = setTimeout(() => {
+        fetchUnreadCount();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [fetchUnreadCount, sessionStatus]);
 
   // ✅ Performance: Use polling hook instead of manual setInterval
-  // Only poll if socket is not connected (fallback)
-  usePolling(fetchUnreadCount, 30000, !isConnected);
+  // Only poll if socket is not connected (fallback) AND session is authenticated
+  usePolling(fetchUnreadCount, 30000, !isConnected && sessionStatus === "authenticated");
 
   const handleLogout = async () => {
     try {
