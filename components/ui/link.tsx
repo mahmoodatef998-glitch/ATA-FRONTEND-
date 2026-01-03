@@ -5,9 +5,9 @@ import { ReactNode, forwardRef } from "react";
 
 interface CustomLinkProps extends Omit<LinkProps, 'prefetch'> {
   children: ReactNode;
+  href: LinkProps['href']; // Ensure href is required
   prefetch?: boolean;
   className?: string;
-  [key: string]: any;
 }
 
 /**
