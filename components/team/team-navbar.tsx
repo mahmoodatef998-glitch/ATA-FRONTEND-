@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ export function TeamNavbar() {
         <div className="flex items-center justify-between h-16 gap-2 overflow-hidden">
           {/* Logo & Brand */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Link href="/team" className="flex items-center gap-1.5">
+            <Link href="/team" prefetch={false} className="flex items-center gap-1.5">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
                 <Users className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
@@ -100,6 +100,7 @@ export function TeamNavbar() {
             {isTechnician && (
               <Link 
                 href="/team/technician"
+                prefetch={false}
               >
                 <Button
                   variant={pathname === "/team/technician" || pathname.startsWith("/team/technician") ? "default" : "ghost"}
@@ -118,6 +119,7 @@ export function TeamNavbar() {
               <>
                 <Link 
                   href="/team/members"
+                  prefetch={false}
                 >
                   <Button
                     variant={pathname.startsWith("/team/members") ? "default" : "ghost"}
@@ -131,6 +133,7 @@ export function TeamNavbar() {
                 </Link>
                 <Link 
                   href="/team/tasks"
+                  prefetch={false}
                 >
                   <Button
                     variant={pathname.startsWith("/team/tasks") ? "default" : "ghost"}
@@ -149,6 +152,7 @@ export function TeamNavbar() {
             {isAdmin && (
               <Link 
                 href="/team/approval"
+                prefetch={false}
               >
                 <Button
                   variant={pathname.startsWith("/team/approval") ? "default" : "ghost"}
@@ -200,7 +204,7 @@ export function TeamNavbar() {
             
             {/* Register Button - Only show if not logged in or for new registrations */}
             {!session && (
-              <Link href="/team/register">
+              <Link href="/team/register" prefetch={false}>
                 <Button variant="outline" size="sm" className="whitespace-nowrap text-xs px-2 h-8">
                   <Users className="mr-1.5 h-3.5 w-3.5" />
                   <span className="hidden lg:inline">Register</span>
@@ -216,7 +220,7 @@ export function TeamNavbar() {
             <ThemeToggle />
             
             {/* Home Button */}
-            <Link href="/">
+            <Link href="/" prefetch={false}>
               <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8">
                 <Home className="h-3.5 w-3.5" />
               </Button>
@@ -265,6 +269,7 @@ export function TeamNavbar() {
           <div className="flex items-center gap-3 overflow-x-auto">
             <Link 
               href="/team"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/team" ? "default" : "ghost"}
@@ -279,6 +284,7 @@ export function TeamNavbar() {
             {isTechnician && (
               <Link 
                 href="/team/technician"
+                prefetch={false}
               >
                 <Button
                   variant={pathname === "/team/technician" ? "default" : "ghost"}
@@ -295,6 +301,7 @@ export function TeamNavbar() {
               <>
                 <Link 
                   href="/team/members"
+                  prefetch={false}
                 >
                   <Button
                     variant={pathname.startsWith("/team/members") ? "default" : "ghost"}
@@ -307,6 +314,7 @@ export function TeamNavbar() {
                 </Link>
                 <Link 
                   href="/team/tasks"
+                  prefetch={false}
                 >
                   <Button
                     variant={pathname.startsWith("/team/tasks") ? "default" : "ghost"}
@@ -324,6 +332,7 @@ export function TeamNavbar() {
             {isAdmin && (
               <Link 
                 href="/team/approval"
+                prefetch={false}
               >
                 <Button
                   variant={pathname.startsWith("/team/approval") ? "default" : "ghost"}
@@ -339,6 +348,7 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/attendance"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/team/attendance" ? "default" : "ghost"}
@@ -352,6 +362,7 @@ export function TeamNavbar() {
 
             <Link 
               href="/team/kpi"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/team/kpi" ? "default" : "ghost"}

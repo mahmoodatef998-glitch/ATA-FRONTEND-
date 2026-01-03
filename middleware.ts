@@ -9,6 +9,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // ✅ Performance: Block RSC prefetch requests to prevent RSC storms
+  const isRscPrefetch = request.headers.get('next-router-prefetch') === '1';
+  const isRscRequest = request.headers.get('rsc') === '1';
+  
+  if (isRscPrefetch && isRscRequest) {
+    // Block prefetch requests to prevent RSC storms
+    return new NextResponse(null, { status: 204 }); // No Content
+  }
+
   // Only check authentication for dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     // Check for NextAuth session token in cookies

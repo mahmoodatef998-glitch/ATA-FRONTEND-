@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, LogOut, Package, User, Users, Database, LayoutDashboard, Calendar, FileText, Clock, TrendingUp, CheckCircle, Menu, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -190,6 +190,7 @@ export function Navbar({ user }: NavbarProps) {
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1" suppressHydrationWarning>
           <Link 
             href="/dashboard/orders" 
+            prefetch={false}
             className="text-lg sm:text-xl font-bold text-primary whitespace-nowrap flex-shrink-0"
           >
             {t('home.ataGenerators')}
@@ -198,6 +199,7 @@ export function Navbar({ user }: NavbarProps) {
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 flex-1 min-w-0 overflow-x-auto scrollbar-hide" suppressHydrationWarning>
             <Link 
               href="/dashboard"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/dashboard" ? "default" : "ghost"}
@@ -212,6 +214,7 @@ export function Navbar({ user }: NavbarProps) {
 
             <Link 
               href="/dashboard/orders"
+              prefetch={false}
             >
               <Button
                 variant={pathname.startsWith("/dashboard/orders") ? "default" : "ghost"}
@@ -225,6 +228,7 @@ export function Navbar({ user }: NavbarProps) {
             
             <Link 
               href="/dashboard/notifications"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/dashboard/notifications" ? "default" : "ghost"}
@@ -245,6 +249,7 @@ export function Navbar({ user }: NavbarProps) {
 
             <Link 
               href="/dashboard/calendar"
+              prefetch={false}
             >
               <Button
                 variant={pathname === "/dashboard/calendar" ? "default" : "ghost"}
@@ -259,6 +264,7 @@ export function Navbar({ user }: NavbarProps) {
             {user.role === "ADMIN" && (
               <Link 
                 href="/dashboard/clients"
+                prefetch={false}
               >
                 <Button
                   variant={pathname === "/dashboard/clients" ? "default" : "ghost"}
@@ -275,6 +281,7 @@ export function Navbar({ user }: NavbarProps) {
             {(user.role === "TECHNICIAN" || user.role === "SUPERVISOR") && (
               <Link 
                 href="/team"
+                prefetch={false}
               >
                 <Button
                   variant={pathname.startsWith("/team") ? "default" : "ghost"}
@@ -302,6 +309,7 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuItem asChild>
                   <Link 
                     href="/dashboard" 
+                    prefetch={false}
                     className="flex items-center"
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -311,6 +319,7 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuItem asChild>
                   <Link 
                     href="/dashboard/orders" 
+                    prefetch={false}
                     className="flex items-center"
                   >
                     <Package className="mr-2 h-4 w-4" />
@@ -320,6 +329,7 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuItem asChild>
                   <Link 
                     href="/dashboard/notifications" 
+                    prefetch={false}
                     className="flex items-center"
                   >
                     <Bell className="mr-2 h-4 w-4" />
@@ -334,6 +344,7 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuItem asChild>
                   <Link 
                     href="/dashboard/calendar" 
+                    prefetch={false}
                     className="flex items-center"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
@@ -346,6 +357,7 @@ export function Navbar({ user }: NavbarProps) {
                     <DropdownMenuItem asChild>
                       <Link 
                         href="/dashboard/clients" 
+                        prefetch={false}
                         className="flex items-center"
                       >
                         <User className="mr-2 h-4 w-4" />
@@ -355,6 +367,7 @@ export function Navbar({ user }: NavbarProps) {
                     <DropdownMenuItem asChild>
                       <Link 
                         href="/dashboard/company-knowledge" 
+                        prefetch={false}
                         className="flex items-center"
                       >
                         <Building2 className="mr-2 h-4 w-4" />
@@ -367,6 +380,7 @@ export function Navbar({ user }: NavbarProps) {
                   <DropdownMenuItem asChild>
                     <Link 
                       href="/team" 
+                      prefetch={false}
                       className="flex items-center"
                     >
                       <Users className="mr-2 h-4 w-4" />
@@ -404,7 +418,7 @@ export function Navbar({ user }: NavbarProps) {
           </Button>
           
           {/* Notifications Bell - Mobile only (visible in desktop nav) */}
-          <Link href="/dashboard/notifications" className="lg:hidden">
+          <Link href="/dashboard/notifications" prefetch={false} className="lg:hidden">
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
               {unreadCount > 0 && (

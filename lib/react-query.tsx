@@ -22,8 +22,8 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             // ✅ Performance: Enhanced caching strategy for better performance
-            staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes (increased from 2)
-            gcTime: 10 * 60 * 1000, // 10 minutes - keep unused data in cache longer (increased from 5)
+            staleTime: 10 * 60 * 1000, // 10 minutes - data is fresh for 10 minutes (increased from 5)
+            gcTime: 20 * 60 * 1000, // 20 minutes - keep unused data in cache longer (increased from 10)
             // Retry failed requests once (fast failure for better UX)
             retry: 1,
             // Exponential backoff with max delay
