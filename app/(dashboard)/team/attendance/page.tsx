@@ -35,6 +35,8 @@ import { AttendanceDetailModal } from "@/components/attendance/attendance-detail
 import { DateDetailModal } from "@/components/attendance/date-detail-modal";
 import { EmployeeDetailModal } from "@/components/attendance/employee-detail-modal";
 import { MonthCalendar } from "@/components/attendance/month-calendar";
+import { useAttendance, useTodayTeamAttendance } from "@/lib/hooks/use-attendance";
+import { useUsers } from "@/lib/hooks/use-users";
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -125,7 +127,7 @@ export default function AttendancePage() {
 
   // Ensure users is an array before filtering
   const filteredUsers = Array.isArray(users) 
-    ? users.filter((u) =>
+    ? users.filter((u: any) =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -133,7 +135,7 @@ export default function AttendancePage() {
 
   // Calculate summary stats
   const summary = attendances.reduce(
-    (acc, att) => {
+    (acc: { totalDays: number; completedDays: number; totalHours: number; overtimeHours: number; totalTasks: number; completedTasks: number }, att: any) => {
       acc.totalDays += 1;
       if (att.checkOutTime) acc.completedDays += 1;
       if (att.checkInTime && att.checkOutTime) {
@@ -342,7 +344,7 @@ export default function AttendancePage() {
             <div>
               <h2 className="text-2xl font-bold">Team Attendance Today</h2>
               <p className="text-sm text-muted-foreground">
-                {formatDate(defaultSelectedDate)} - {teamAttendance.filter((e) => e.isPresent).length} present, {teamAttendance.filter((e) => !e.isPresent).length} absent
+                {formatDate(defaultSelectedDate)} - {teamAttendance.filter((e: any) => e.isPresent).length} present, {teamAttendance.filter((e: any) => !e.isPresent).length} absent
               </p>
             </div>
             <Badge variant="outline">{teamAttendance.length} Team Members</Badge>
@@ -350,7 +352,7 @@ export default function AttendancePage() {
           
           {teamAttendance.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {teamAttendance.map((employee) => (
+              {teamAttendance.map((employee: any) => (
                 <EmployeeCard
                   key={employee.id}
                   employee={employee}

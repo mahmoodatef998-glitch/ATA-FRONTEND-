@@ -146,7 +146,7 @@ export default function TasksPage() {
         <h2 className="text-2xl font-bold mb-4">My Tasks</h2>
         {tasks.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tasks.map((task) => (
+            {tasks.map((task: any) => (
               <TaskCard key={task.id} task={task} />
             ))}
           </div>

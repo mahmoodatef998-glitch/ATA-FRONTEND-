@@ -159,7 +159,7 @@ export default function SupervisorDashboardPage() {
         </div>
         {pendingTasks.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {pendingTasks.map((task) => (
+            {pendingTasks.map((task: any) => (
               <Card key={task.id} className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <CardTitle className="text-lg">{task.title}</CardTitle>

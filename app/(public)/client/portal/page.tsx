@@ -120,23 +120,23 @@ export default function ClientPortalPage() {
   // Calculate statistics - filter out viewed action items
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => 
+    pending: orders.filter((o: any) => 
       o.status === "PENDING" || 
       o.status === "QUOTATION_SENT" ||
       (o.status === "APPROVED" && o.stage !== "COMPLETED_DELIVERED")
     ).length,
-    active: orders.filter(o => 
+    active: orders.filter((o: any) => 
       o.status === "APPROVED" && 
       o.stage !== "COMPLETED_DELIVERED" &&
       o.stage !== "FINAL_PAYMENT_RECEIVED"
     ).length,
-    completed: orders.filter(o => 
+    completed: orders.filter((o: any) => 
       o.status === "COMPLETED" || 
       o.stage === "COMPLETED_DELIVERED"
     ).length,
-    totalValue: orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+    totalValue: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0),
     // Needs action: quotation review, unpaid deposit, or delivery note with final payment due (excluding viewed items)
-    needsAction: orders.filter(o => {
+    needsAction: orders.filter((o: any) => {
       const hasQuotation = o.quotations?.some((q: any) => q.accepted === null && q.file);
       const needsPayment = o.depositPercentage && !o.depositPaid;
       const hasDeliveryNote = o.delivery_notes && o.delivery_notes.length > 0;
@@ -283,7 +283,7 @@ export default function ClientPortalPage() {
               {/* List of orders needing action */}
               <div className="space-y-2">
                 {orders
-                  .filter(o => {
+                  .filter((o: any) => {
                     const hasQuotation = o.quotations?.some((q: any) => q.accepted === null && q.file);
                     const needsPayment = o.depositPercentage && !o.depositPaid;
                     const hasDeliveryNote = o.delivery_notes && o.delivery_notes.length > 0;
@@ -296,7 +296,7 @@ export default function ClientPortalPage() {
                     // Show if there's action needed AND not viewed
                     return (hasQuotation && !quotationViewed) || (needsPayment && !paymentViewed) || (needsFinalPayment && !deliveryViewed);
                   })
-                  .map((order) => {
+                  .map((order: any) => {
                     const hasQuotation = order.quotations?.some((q: any) => q.accepted === null && q.file);
                     const needsPayment = order.depositPercentage && !order.depositPaid;
                     const hasDeliveryNote = order.delivery_notes && order.delivery_notes.length > 0;
@@ -402,7 +402,7 @@ export default function ClientPortalPage() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {orders.map((order) => (
+            {orders.map((order: any) => (
               <Card key={order.id} className="hover:shadow-xl transition-all hover:scale-[1.02] border-2 overflow-hidden group">
                 {/* Colored Top Border based on status */}
                 <div className={`h-1 ${
