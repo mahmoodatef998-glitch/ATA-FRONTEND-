@@ -50,31 +50,40 @@ export function DataPrefetcher() {
         // });
 
         // Common data for all users
-        const commonPrefetches: Promise<any>[] = [
-          // ✅ Performance: Prefetch orders data with credentials
-          fetch("/api/orders?page=1&limit=20", {
-            credentials: "include",
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.success) {
-                queryClient.setQueryData(["orders", { page: 1, limit: 20 }], data.data);
-              }
+        const commonPrefetches: Promise<any>[] = [];
+        
+        // ✅ Performance: Only prefetch if data is not already in cache
+        // Prefetch orders data with credentials (only if not cached)
+        if (!queryClient.getQueryData(["orders", { page: 1, limit: 20 }])) {
+          commonPrefetches.push(
+            fetch("/api/orders?page=1&limit=20", {
+              credentials: "include",
             })
-            .catch(() => {}), // Ignore errors - prefetch is optional
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.success) {
+                  queryClient.setQueryData(["orders", { page: 1, limit: 20 }], data.data);
+                }
+              })
+              .catch(() => {}) // Ignore errors - prefetch is optional
+          );
+        }
 
-          // ✅ Performance: Prefetch clients data with credentials
-          fetch("/api/users?role=CLIENT&limit=20", {
-            credentials: "include",
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.success) {
-                queryClient.setQueryData(["clients", { limit: 20 }], data.data);
-              }
+        // ✅ Performance: Prefetch clients data with credentials (only if not cached)
+        if (!queryClient.getQueryData(["clients", { limit: 20 }])) {
+          commonPrefetches.push(
+            fetch("/api/users?role=CLIENT&limit=20", {
+              credentials: "include",
             })
-            .catch(() => {}),
-        ];
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.success) {
+                  queryClient.setQueryData(["clients", { limit: 20 }], data.data);
+                }
+              })
+              .catch(() => {})
+          );
+        }
 
         // ✅ Performance: Role-specific prefetches with credentials
         if (
@@ -85,69 +94,77 @@ export function DataPrefetcher() {
           // ✅ Disable RSC prefetching - causes RSC storms
           // router.prefetch("/team");
 
-          // Prefetch team stats with credentials
-          commonPrefetches.push(
-            fetch("/api/team/attendance-stats", {
-              credentials: "include",
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["team", "attendance-stats"], data.data);
-                }
+          // ✅ Performance: Prefetch team stats with credentials (only if not cached)
+          if (!queryClient.getQueryData(["team", "attendance-stats"])) {
+            commonPrefetches.push(
+              fetch("/api/team/attendance-stats", {
+                credentials: "include",
               })
-              .catch(() => {})
-          );
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["team", "attendance-stats"], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
 
-          // Prefetch team KPI with credentials
-          commonPrefetches.push(
-            fetch("/api/kpi/team", {
-              credentials: "include",
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["kpi", "team", {}], data.data);
-                }
+          // ✅ Performance: Prefetch team KPI with credentials (only if not cached)
+          if (!queryClient.getQueryData(["kpi", "team", {}])) {
+            commonPrefetches.push(
+              fetch("/api/kpi/team", {
+                credentials: "include",
               })
-              .catch(() => {})
-          );
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["kpi", "team", {}], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
         }
 
         if (userRole === UserRole.TECHNICIAN) {
           // ✅ Disable RSC prefetching - causes RSC storms
           // router.prefetch("/team");
 
-          // Prefetch tasks for technicians with credentials
-          commonPrefetches.push(
-            fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", {
-              credentials: "include",
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(
-                    ["tasks", { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 }],
-                    data.data
-                  );
-                }
+          // ✅ Performance: Prefetch tasks for technicians with credentials (only if not cached)
+          if (!queryClient.getQueryData(["tasks", { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 }])) {
+            commonPrefetches.push(
+              fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", {
+                credentials: "include",
               })
-              .catch(() => {})
-          );
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(
+                      ["tasks", { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 }],
+                      data.data
+                    );
+                  }
+                })
+                .catch(() => {})
+            );
+          }
 
-          // Prefetch KPI for technicians with credentials
-          commonPrefetches.push(
-            fetch("/api/kpi", {
-              credentials: "include",
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["kpi"], data.data);
-                }
+          // ✅ Performance: Prefetch KPI for technicians with credentials (only if not cached)
+          if (!queryClient.getQueryData(["kpi"])) {
+            commonPrefetches.push(
+              fetch("/api/kpi", {
+                credentials: "include",
               })
-              .catch(() => {})
-          );
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["kpi"], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
         }
 
         // Execute all prefetches in parallel (non-blocking)

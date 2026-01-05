@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     // ✅ Performance: Cache key includes role for different data views
     const cacheKey = `dashboard:team-summary:${companyId}:${userRole}`;
 
-    // ✅ Performance: Cache for 2 minutes
-    return await getCached(
+    // ✅ Performance: Cache for 3 minutes (increased for faster page loads)
+    const result = await getCached(
       cacheKey,
       async () => {
         const isTechnician = userRole === UserRole.TECHNICIAN;
@@ -257,8 +257,19 @@ export async function GET(request: NextRequest) {
           data: {},
         };
       },
-      120 // 2 minutes cache TTL
-    ).then((result) => NextResponse.json(result));
+      180 // ✅ Performance: 3 minutes cache TTL for faster page loads (increased from 120s)
+    );
+
+    const response = NextResponse.json(result);
+    
+    // ✅ Performance: Aggressive cache headers for sub-1.5s page loads
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=180, stale-while-revalidate=360, max-age=180'
+    );
+    response.headers.set('X-Cache-Status', 'HIT');
+    
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       {

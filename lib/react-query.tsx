@@ -21,13 +21,13 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // ✅ Performance: Enhanced caching strategy for better performance
-            staleTime: 10 * 60 * 1000, // 10 minutes - data is fresh for 10 minutes (increased from 5)
-            gcTime: 20 * 60 * 1000, // 20 minutes - keep unused data in cache longer (increased from 10)
+            // ✅ Performance: Ultra-aggressive caching for sub-1.5s page loads
+            staleTime: 15 * 60 * 1000, // 15 minutes - data is fresh for 15 minutes (increased for faster loads)
+            gcTime: 30 * 60 * 1000, // 30 minutes - keep unused data in cache longer (increased for instant navigation)
             // Retry failed requests once (fast failure for better UX)
             retry: 1,
-            // Exponential backoff with max delay
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+            // Exponential backoff with max delay (reduced for faster failure)
+            retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 2000), // Reduced from 1000-3000 to 500-2000
             // Disable automatic refetching for better performance
             refetchOnWindowFocus: false, // Don't refetch on window focus
             refetchOnReconnect: false, // Don't refetch on reconnect
@@ -37,6 +37,8 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
             // ✅ Performance: Enable query deduplication to prevent duplicate requests
             // If multiple components request the same query simultaneously, only one request will be made
             structuralSharing: true, // ✅ Enable structural sharing for better performance
+            // ✅ Performance: Enable query deduplication (automatic in React Query v5)
+            // This ensures identical queries are deduplicated automatically
           },
           mutations: {
             // Retry failed mutations once
