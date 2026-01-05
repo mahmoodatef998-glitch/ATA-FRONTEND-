@@ -135,8 +135,13 @@ export function TeamDataPrefetcher() {
       }
     };
 
-    // Start prefetching immediately (non-blocking)
-    prefetchData();
+    // ✅ Fix: Add delay to prevent race conditions and duplicate calls
+    // This ensures session is fully ready before prefetching
+    const timer = setTimeout(() => {
+      prefetchData();
+    }, 300); // 300ms delay to ensure session cookies are ready
+
+    return () => clearTimeout(timer);
   }, [queryClient, router, status, session?.user?.role]);
 
   // This component doesn't render anything

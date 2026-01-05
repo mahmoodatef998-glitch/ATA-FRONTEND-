@@ -8,7 +8,7 @@ import { CheckInOut } from "@/components/technician/check-in-out";
 import { KPICard } from "@/components/technician/kpi-card";
 import { Users, CheckCircle, Clock, TrendingUp, Package, FileText, XCircle } from "lucide-react";
 import { formatTime } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { useI18n } from "@/lib/i18n/context";
@@ -174,7 +174,7 @@ export default function TeamDashboardPage() {
                   {t('team.viewManageTasks')}
                 </p>
               </div>
-              <Link href="/team/technician">
+              <Link href="/team/technician" prefetch={false}>
                 <Button>
                   <Package className="mr-2 h-4 w-4" />
                   {t('team.goToMyTasks')}
@@ -386,7 +386,7 @@ export default function TeamDashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/team/tasks">
+        <Link href="/team/tasks" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer h-full">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -402,7 +402,7 @@ export default function TeamDashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/team/attendance">
+        <Link href="/team/attendance" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer h-full">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -418,7 +418,7 @@ export default function TeamDashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/team/kpi">
+        <Link href="/team/kpi" prefetch={false}>
           <Card className="hover:shadow-lg transition-all cursor-pointer h-full">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">

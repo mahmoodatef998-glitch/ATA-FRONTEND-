@@ -10,10 +10,13 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   // ✅ Performance: Block RSC prefetch requests to prevent RSC storms
+  // More aggressive blocking - block ANY prefetch or RSC request with next-url
   const isRscPrefetch = request.headers.get('next-router-prefetch') === '1';
   const isRscRequest = request.headers.get('rsc') === '1';
+  const hasNextUrl = request.headers.get('next-url');
   
-  if (isRscPrefetch && isRscRequest) {
+  // ✅ Fix: Block if it's a prefetch request OR RSC request with next-url (navigation prefetch)
+  if (isRscPrefetch || (isRscRequest && hasNextUrl)) {
     // Block prefetch requests to prevent RSC storms
     return new NextResponse(null, { status: 204 }); // No Content
   }
