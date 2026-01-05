@@ -14,19 +14,32 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.toString();
   const searchParams = request.nextUrl.searchParams;
   
-  // ✅ CRITICAL: Check RSC in URL FIRST (before any other checks)
-  // This must be the FIRST check to catch all RSC requests immediately
-  // Next.js sends RSC requests with ?_rsc=xxx in the URL
-  if (url.includes('_rsc=') || url.includes('?_rsc') || searchParams.has('_rsc')) {
-    return new NextResponse(null, { 
-      status: 204,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'X-RSC-Blocked': 'url-check',
-      }
-    });
+  // ✅ CRITICAL: Check RSC in URL - but ONLY block prefetch requests, not current page requests
+  // Next.js needs RSC requests for the CURRENT page to load it
+  // We only want to block RSC PREFETCH requests (for other pages)
+  // Prefetch requests have 'next-router-prefetch' or 'next-router-segment-prefetch' headers
+  const hasRscInUrl = url.includes('_rsc=') || url.includes('?_rsc') || searchParams.has('_rsc');
+  
+  // Only block RSC if it's a prefetch request (has prefetch headers)
+  // Allow RSC requests for the current page (needed for page rendering)
+  if (hasRscInUrl) {
+    const isRscPrefetchHeader = 
+      request.headers.get('next-router-prefetch') === '1' ||
+      request.headers.get('next-router-segment-prefetch') !== null;
+    
+    // Only block if it's a prefetch request
+    if (isRscPrefetchHeader) {
+      return new NextResponse(null, { 
+        status: 204,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-RSC-Blocked': 'prefetch-only',
+        }
+      });
+    }
+    // Allow RSC requests for current page (no prefetch header = current page request)
   }
   
   // ✅ Performance: Early return for static files and API routes (skip RSC checks)
@@ -41,29 +54,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // ✅ CRITICAL: Check ALL possible RSC headers (comprehensive blocking)
-  // Check headers AFTER URL check but BEFORE other logic
+  // ✅ CRITICAL: Check RSC headers - but ONLY block PREFETCH requests
+  // Next.js needs RSC requests for the CURRENT page to render it
+  // We only block PREFETCH requests (for other pages), not current page requests
   const isRscPrefetch = 
     request.headers.get('next-router-prefetch') === '1' ||
-    request.headers.get('next-router-segment-prefetch') !== null ||
-    request.headers.get('next-router-segment-prefetch') !== undefined;
-  const isRscRequest = 
-    request.headers.get('rsc') === '1' ||
-    request.headers.get('next-router-state-tree') !== null ||
-    request.headers.get('next-router-state-tree') !== undefined;
+    request.headers.get('next-router-segment-prefetch') !== null;
   
-  // ✅ Block ALL RSC requests immediately (headers check)
-  if (isRscPrefetch || isRscRequest) {
+  // Block ONLY prefetch requests (not current page RSC requests)
+  if (isRscPrefetch) {
     return new NextResponse(null, { 
       status: 204,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'X-RSC-Blocked': 'header-check',
+        'X-RSC-Blocked': 'prefetch-only',
       }
     });
   }
+  
+  // Allow RSC requests without prefetch headers (current page rendering)
+  // These are needed for Next.js to render the current page
   
   // ✅ CRITICAL: Block HEAD requests ONLY for prefetch checks (not for Vercel health checks)
   // Allow HEAD requests for:
