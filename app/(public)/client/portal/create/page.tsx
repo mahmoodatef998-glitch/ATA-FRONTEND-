@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Trash2, ArrowLeft, Package, Upload, FileText } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Package, Upload, FileText } from "lucide-react";
+import { AtaLoader } from "@/components/ui/ata-loader";
 import { useDropzone } from "react-dropzone";
 
 export default function CreateOrderPage() {
@@ -298,7 +299,9 @@ export default function CreateOrderPage() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <div className="mr-2">
+                        <AtaLoader size="sm" showText={false} />
+                      </div>
                       Creating Order...
                     </>
                   ) : (

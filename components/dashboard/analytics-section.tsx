@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyticsCharts } from "./analytics-charts";
-import { Loader2 } from "lucide-react";
+import { AtaLoader } from "@/components/ui/ata-loader";
 import { deduplicateRequest } from "@/lib/utils/request-deduplication";
 import { useSession } from "next-auth/react";
 
@@ -67,9 +67,7 @@ export function AnalyticsSection() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <AtaLoader size="default" showText={true} />
         </CardContent>
       </Card>
     );

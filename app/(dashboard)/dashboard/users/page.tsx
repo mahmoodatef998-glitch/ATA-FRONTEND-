@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Edit, Trash2, Loader2, CheckCircle, XCircle, Clock, UserPlus } from "lucide-react";
+import { Users, Edit, Trash2, CheckCircle, XCircle, Clock, UserPlus } from "lucide-react";
+import { AtaLoader } from "@/components/ui/ata-loader";
 import { toast } from "@/hooks/use-toast";
 import { UserRole, UserAccountStatus } from "@prisma/client";
 import { useSession } from "next-auth/react";
@@ -308,7 +309,7 @@ export default function UsersPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <AtaLoader size="sm" showText={false} />
             </div>
           </CardContent>
         </Card>
@@ -489,7 +490,7 @@ export default function UsersPage() {
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <AtaLoader size="sm" showText={false} />
                 </div>
               ) : users.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -622,7 +623,7 @@ export default function UsersPage() {
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <AtaLoader size="sm" showText={false} />
                 </div>
               ) : pendingUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -719,7 +720,7 @@ export default function UsersPage() {
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <AtaLoader size="sm" showText={false} />
                 </div>
               ) : users.filter(u => u.accountStatus === "APPROVED").length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
