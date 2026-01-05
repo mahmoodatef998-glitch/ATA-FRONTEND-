@@ -11,6 +11,7 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
+  const searchParams = request.nextUrl.searchParams;
   
   // ✅ Performance: Early return for static files and API routes (skip RSC checks)
   // This improves performance by skipping unnecessary checks
@@ -25,6 +26,9 @@ export async function middleware(request: NextRequest) {
   
   // ✅ Performance: PRIORITY 1 - Block ALL RSC requests immediately (before any other logic)
   // This is the most critical optimization for sub-1.5s page loads
+  // ✅ CRITICAL FIX: Check RSC in query parameters (?_rsc=xxx) - Next.js sends RSC requests with query params
+  const hasRscQuery = searchParams.has('_rsc');
+  
   // ✅ FIX: Check ALL possible RSC headers (comprehensive blocking)
   const isRscPrefetch = 
     request.headers.get('next-router-prefetch') === '1' ||
@@ -33,9 +37,9 @@ export async function middleware(request: NextRequest) {
     request.headers.get('rsc') === '1' ||
     request.headers.get('next-router-state-tree') !== null;
   
-  // ✅ Block ALL RSC requests immediately (most aggressive blocking)
+  // ✅ Block ALL RSC requests immediately (headers OR query params) - most aggressive blocking
   // Block ANY RSC request - this prevents all RSC storms
-  if (isRscPrefetch || isRscRequest) {
+  if (hasRscQuery || isRscPrefetch || isRscRequest) {
     return new NextResponse(null, { 
       status: 204, // No Content
       headers: {
@@ -52,6 +56,7 @@ export async function middleware(request: NextRequest) {
       status: 204,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-HEAD-Blocked': 'true', // Debug header
       }
     });
   }

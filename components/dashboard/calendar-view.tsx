@@ -45,7 +45,9 @@ export function CalendarView({ companyId }: CalendarViewProps) {
   const fetchCalendarData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/dashboard/calendar?companyId=${companyId}`);
+      const response = await fetch(`/api/dashboard/calendar?companyId=${companyId}`, {
+        credentials: "include", // ✅ Critical: Include credentials for authentication
+      });
       const result = await response.json();
 
       if (result.success) {

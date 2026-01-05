@@ -7,10 +7,21 @@ import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users, ArrowRight,
 import { Link } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@prisma/client";
-import { AnalyticsSection } from "@/components/dashboard/analytics-section";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardSkeleton } from "@/components/loading-skeletons/dashboard-skeleton";
 import { deduplicateRequest } from "@/lib/utils/request-deduplication";
+
+// ✅ Performance: Lazy load AnalyticsSection (contains heavy chart libraries)
+const AnalyticsSection = dynamic(
+  () => import("@/components/dashboard/analytics-section").then(mod => ({ default: mod.AnalyticsSection })),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse bg-gray-200 dark:bg-gray-800 rounded-lg" />
+    ),
+    ssr: false, // Charts don't need SSR
+  }
+);
 
 interface DashboardSummary {
   stats: {

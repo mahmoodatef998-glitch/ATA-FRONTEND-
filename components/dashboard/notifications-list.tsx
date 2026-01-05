@@ -71,7 +71,10 @@ export function NotificationsList({ initialNotifications, pagination }: Notifica
     try {
       await Promise.all(
         unreadNotifications.map((n) =>
-          fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" })
+          fetch(`/api/notifications/${n.id}/read`, { 
+            method: "PATCH",
+            credentials: "include", // ✅ Critical: Include credentials for authentication
+          })
         )
       );
 

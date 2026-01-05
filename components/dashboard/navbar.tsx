@@ -170,6 +170,7 @@ export function Navbar({ user }: NavbarProps) {
     try {
       const response = await fetch("/api/backup", {
         method: "POST",
+        credentials: "include", // ✅ Critical: Include credentials for authentication
       });
 
       const result = await response.json();

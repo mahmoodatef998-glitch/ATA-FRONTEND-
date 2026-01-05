@@ -22,8 +22,8 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             // ✅ Performance: Ultra-aggressive caching for sub-1.5s page loads
-            staleTime: 15 * 60 * 1000, // 15 minutes - data is fresh for 15 minutes (increased for faster loads)
-            gcTime: 30 * 60 * 1000, // 30 minutes - keep unused data in cache longer (increased for instant navigation)
+            staleTime: 20 * 60 * 1000, // 20 minutes - data is fresh for 20 minutes (increased from 15 for even faster loads)
+            gcTime: 40 * 60 * 1000, // 40 minutes - keep unused data in cache longer (increased from 30 for instant navigation)
             // Retry failed requests once (fast failure for better UX)
             retry: 1,
             // Exponential backoff with max delay (reduced for faster failure)
@@ -39,6 +39,11 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
             structuralSharing: true, // ✅ Enable structural sharing for better performance
             // ✅ Performance: Enable query deduplication (automatic in React Query v5)
             // This ensures identical queries are deduplicated automatically
+            // ✅ Performance: Add query key factory for better deduplication
+            queryKeyHashFn: (queryKey) => {
+              // Custom hash function for better deduplication
+              return JSON.stringify(queryKey);
+            },
           },
           mutations: {
             // Retry failed mutations once
