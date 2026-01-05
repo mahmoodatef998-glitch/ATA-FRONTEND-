@@ -54,47 +54,9 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // ✅ Performance: Block RSC prefetch requests using rewrites
-  // This intercepts RSC requests before they reach the server
-  async rewrites() {
-    return {
-      beforeFiles: [
-        // Block RSC prefetch requests
-        {
-          source: '/:path*',
-          has: [
-            {
-              type: 'header',
-              key: 'next-router-prefetch',
-              value: '1',
-            },
-          ],
-          destination: '/api/block-rsc',
-        },
-        {
-          source: '/:path*',
-          has: [
-            {
-              type: 'header',
-              key: 'rsc',
-              value: '1',
-            },
-          ],
-          destination: '/api/block-rsc',
-        },
-        {
-          source: '/:path*',
-          has: [
-            {
-              type: 'header',
-              key: 'next-router-state-tree',
-            },
-          ],
-          destination: '/api/block-rsc',
-        },
-      ],
-    };
-  },
+  // ✅ Performance: RSC blocking is handled by middleware (faster than rewrites)
+  // Middleware runs on Edge Runtime and is more efficient than rewrites
+  // Rewrites add overhead to every request, so we removed them
   
   // Security Headers & CORS Configuration
   async headers() {

@@ -12,6 +12,17 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
   
+  // ✅ Performance: Early return for static files and API routes (skip RSC checks)
+  // This improves performance by skipping unnecessary checks
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/images') ||
+    pathname.startsWith('/favicon')
+  ) {
+    return NextResponse.next();
+  }
+  
   // ✅ Performance: PRIORITY 1 - Block ALL RSC requests immediately (before any other logic)
   // This is the most critical optimization for sub-1.5s page loads
   // ✅ FIX: Check ALL possible RSC headers (comprehensive blocking)
@@ -36,13 +47,7 @@ export async function middleware(request: NextRequest) {
   
   // ✅ Performance: PRIORITY 2 - Block ALL HEAD requests to page routes
   // HEAD requests are used for prefetch checks - blocking them speeds up navigation
-  if (
-    method === 'HEAD' && 
-    !pathname.startsWith('/api') && 
-    !pathname.startsWith('/_next') &&
-    !pathname.startsWith('/images') &&
-    !pathname.startsWith('/favicon')
-  ) {
+  if (method === 'HEAD') {
     return new NextResponse(null, { 
       status: 204,
       headers: {
