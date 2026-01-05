@@ -718,6 +718,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 const response = await fetch(`/api/orders/${order.id}/payment`, {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
+                                  credentials: "include", // ✅ Critical: Include credentials for authentication
                                   body: JSON.stringify({
                                     paymentType: "DEPOSIT",
                                     amount: order.depositAmount,
@@ -811,6 +812,7 @@ export function OrderDetailsTabs({ order }: OrderDetailsTabsProps) {
                                 const response = await fetch(`/api/orders/${order.id}/payment`, {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
+                                  credentials: "include", // ✅ Critical: Include credentials for authentication
                                   body: JSON.stringify({
                                     paymentType: "FINAL",
                                     amount: finalAmount,

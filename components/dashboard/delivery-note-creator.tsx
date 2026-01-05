@@ -77,6 +77,7 @@ export function DeliveryNoteCreator({
 
       const response = await fetch(`/api/orders/${orderId}/delivery-note`, {
         method: "POST",
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: formData,
       });
 

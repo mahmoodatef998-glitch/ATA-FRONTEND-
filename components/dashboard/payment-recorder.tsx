@@ -55,6 +55,7 @@ export function PaymentRecorder({
       const response = await fetch(`/api/orders/${orderId}/payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: JSON.stringify({
           paymentType,
           amount: parseFloat(amount),

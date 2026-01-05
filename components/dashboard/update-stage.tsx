@@ -71,6 +71,7 @@ export function UpdateStage({ orderId, currentStage }: UpdateStageProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: JSON.stringify({ stage }),
       });
 

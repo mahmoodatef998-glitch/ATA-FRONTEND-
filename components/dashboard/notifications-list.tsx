@@ -40,6 +40,7 @@ export function NotificationsList({ initialNotifications, pagination }: Notifica
     try {
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: "PATCH",
+        credentials: "include", // ✅ Critical: Include credentials for authentication
       });
 
       if (response.ok) {

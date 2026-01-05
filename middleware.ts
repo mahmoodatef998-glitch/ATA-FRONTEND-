@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
-  const searchParams = request.nextUrl.searchParams;
+  const url = request.nextUrl.toString(); // ✅ Get full URL including query params
   
   // ✅ Performance: Early return for static files and API routes (skip RSC checks)
   // This improves performance by skipping unnecessary checks
@@ -26,7 +26,11 @@ export async function middleware(request: NextRequest) {
   
   // ✅ Performance: PRIORITY 1 - Block ALL RSC requests immediately (before any other logic)
   // This is the most critical optimization for sub-1.5s page loads
-  // ✅ CRITICAL FIX: Check RSC in query parameters (?_rsc=xxx) - Next.js sends RSC requests with query params
+  // ✅ CRITICAL FIX: Check RSC in full URL string (most reliable method)
+  const hasRscInUrl = url.includes('_rsc=') || url.includes('?_rsc');
+  
+  // ✅ Check RSC in query parameters (backup method)
+  const searchParams = request.nextUrl.searchParams;
   const hasRscQuery = searchParams.has('_rsc');
   
   // ✅ FIX: Check ALL possible RSC headers (comprehensive blocking)
@@ -37,9 +41,9 @@ export async function middleware(request: NextRequest) {
     request.headers.get('rsc') === '1' ||
     request.headers.get('next-router-state-tree') !== null;
   
-  // ✅ Block ALL RSC requests immediately (headers OR query params) - most aggressive blocking
+  // ✅ Block ALL RSC requests immediately (URL string, query params, OR headers) - most aggressive blocking
   // Block ANY RSC request - this prevents all RSC storms
-  if (hasRscQuery || isRscPrefetch || isRscRequest) {
+  if (hasRscInUrl || hasRscQuery || isRscPrefetch || isRscRequest) {
     return new NextResponse(null, { 
       status: 204, // No Content
       headers: {
@@ -95,14 +99,17 @@ export async function middleware(request: NextRequest) {
 
 // ✅ Performance: Run middleware on all routes to block RSC prefetch requests
 // This ensures RSC prefetch blocking works across the entire application
+// ✅ FIX: Simplified matcher pattern to avoid conflicts and ensure comprehensive coverage
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/client/portal/:path*',
-    '/team/:path*',        // ✅ Add team routes
-    '/login',              // ✅ Add login route
-    '/client/login',       // ✅ Add client login route
-    '/',                   // ✅ Add home page
-    '/((?!api|_next/static|_next/image|favicon.ico).*)', // ✅ Match all routes except static files
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - image files (svg, png, jpg, jpeg, gif, webp)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

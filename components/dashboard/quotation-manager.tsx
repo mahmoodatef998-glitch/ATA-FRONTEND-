@@ -116,6 +116,7 @@ export function QuotationManager({ orderId, orderTotal, currency = "AED" }: Quot
 
       const response = await fetch(`/api/orders/${orderId}/quotations`, {
         method: "POST",
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: formData,
       });
 

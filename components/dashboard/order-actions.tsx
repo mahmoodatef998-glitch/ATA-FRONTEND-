@@ -44,6 +44,7 @@ export function OrderActions({ orderId, currentStatus, publicToken }: OrderActio
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: JSON.stringify({
           status: newStatus,
           note: actionNote || note,
