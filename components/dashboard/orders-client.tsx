@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -249,9 +249,14 @@ export function OrdersClient() {
     }
   }, [sessionStatus, router]);
 
-  // ✅ Fix: Show loading if session is loading or query is loading/fetching
+  // ✅ Fix: Show loading if session is loading, query is loading/fetching, OR session is not ready yet
   // IMPORTANT: Show skeleton during loading even if there's an error (will auto-retry)
-  if (sessionStatus === "loading" || isLoading || isFetching) {
+  if (
+    sessionStatus === "loading" || 
+    isLoading || 
+    isFetching || 
+    (sessionStatus === "authenticated" && !sessionReady)
+  ) {
     return <OrdersSkeleton />;
   }
 
@@ -260,9 +265,9 @@ export function OrdersClient() {
     return <OrdersSkeleton />;
   }
 
-  // ✅ Fix: Only show error if session is authenticated (not during loading)
+  // ✅ Fix: Only show error if session is authenticated and ready (not during loading)
   // If session was loading and error occurred, it will auto-retry via useEffect
-  if (error && sessionStatus === "authenticated" && session?.user) {
+  if (error && sessionStatus === "authenticated" && session?.user && sessionReady) {
     const errorMessage = error instanceof Error ? error.message : "An error occurred while loading orders";
     const isAuthError = errorMessage.includes("Session expired") || errorMessage.includes("Unauthorized");
     
@@ -303,7 +308,16 @@ export function OrdersClient() {
     );
   }
 
-  if (!data?.success || !data?.data) {
+  // ✅ Fix: Only show "No data" if query has completed and returned no data
+  // Don't show this if query hasn't run yet (sessionReady = false)
+  if (
+    sessionStatus === "authenticated" && 
+    session?.user && 
+    sessionReady && 
+    !isLoading && 
+    !isFetching && 
+    (!data?.success || !data?.data)
+  ) {
     return (
       <div className="space-y-6">
         <Card>
@@ -319,6 +333,11 @@ export function OrdersClient() {
         </Card>
       </div>
     );
+  }
+
+  // ✅ Fix: Ensure data exists before accessing it
+  if (!data?.data) {
+    return <OrdersSkeleton />;
   }
 
   const orders = data.data.orders;
@@ -470,7 +489,7 @@ export function OrdersClient() {
                         </TableCell>
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>
-                          <Link href={`/dashboard/orders/${order.id}`}>
+                          <Link href={`/dashboard/orders/${order.id}`} prefetch={false}>
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4 mr-2" />
                               View
