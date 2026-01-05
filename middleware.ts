@@ -14,14 +14,39 @@ export async function middleware(request: NextRequest) {
   const isRscPrefetch = request.headers.get('next-router-prefetch') === '1';
   const isRscRequest = request.headers.get('rsc') === '1';
   const hasNextUrl = request.headers.get('next-url');
+  const hasRouterStateTree = request.headers.get('next-router-state-tree');
   const pathname = request.nextUrl.pathname;
+  const method = request.method;
   
-  // ✅ Fix: Block ALL RSC requests except actual page navigation
+  // ✅ Fix: Block ALL RSC prefetch requests and unnecessary HEAD requests
   // Block if:
   // 1. It's a prefetch request (next-router-prefetch)
   // 2. It's an RSC request with next-url (navigation prefetch)
-  // 3. It's an RSC request to root path (likely prefetch)
-  if (isRscPrefetch || (isRscRequest && hasNextUrl) || (isRscRequest && pathname === '/')) {
+  // 3. It's an RSC request with next-router-state-tree (navigation prefetch)
+  // 4. It's an RSC request to root or common paths (likely prefetch)
+  // 5. It's a HEAD request to page routes (likely prefetch check) - except API routes
+  const isPrefetchRequest = 
+    isRscPrefetch || 
+    (isRscRequest && hasNextUrl) || 
+    (isRscRequest && hasRouterStateTree) ||
+    (isRscRequest && (
+      pathname === '/' || 
+      pathname.startsWith('/team') || 
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/login')
+    ));
+  
+  const isUnnecessaryHeadRequest = 
+    method === 'HEAD' && 
+    !pathname.startsWith('/api') && 
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/images') &&
+    (pathname.startsWith('/team') || 
+     pathname.startsWith('/dashboard') || 
+     pathname.startsWith('/login') ||
+     pathname === '/');
+  
+  if (isPrefetchRequest || isUnnecessaryHeadRequest) {
     // Block prefetch requests to prevent RSC storms
     return new NextResponse(null, { status: 204 }); // No Content
   }

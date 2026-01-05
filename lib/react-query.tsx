@@ -34,6 +34,9 @@ export function ReactQueryProvider({ children }: { children: ReactNode }) {
             refetchOnMount: false, // Use cached data if available (don't refetch on mount)
             // Network mode: prefer cache over network for better performance
             networkMode: "offlineFirst", // ✅ Use cache first, then network if needed
+            // ✅ Performance: Enable query deduplication to prevent duplicate requests
+            // If multiple components request the same query simultaneously, only one request will be made
+            structuralSharing: true, // ✅ Enable structural sharing for better performance
           },
           mutations: {
             // Retry failed mutations once

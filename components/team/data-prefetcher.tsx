@@ -28,18 +28,9 @@ export function TeamDataPrefetcher() {
     // Prefetch data and pages based on user role
     const prefetchData = async () => {
       try {
-        // ✅ Performance: Disable RSC prefetching - causes excessive _rsc requests
-        // Client-side navigation is fast enough with React Query cache
-        // const pagesToPrefetch = [
-        //   "/team/tasks",
-        //   "/team/attendance",
-        //   "/team/kpi",
-        // ];
-        // pagesToPrefetch.forEach((page) => {
-        //   router.prefetch(page);
-        // });
-
-        // ✅ Performance: Check cache first to avoid duplicate requests
+        // ✅ Performance: Check cache to avoid duplicate requests
+        // React Query automatically handles deduplication for concurrent requests
+        // So we only need to check if data exists in cache
         const attendanceStatsCache = queryClient.getQueryData(["team", "attendance-stats"]);
         const tasksCache = queryClient.getQueryData([
           "tasks",
@@ -61,6 +52,7 @@ export function TeamDataPrefetcher() {
           userRole === UserRole.ACCOUNTANT
         ) {
           // Prefetch team attendance stats (only if not in cache)
+          // React Query will handle deduplication automatically
           if (!attendanceStatsCache) {
             prefetches.push(
               fetch("/api/team/attendance-stats", { credentials: "include" })
@@ -75,6 +67,7 @@ export function TeamDataPrefetcher() {
           }
 
           // Prefetch tasks (only if not in cache)
+          // React Query will handle deduplication automatically
           if (!tasksCache) {
             prefetches.push(
               fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", { credentials: "include" })
@@ -95,6 +88,7 @@ export function TeamDataPrefetcher() {
         // Prefetch for technicians
         if (userRole === UserRole.TECHNICIAN) {
           // Prefetch KPI (only if not in cache)
+          // React Query will handle deduplication automatically
           if (!kpiCache) {
             prefetches.push(
               fetch("/api/kpi", { credentials: "include" })
@@ -115,10 +109,8 @@ export function TeamDataPrefetcher() {
           userRole === UserRole.ADMIN ||
           userRole === UserRole.OPERATIONS_MANAGER
         ) {
-          // ✅ Performance: Disable RSC prefetching
-          // router.prefetch("/team/members");
-
           // Prefetch team KPI (only if not in cache)
+          // React Query will handle deduplication automatically
           if (!teamKPICache) {
             prefetches.push(
               fetch("/api/kpi/team", { credentials: "include" })
@@ -133,6 +125,7 @@ export function TeamDataPrefetcher() {
           }
 
           // Prefetch team members data (only if not in cache)
+          // React Query will handle deduplication automatically
           if (!membersCache) {
             prefetches.push(
               fetch("/api/team/members", { credentials: "include" })
@@ -148,7 +141,10 @@ export function TeamDataPrefetcher() {
         }
 
         // Execute all prefetches in parallel (non-blocking)
-        await Promise.allSettled(prefetches);
+        // Only execute if there are prefetches to make
+        if (prefetches.length > 0) {
+          await Promise.allSettled(prefetches);
+        }
       } catch (error) {
         // Silently fail - prefetching is optional
         console.debug("Team prefetch error (non-critical):", error);
