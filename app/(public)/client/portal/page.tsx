@@ -49,10 +49,8 @@ export default function ClientPortalPage() {
         className: "bg-green-50 border-green-200",
       });
       window.history.replaceState({}, "", "/client/portal");
-      // ✅ Performance: Invalidate query to refetch updated data
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
-      }, 500);
+      // ✅ Performance: Invalidate query immediately (React Query handles debouncing)
+      queryClient.invalidateQueries({ queryKey: ["clientOrders"] });
     } else if (successType === "accepted") {
       toast({
         title: "✅ Quotation accepted",
