@@ -21,8 +21,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket, useSocketEvent } from "@/hooks/use-socket";
-import { usePolling } from "@/lib/hooks/use-polling";
-import { deduplicateRequest } from "@/lib/utils/request-deduplication";
+import { useQuery } from "@tanstack/react-query";
 
 interface NavbarProps {
   user: {
@@ -39,7 +38,6 @@ export function Navbar({ user }: NavbarProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useI18n();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
   
   // ✅ Performance: Disable RSC prefetching on hover - causes RSC storms
@@ -56,39 +54,28 @@ export function Navbar({ user }: NavbarProps) {
     autoConnect: true, // Will auto-detect Vercel and skip connection
   });
 
-  // ✅ Performance: Memoize fetchUnreadCount to prevent re-creation
-  // ✅ FIX: Add request deduplication to prevent duplicate calls
-  const fetchUnreadCount = useCallback(async () => {
-    // ✅ Performance: Deduplicate requests within 1 second window
-    const userId = user.id || 0;
-    const deduplicationKey = `unread-count:${userId}`;
-    
-    return deduplicateRequest(
-      deduplicationKey,
-      async () => {
-        try {
-          // ✅ Fix: Add credentials and ensure session is ready
-          const response = await fetch("/api/notifications/unread-count", {
-            credentials: "include", // ✅ Critical: Include credentials for authentication
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUnreadCount(data.data?.count || 0);
-            return data;
-          } else {
-            // Silently ignore errors (notifications are not critical)
-            setUnreadCount(0);
-            return { success: true, data: { count: 0 } };
-          }
-        } catch (error) {
-          // Silently ignore - notifications are not critical for app functionality
-          setUnreadCount(0);
-          return { success: true, data: { count: 0 } };
-        }
-      },
-      1000 // ✅ Deduplication window: 1 second
-    );
-  }, [user.id]);
+  // ✅ Performance: Use React Query for unread count with automatic deduplication
+  // This prevents duplicate requests and provides better caching
+  const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery({
+    queryKey: ['notifications', 'unread-count', user.id],
+    queryFn: async () => {
+      const response = await fetch("/api/notifications/unread-count", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.data?.count || 0;
+      }
+      return 0;
+    },
+    staleTime: 5000, // ✅ Cache for 5 seconds
+    refetchInterval: isConnected ? false : 30000, // ✅ Only poll if socket is not connected
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    enabled: !!user.id, // ✅ Only fetch if user.id exists
+  });
+
+  const unreadCount = unreadCountData || 0;
 
   // Real-time notification handler
   const handleNewNotification = useCallback((data: any) => {
@@ -96,15 +83,15 @@ export function Navbar({ user }: NavbarProps) {
       console.log("🔔 New notification received:", data);
     }
     
-    // Refresh unread count
-    fetchUnreadCount();
+    // Refresh unread count using React Query
+    refetchUnreadCount();
     
     // Show toast notification
     toast({
       title: data.title || "New Notification",
       description: data.body || "You have a new notification",
     });
-  }, [toast, fetchUnreadCount]);
+  }, [toast, refetchUnreadCount]);
 
   // Real-time order update handler
   const handleOrderUpdate = useCallback((data: any) => {
@@ -112,31 +99,12 @@ export function Navbar({ user }: NavbarProps) {
       console.log("📦 Order updated:", data);
     }
     // Refresh unread count (in case there's a new notification)
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
+    refetchUnreadCount();
+  }, [refetchUnreadCount]);
 
   // Subscribe to real-time events
   useSocketEvent(socket, "new_notification", handleNewNotification);
   useSocketEvent(socket, "order_updated", handleOrderUpdate);
-
-  // ✅ Fix: Get session status to check if ready
-  const { status: sessionStatus } = useSession();
-
-  // ✅ Performance: Use polling hook with proper cleanup
-  useEffect(() => {
-    // ✅ Fix: Only fetch if session is authenticated (not loading)
-    if (sessionStatus === "authenticated") {
-      // Small delay to ensure session cookies are ready
-      const timer = setTimeout(() => {
-        fetchUnreadCount();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [fetchUnreadCount, sessionStatus]);
-
-  // ✅ Performance: Use polling hook instead of manual setInterval
-  // Only poll if socket is not connected (fallback) AND session is authenticated
-  usePolling(fetchUnreadCount, 30000, !isConnected && sessionStatus === "authenticated");
 
   const handleLogout = async () => {
     try {

@@ -17,29 +17,37 @@ export async function middleware(request: NextRequest) {
   // ✅ CRITICAL: Check RSC in URL - but ONLY block prefetch requests, not current page requests
   // Next.js needs RSC requests for the CURRENT page to load it
   // We only want to block RSC PREFETCH requests (for other pages)
-  // Prefetch requests have 'next-router-prefetch' or 'next-router-segment-prefetch' headers
+  // Prefetch requests have:
+  // 1. 'next-router-prefetch' or 'next-router-segment-prefetch' headers, OR
+  // 2. 'rsc: 1' header with 'next-url' pointing to a different page
   const hasRscInUrl = url.includes('_rsc=') || url.includes('?_rsc') || searchParams.has('_rsc');
   
-  // Only block RSC if it's a prefetch request (has prefetch headers)
-  // Allow RSC requests for the current page (needed for page rendering)
   if (hasRscInUrl) {
     const isRscPrefetchHeader = 
       request.headers.get('next-router-prefetch') === '1' ||
       request.headers.get('next-router-segment-prefetch') !== null;
     
-    // Only block if it's a prefetch request
-    if (isRscPrefetchHeader) {
+    // Check if rsc: "1" header exists AND next-url is different from current path (prefetch)
+    const hasRscHeader = request.headers.get('rsc') === '1';
+    const nextUrl = request.headers.get('next-url');
+    // Normalize paths for comparison (remove leading/trailing slashes)
+    const normalizedPathname = pathname.replace(/^\/|\/$/g, '');
+    const normalizedNextUrl = nextUrl ? nextUrl.replace(/^\/|\/$/g, '') : '';
+    const isDifferentPage = nextUrl && normalizedNextUrl !== normalizedPathname && normalizedNextUrl !== '';
+    
+    // Block if it's a prefetch request (has prefetch header OR rsc header with different page)
+    if (isRscPrefetchHeader || (hasRscHeader && isDifferentPage)) {
       return new NextResponse(null, { 
         status: 204,
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
-          'X-RSC-Blocked': 'prefetch-only',
+          'X-RSC-Blocked': 'prefetch-detected',
         }
       });
     }
-    // Allow RSC requests for current page (no prefetch header = current page request)
+    // Allow RSC requests for current page (no prefetch header and same page = current page request)
   }
   
   // ✅ Performance: Early return for static files and API routes (skip RSC checks)
@@ -61,15 +69,22 @@ export async function middleware(request: NextRequest) {
     request.headers.get('next-router-prefetch') === '1' ||
     request.headers.get('next-router-segment-prefetch') !== null;
   
+  // Also check for rsc: "1" with different page (prefetch)
+  const hasRscHeader = request.headers.get('rsc') === '1';
+  const nextUrl = request.headers.get('next-url');
+  const normalizedPathname = pathname.replace(/^\/|\/$/g, '');
+  const normalizedNextUrl = nextUrl ? nextUrl.replace(/^\/|\/$/g, '') : '';
+  const isDifferentPage = nextUrl && normalizedNextUrl !== normalizedPathname && normalizedNextUrl !== '';
+  
   // Block ONLY prefetch requests (not current page RSC requests)
-  if (isRscPrefetch) {
+  if (isRscPrefetch || (hasRscHeader && isDifferentPage)) {
     return new NextResponse(null, { 
       status: 204,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'X-RSC-Blocked': 'prefetch-only',
+        'X-RSC-Blocked': 'prefetch-detected',
       }
     });
   }
