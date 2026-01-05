@@ -14,7 +14,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { UserRole } from "@prisma/client";
 
 async function getPurchaseOrdersAndPayments(companyId: number) {

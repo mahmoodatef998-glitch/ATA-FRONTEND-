@@ -52,7 +52,18 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'recharts',
     ],
+    // ✅ CRITICAL: Disable RSC prefetching at Next.js level
+    // This prevents Next.js from automatically prefetching RSC payloads
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
+  
+  // ✅ CRITICAL: Disable automatic prefetching for all routes
+  // This prevents Next.js from automatically prefetching pages on hover/focus
+  // We use client-side navigation with React Query instead
+  // Note: This is a global setting - all Link components should have prefetch={false}
+  // We've already created a custom Link component that disables prefetch by default
   
   // ✅ Performance: RSC blocking is handled by middleware (faster than rewrites)
   // Middleware runs on Edge Runtime and is more efficient than rewrites

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Clock, MapPin, User, Package, CheckCircle, Circle, AlertCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { WorkLogForm } from "@/components/technician/work-log-form";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";

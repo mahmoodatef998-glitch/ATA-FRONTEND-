@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/technician/task-card";
 import { Loader2, Plus, Filter, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import {
   Select,
   SelectContent,

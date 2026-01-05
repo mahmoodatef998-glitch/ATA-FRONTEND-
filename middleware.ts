@@ -11,7 +11,23 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
-  const url = request.nextUrl.toString(); // ✅ Get full URL including query params
+  const url = request.nextUrl.toString();
+  const searchParams = request.nextUrl.searchParams;
+  
+  // ✅ CRITICAL: Check RSC in URL FIRST (before any other checks)
+  // This must be the FIRST check to catch all RSC requests immediately
+  // Next.js sends RSC requests with ?_rsc=xxx in the URL
+  if (url.includes('_rsc=') || url.includes('?_rsc') || searchParams.has('_rsc')) {
+    return new NextResponse(null, { 
+      status: 204,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-RSC-Blocked': 'url-check',
+      }
+    });
+  }
   
   // ✅ Performance: Early return for static files and API routes (skip RSC checks)
   // This improves performance by skipping unnecessary checks
@@ -19,48 +35,47 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/images') ||
-    pathname.startsWith('/favicon')
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/.well-known')
   ) {
     return NextResponse.next();
   }
   
-  // ✅ Performance: PRIORITY 1 - Block ALL RSC requests immediately (before any other logic)
-  // This is the most critical optimization for sub-1.5s page loads
-  // ✅ CRITICAL FIX: Check RSC in full URL string (most reliable method)
-  const hasRscInUrl = url.includes('_rsc=') || url.includes('?_rsc');
-  
-  // ✅ Check RSC in query parameters (backup method)
-  const searchParams = request.nextUrl.searchParams;
-  const hasRscQuery = searchParams.has('_rsc');
-  
-  // ✅ FIX: Check ALL possible RSC headers (comprehensive blocking)
+  // ✅ CRITICAL: Check ALL possible RSC headers (comprehensive blocking)
+  // Check headers AFTER URL check but BEFORE other logic
   const isRscPrefetch = 
     request.headers.get('next-router-prefetch') === '1' ||
-    request.headers.get('next-router-segment-prefetch') !== null;
+    request.headers.get('next-router-segment-prefetch') !== null ||
+    request.headers.get('next-router-segment-prefetch') !== undefined;
   const isRscRequest = 
     request.headers.get('rsc') === '1' ||
-    request.headers.get('next-router-state-tree') !== null;
+    request.headers.get('next-router-state-tree') !== null ||
+    request.headers.get('next-router-state-tree') !== undefined;
   
-  // ✅ Block ALL RSC requests immediately (URL string, query params, OR headers) - most aggressive blocking
-  // Block ANY RSC request - this prevents all RSC storms
-  if (hasRscInUrl || hasRscQuery || isRscPrefetch || isRscRequest) {
+  // ✅ Block ALL RSC requests immediately (headers check)
+  if (isRscPrefetch || isRscRequest) {
     return new NextResponse(null, { 
-      status: 204, // No Content
+      status: 204,
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'X-RSC-Blocked': 'true', // Debug header
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-RSC-Blocked': 'header-check',
       }
     });
   }
   
-  // ✅ Performance: PRIORITY 2 - Block ALL HEAD requests to page routes
+  // ✅ CRITICAL: Block ALL HEAD requests to page routes (including Vercel draft status)
   // HEAD requests are used for prefetch checks - blocking them speeds up navigation
+  // Vercel sends HEAD requests with x-vercel-draft-status header
   if (method === 'HEAD') {
     return new NextResponse(null, { 
       status: 204,
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'X-HEAD-Blocked': 'true', // Debug header
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-HEAD-Blocked': 'true',
       }
     });
   }

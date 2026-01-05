@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { useSession } from "next-auth/react";
 import { UserRole } from "@prisma/client";
 import { usePermission } from "@/lib/permissions/hooks";

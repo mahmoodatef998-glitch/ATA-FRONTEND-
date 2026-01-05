@@ -51,6 +51,7 @@ export function ClientApprovalList({ initialClients, pagination }: ClientApprova
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: JSON.stringify({ action: "approve" }),
       });
 
@@ -99,6 +100,7 @@ export function ClientApprovalList({ initialClients, pagination }: ClientApprova
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // ✅ Critical: Include credentials for authentication
         body: JSON.stringify({ action: "reject", rejectionReason }),
       });
 

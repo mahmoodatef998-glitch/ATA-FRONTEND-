@@ -3,7 +3,7 @@
 import { Chatbot } from "@/components/chat/chatbot";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { ArrowLeft, MessageCircle, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function TestChatbotPage() {
