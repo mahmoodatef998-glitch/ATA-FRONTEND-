@@ -22,6 +22,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket, useSocketEvent } from "@/hooks/use-socket";
 import { usePolling } from "@/lib/hooks/use-polling";
+import { deduplicateRequest } from "@/lib/utils/request-deduplication";
 
 interface NavbarProps {
   user: {
@@ -56,24 +57,38 @@ export function Navbar({ user }: NavbarProps) {
   });
 
   // ✅ Performance: Memoize fetchUnreadCount to prevent re-creation
+  // ✅ FIX: Add request deduplication to prevent duplicate calls
   const fetchUnreadCount = useCallback(async () => {
-    try {
-      // ✅ Fix: Add credentials and ensure session is ready
-      const response = await fetch("/api/notifications/unread-count", {
-        credentials: "include", // ✅ Critical: Include credentials for authentication
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.data?.count || 0);
-      } else {
-        // Silently ignore errors (notifications are not critical)
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      // Silently ignore - notifications are not critical for app functionality
-      setUnreadCount(0);
-    }
-  }, []);
+    // ✅ Performance: Deduplicate requests within 1 second window
+    const userId = user.id || 0;
+    const deduplicationKey = `unread-count:${userId}`;
+    
+    return deduplicateRequest(
+      deduplicationKey,
+      async () => {
+        try {
+          // ✅ Fix: Add credentials and ensure session is ready
+          const response = await fetch("/api/notifications/unread-count", {
+            credentials: "include", // ✅ Critical: Include credentials for authentication
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUnreadCount(data.data?.count || 0);
+            return data;
+          } else {
+            // Silently ignore errors (notifications are not critical)
+            setUnreadCount(0);
+            return { success: true, data: { count: 0 } };
+          }
+        } catch (error) {
+          // Silently ignore - notifications are not critical for app functionality
+          setUnreadCount(0);
+          return { success: true, data: { count: 0 } };
+        }
+      },
+      1000 // ✅ Deduplication window: 1 second
+    );
+  }, [user.id]);
 
   // Real-time notification handler
   const handleNewNotification = useCallback((data: any) => {

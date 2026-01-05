@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyticsCharts } from "./analytics-charts";
 import { Loader2 } from "lucide-react";
+import { deduplicateRequest } from "@/lib/utils/request-deduplication";
+import { useSession } from "next-auth/react";
 
 interface AnalyticsData {
   revenueData: Array<{ month: string; revenue: number }>;
@@ -17,28 +19,49 @@ export function AnalyticsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: session } = useSession();
+
+  // ✅ Performance: Memoize fetchAnalytics and add deduplication
+  const fetchAnalytics = useCallback(async () => {
+    if (!session?.user) return;
+    
+    // ✅ Performance: Deduplicate requests within 2 seconds window
+    const userId = session.user.id || 0;
+    const deduplicationKey = `analytics:${userId}`;
+    
+    return deduplicateRequest(
+      deduplicationKey,
+      async () => {
+        try {
+          setLoading(true);
+          const response = await fetch("/api/dashboard/analytics", {
+            credentials: "include", // ✅ Critical: Include credentials for authentication
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            setData(result.data);
+          } else {
+            setError(result.error || "Failed to load analytics");
+          }
+          return result;
+        } catch (err) {
+          setError("Failed to load analytics");
+          console.error("Error fetching analytics:", err);
+          return { success: false, error: "Failed to load analytics" };
+        } finally {
+          setLoading(false);
+        }
+      },
+      2000 // ✅ Deduplication window: 2 seconds
+    );
+  }, [session?.user]);
+
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/dashboard/analytics");
-      const result = await response.json();
-
-      if (result.success) {
-        setData(result.data);
-      } else {
-        setError(result.error || "Failed to load analytics");
-      }
-    } catch (err) {
-      setError("Failed to load analytics");
-      console.error("Error fetching analytics:", err);
-    } finally {
-      setLoading(false);
+    if (session?.user) {
+      fetchAnalytics();
     }
-  };
+  }, [fetchAnalytics, session?.user]);
 
   if (loading) {
     return (

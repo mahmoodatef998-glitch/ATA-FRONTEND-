@@ -4,12 +4,13 @@ import { useEffect, useState, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, DollarSign, Clock, CheckCircle, TrendingUp, Users, ArrowRight, UserPlus, Building2 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@prisma/client";
 import { AnalyticsSection } from "@/components/dashboard/analytics-section";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardSkeleton } from "@/components/loading-skeletons/dashboard-skeleton";
+import { deduplicateRequest } from "@/lib/utils/request-deduplication";
 
 interface DashboardSummary {
   stats: {
@@ -59,22 +60,32 @@ export function DashboardClient() {
   const { data: session, status } = useSession();
   const [translations, setTranslations] = useState<Record<string, string>>({});
 
-  // ✅ Performance: Single aggregated API call
+  // ✅ Performance: Single aggregated API call with deduplication
   const { data, isLoading, error } = useQuery<{ success: boolean; data: DashboardSummary }>({
     queryKey: ["dashboard-summary"],
     queryFn: async () => {
-      const response = await fetch("/api/dashboard/summary", {
-        // ✅ Performance: Explicit cache control
-        cache: "force-cache",
-        next: { revalidate: 120 }, // 2 minutes
-        credentials: "include", // ✅ Critical: Include credentials for authentication
-      });
-      if (!response.ok) throw new Error("Failed to fetch dashboard data");
-      return response.json();
+      // ✅ Performance: Deduplicate requests within 2 seconds window
+      const userId = session?.user?.id || 0;
+      const deduplicationKey = `dashboard-summary:${userId}`;
+      
+      return deduplicateRequest(
+        deduplicationKey,
+        async () => {
+          const response = await fetch("/api/dashboard/summary", {
+            // ✅ Performance: Explicit cache control
+            cache: "force-cache",
+            next: { revalidate: 120 }, // 2 minutes
+            credentials: "include", // ✅ Critical: Include credentials for authentication
+          });
+          if (!response.ok) throw new Error("Failed to fetch dashboard data");
+          return response.json();
+        },
+        2000 // ✅ Deduplication window: 2 seconds
+      );
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    enabled: status === "authenticated",
+    staleTime: 3 * 60 * 1000, // ✅ Performance: 3 minutes (increased from 2)
+    gcTime: 10 * 60 * 1000, // ✅ Performance: 10 minutes (increased from 5)
+    enabled: status === "authenticated" && !!session?.user,
   });
 
   // Load translations once

@@ -14,23 +14,18 @@ export async function middleware(request: NextRequest) {
   
   // ✅ Performance: PRIORITY 1 - Block ALL RSC requests immediately (before any other logic)
   // This is the most critical optimization for sub-1.5s page loads
+  // ✅ FIX: Simplified blocking - block ANY RSC request directly (no complex conditions)
   const isRscPrefetch = request.headers.get('next-router-prefetch') === '1';
   const isRscRequest = request.headers.get('rsc') === '1';
-  const hasNextUrl = request.headers.get('next-url');
-  const hasRouterStateTree = request.headers.get('next-router-state-tree');
   
-  // ✅ Block ALL RSC-related requests (most aggressive blocking)
-  // Block if it's ANY RSC request (not just prefetch) - this prevents all RSC storms
-  if (
-    isRscPrefetch || 
-    (isRscRequest && hasNextUrl) || 
-    (isRscRequest && hasRouterStateTree) ||
-    (isRscRequest && pathname !== '/api' && !pathname.startsWith('/api/')) // Block all RSC except API routes
-  ) {
+  // ✅ Block ALL RSC requests immediately (most aggressive blocking)
+  // Block ANY RSC request - this prevents all RSC storms
+  if (isRscPrefetch || isRscRequest) {
     return new NextResponse(null, { 
       status: 204, // No Content
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-RSC-Blocked': 'true', // Debug header
       }
     });
   }

@@ -156,10 +156,19 @@ export async function GET(request: NextRequest) {
           },
         };
       },
-      120 // 2 minutes cache TTL
+      180 // ✅ Performance: 3 minutes cache TTL for faster page loads (increased from 120s)
     );
 
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+    
+    // ✅ Performance: Aggressive cache headers for sub-1.5s page loads
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=180, stale-while-revalidate=360, max-age=180'
+    );
+    response.headers.set('X-Cache-Status', 'HIT');
+    
+    return response;
   } catch (error: any) {
     logger.error("Analytics API error", error, "analytics");
     return handleApiError(error);
