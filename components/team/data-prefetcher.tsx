@@ -39,6 +39,16 @@ export function TeamDataPrefetcher() {
         //   router.prefetch(page);
         // });
 
+        // ✅ Performance: Check cache first to avoid duplicate requests
+        const attendanceStatsCache = queryClient.getQueryData(["team", "attendance-stats"]);
+        const tasksCache = queryClient.getQueryData([
+          "tasks",
+          { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 },
+        ]);
+        const kpiCache = queryClient.getQueryData(["kpi"]);
+        const teamKPICache = queryClient.getQueryData(["kpi", "team", {}]);
+        const membersCache = queryClient.getQueryData(["team", "members"]);
+
         const prefetches: Promise<any>[] = [];
 
         // Common prefetches for all team members
@@ -50,47 +60,53 @@ export function TeamDataPrefetcher() {
           userRole === UserRole.HR ||
           userRole === UserRole.ACCOUNTANT
         ) {
-          // Prefetch team attendance stats
-          prefetches.push(
-            fetch("/api/team/attendance-stats", { credentials: "include" })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["team", "attendance-stats"], data.data);
-                }
-              })
-              .catch(() => {})
-          );
+          // Prefetch team attendance stats (only if not in cache)
+          if (!attendanceStatsCache) {
+            prefetches.push(
+              fetch("/api/team/attendance-stats", { credentials: "include" })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["team", "attendance-stats"], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
 
-          // Prefetch tasks
-          prefetches.push(
-            fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", { credentials: "include" })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(
-                    ["tasks", { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 }],
-                    data.data
-                  );
-                }
-              })
-              .catch(() => {})
-          );
+          // Prefetch tasks (only if not in cache)
+          if (!tasksCache) {
+            prefetches.push(
+              fetch("/api/tasks?status=PENDING&status=IN_PROGRESS&status=COMPLETED&limit=100", { credentials: "include" })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(
+                      ["tasks", { status: ["PENDING", "IN_PROGRESS", "COMPLETED"], limit: 100 }],
+                      data.data
+                    );
+                  }
+                })
+                .catch(() => {})
+            );
+          }
         }
 
         // Prefetch for technicians
         if (userRole === UserRole.TECHNICIAN) {
-          // Prefetch KPI
-          prefetches.push(
-            fetch("/api/kpi", { credentials: "include" })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["kpi"], data.data);
-                }
-              })
-              .catch(() => {})
-          );
+          // Prefetch KPI (only if not in cache)
+          if (!kpiCache) {
+            prefetches.push(
+              fetch("/api/kpi", { credentials: "include" })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["kpi"], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
         }
 
         // Prefetch for supervisors/admins
@@ -102,29 +118,33 @@ export function TeamDataPrefetcher() {
           // ✅ Performance: Disable RSC prefetching
           // router.prefetch("/team/members");
 
-          // Prefetch team KPI
-          prefetches.push(
-            fetch("/api/kpi/team", { credentials: "include" })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["kpi", "team", {}], data.data);
-                }
-              })
-              .catch(() => {})
-          );
+          // Prefetch team KPI (only if not in cache)
+          if (!teamKPICache) {
+            prefetches.push(
+              fetch("/api/kpi/team", { credentials: "include" })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["kpi", "team", {}], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
 
-          // Prefetch team members data
-          prefetches.push(
-            fetch("/api/team/members", { credentials: "include" })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  queryClient.setQueryData(["team", "members"], data.data);
-                }
-              })
-              .catch(() => {})
-          );
+          // Prefetch team members data (only if not in cache)
+          if (!membersCache) {
+            prefetches.push(
+              fetch("/api/team/members", { credentials: "include" })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    queryClient.setQueryData(["team", "members"], data.data);
+                  }
+                })
+                .catch(() => {})
+            );
+          }
         }
 
         // Execute all prefetches in parallel (non-blocking)
