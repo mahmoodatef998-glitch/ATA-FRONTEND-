@@ -65,17 +65,31 @@ export async function middleware(request: NextRequest) {
     });
   }
   
-  // ✅ CRITICAL: Block ALL HEAD requests to page routes (including Vercel draft status)
-  // HEAD requests are used for prefetch checks - blocking them speeds up navigation
-  // Vercel sends HEAD requests with x-vercel-draft-status header
+  // ✅ CRITICAL: Block HEAD requests ONLY for prefetch checks (not for Vercel health checks)
+  // Allow HEAD requests for:
+  // - Vercel health checks (x-vercel-draft-status header)
+  // - Root path (/) for initial page load
+  // Block HEAD requests for:
+  // - Prefetch checks (without x-vercel-draft-status)
+  // - Internal navigation prefetch
   if (method === 'HEAD') {
+    // ✅ Allow Vercel health checks and root path
+    const isVercelHealthCheck = request.headers.get('x-vercel-draft-status') !== null;
+    const isRootPath = pathname === '/';
+    
+    // Allow Vercel health checks and root path HEAD requests
+    if (isVercelHealthCheck || isRootPath) {
+      return NextResponse.next();
+    }
+    
+    // Block other HEAD requests (prefetch checks)
     return new NextResponse(null, { 
       status: 204,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'X-HEAD-Blocked': 'true',
+        'X-HEAD-Blocked': 'prefetch-check',
       }
     });
   }
